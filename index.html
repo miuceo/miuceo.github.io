@@ -101,9 +101,10 @@ h1{font-size:clamp(3rem,8vw,5rem);font-weight:700;line-height:1.04;letter-spacin
 .btn-new-post .icon{font-size:15px;}
 
 /* Blog grid */
-.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
-.blog-card{background:var(--bg);display:flex;flex-direction:column;overflow:hidden;transition:background var(--tf);text-decoration:none;color:inherit;cursor:pointer;}
-.blog-card:hover{background:var(--bg2);}
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;}
+.blog-card{background:var(--bg2);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:background var(--tf),transform .2s var(--ease),box-shadow .2s;text-decoration:none;color:inherit;cursor:pointer;border-radius:var(--r);}
+.blog-card:hover{background:var(--bg3);transform:translateY(-2px);box-shadow:0 6px 24px rgba(26,23,20,.07);}
+.blog-card-text{} /* text-only post: no image */
 
 /* Slider */
 .blog-card-slider{position:relative;width:100%;height:180px;overflow:hidden;background:var(--bg3);}
@@ -116,10 +117,10 @@ h1{font-size:clamp(3rem,8vw,5rem);font-weight:700;line-height:1.04;letter-spacin
 .blog-card-slider:hover .slider-btn{opacity:1;}
 .slider-prev{left:6px;}.slider-next{right:6px;}
 
-.blog-card-body{padding:1.1rem 1.25rem;flex:1;display:flex;flex-direction:column;}
+.blog-card-body{padding:1rem 1.1rem;flex:1;display:flex;flex-direction:column;gap:.4rem;}
 .blog-card-meta{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;}
-.blog-card-title{font-size:14px;font-weight:600;line-height:1.35;margin-bottom:.4rem;flex:1;}
-.blog-card-preview{font-size:12px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.blog-card-title{font-size:14px;font-weight:700;line-height:1.35;}
+.blog-card-preview{font-size:13px;color:var(--text2);line-height:1.65;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line;}
 .blog-card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:.6rem;}
 .blog-card-tag{font-size:10px;font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:1px 6px;color:var(--text3);}
 .blog-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:.85rem;padding-top:.7rem;border-top:1px solid var(--border);}
@@ -392,7 +393,23 @@ function showToast(msg){
   clearTimeout(toastT2);toastT2=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';},2800);
 }
 
-// Load blog posts (latest 5)
+// Parse clean post body — strip meta lines added by admin, strip images, strip Telegram footer
+function cleanBody(body){
+  return (body||'')
+    .replace(/\*\*Author:\*\*.*/g,'')
+    .replace(/\*\*Date:\*\*.*/g,'')
+    .replace(/\*\*Tags:\*\*.*/g,'')
+    .replace(/!\[.*?\]\(.*?\)/g,'')   // images
+    .replace(/👤.*?\n?/g,'')            // author icon line
+    .replace(/🔗.*?\n?/g,'')            // link icon line
+    .replace(/📝\s*/g,'')               // post icon
+    .replace(/\[.*?\]\(.*?\)/g,'')   // markdown links → text
+    .replace(/[#*`]/g,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+// Load blog posts (latest 5) — Telegram-style: just title + text
 async function loadBlog(){
   const grid=document.getElementById('blogGrid');
   try{
@@ -401,31 +418,24 @@ async function loadBlog(){
     if(!Array.isArray(issues)||!issues.length){grid.innerHTML='<div class="blog-empty">No posts yet.</div>';return;}
     grid.innerHTML=issues.map((issue,i)=>{
       const imgs=parseImages(issue.body||'');
-      const preview=parsePreview(issue.body||'');
-      const date=new Date(issue.created_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
-      const postTags=issue.labels.filter(l=>l.name!=='blog').map(l=>l.name).slice(0,3);
+      const body=cleanBody(issue.body||'');
       const postUrl=`post.html?id=${issue.number}`;
-      return `<div class="blog-card" onclick="location.href='${postUrl}'">
-        ${imgs.length?makeSlider(imgs,issue.number):''}
+      const hasImg=imgs.length>0;
+      return `<div class="blog-card${hasImg?'':' blog-card-text'}" onclick="location.href='${postUrl}'">
+        ${hasImg?makeSlider(imgs,issue.number):''}
         <div class="blog-card-body">
-          <div class="blog-card-meta">${date}</div>
           <div class="blog-card-title">${esc(issue.title)}</div>
-          ${preview?`<div class="blog-card-preview">${esc(preview)}</div>`:''}
-          ${postTags.length?`<div class="blog-card-tags">${postTags.map(t=>`<span class="blog-card-tag">${esc(t)}</span>`).join('')}</div>`:''}
-          <div class="blog-card-footer">
-            <span class="blog-card-author">Muhammadjon Ibrohimov</span>
-            <div class="blog-card-actions">
-              <button class="blog-card-share" title="Share" onclick="sharePost(event,'${esc(issue.title)}','${location.origin}/${postUrl}')">⬆</button>
-              <span class="blog-card-arrow">↗</span>
-            </div>
-          </div>
+          ${body?`<div class="blog-card-preview">${esc(body)}</div>`:''}
         </div>
       </div>`;
     }).join('');
     document.getElementById('blogViewAll').style.display='inline-flex';
-    // animate
-    document.querySelectorAll('.blog-card').forEach((c,i)=>{c.style.opacity='0';c.style.transform='translateY(18px)';c.style.transition=`opacity .5s var(--ease) ${.06*i}s,transform .5s var(--ease) ${.06*i}s`;setTimeout(()=>{c.style.opacity='1';c.style.transform='translateY(0)';},80);});
-  }catch(e){grid.innerHTML=`<div class="blog-empty">Could not load posts.</div>`;}
+    document.querySelectorAll('.blog-card').forEach((c,i)=>{
+      c.style.opacity='0';c.style.transform='translateY(18px)';
+      c.style.transition=`opacity .5s var(--ease) ${.06*i}s,transform .5s var(--ease) ${.06*i}s`;
+      setTimeout(()=>{c.style.opacity='1';c.style.transform='translateY(0)';},80);
+    });
+  }catch(e){grid.innerHTML='<div class="blog-empty">Could not load posts.</div>';}
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 loadBlog();
