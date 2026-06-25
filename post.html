@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post — Muhammadjon Ibrohimov</title>
+<link rel="icon" href="favicon.ico">
+<style>
+:root{--bg:#faf8f4;--bg2:#f2ede4;--bg3:#e8e1d4;--text:#1a1714;--text2:#6b6255;--text3:#a8998a;--border:rgba(26,23,20,0.08);--accent:#c8622a;--accent2:#e8854a;--acbg:#fdf3ec;--green:#4caf7d;--red:#e05555;--nav-bg:rgba(250,248,244,0.88);--r:12px;--sans:-apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',sans-serif;--mono:'SF Mono',ui-monospace,'Cascadia Code',monospace;--ease:cubic-bezier(0.22,1,0.36,1);}
+[data-theme="dark"]{--bg:#13110e;--bg2:#1c1916;--bg3:#252118;--text:#f0ebe3;--text2:#9a9082;--text3:#5a5248;--border:rgba(240,235,227,0.08);--accent:#e8854a;--accent2:#f0a070;--acbg:#1f1610;--nav-bg:rgba(19,17,14,0.85);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s;}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(1.25rem,5vw,3rem);height:60px;background:var(--nav-bg);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--border);}
+.nav-logo{font-size:16px;font-weight:600;color:var(--text);text-decoration:none;font-family:var(--mono);}
+.nav-logo span{color:var(--accent);}
+.nav-right{display:flex;align-items:center;gap:.5rem;}
+.nav-back{font-size:13px;color:var(--text2);text-decoration:none;padding:5px 12px;border-radius:7px;display:flex;align-items:center;gap:5px;transition:color .15s,background .15s;border:1px solid var(--border);}
+.nav-back:hover{color:var(--text);background:var(--bg2);}
+.lang-sw{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.lang-btn{background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text2);padding:4px 9px;border-radius:5px;transition:all .15s;}
+.lang-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.theme-btn{background:var(--bg2);border:1px solid var(--border);cursor:pointer;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .15s,transform .15s;}
+.theme-btn:hover{background:var(--bg3);transform:rotate(15deg);}
+
+.post-wrap{max-width:680px;margin:0 auto;padding:7.5rem clamp(1.25rem,5vw,3rem) 4rem;}
+.post-meta-top{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.25rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
+.post-author{color:var(--accent);}
+.post-title{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:700;letter-spacing:-.03em;line-height:1.15;margin-bottom:1.5rem;}
+.post-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:2rem;}
+.post-tag{font-size:11px;font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 10px;color:var(--text2);}
+
+/* ── SLIDER ── */
+.post-slider{position:relative;width:100%;border-radius:var(--r);overflow:hidden;margin-bottom:2.5rem;background:var(--bg3);}
+.post-slider img{width:100%;display:block;opacity:0;position:absolute;top:0;left:0;height:100%;object-fit:cover;transition:opacity .4s ease;}
+.post-slider img.active{opacity:1;position:relative;}
+.post-slider img:only-child{position:relative;opacity:1;}
+.slider-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;}
+.slider-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:background .2s;}
+.slider-dot.active{background:#fff;}
+.slider-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.4);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:2;opacity:0;transition:opacity .2s;}
+.post-slider:hover .slider-btn{opacity:1;}
+.ps-prev{left:10px;}.ps-next{right:10px;}
+
+/* ── BODY ── */
+.post-body{font-size:16px;line-height:1.85;color:var(--text);}
+.post-body h1,.post-body h2,.post-body h3{font-weight:700;letter-spacing:-.02em;margin:2rem 0 .75rem;line-height:1.25;}
+.post-body h1{font-size:1.8rem;}
+.post-body h2{font-size:1.4rem;}
+.post-body h3{font-size:1.15rem;}
+.post-body p{margin-bottom:1.25rem;}
+.post-body ul,.post-body ol{padding-left:1.5rem;margin-bottom:1.25rem;}
+.post-body li{margin-bottom:.35rem;}
+.post-body blockquote{border-left:3px solid var(--accent);padding:.25rem 0 .25rem 1.25rem;color:var(--text2);font-style:italic;margin:1.5rem 0;}
+.post-body code{font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:.875em;}
+.post-body pre{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;overflow-x:auto;margin:1.5rem 0;}
+.post-body pre code{background:none;border:none;padding:0;font-size:.875rem;}
+.post-body img{max-width:100%;border-radius:var(--r);margin:1rem 0;}
+.post-body a{color:var(--accent);text-decoration:underline;}
+.post-body strong{font-weight:700;}
+.post-body em{font-style:italic;}
+.post-body hr{border:none;border-top:1px solid var(--border);margin:2rem 0;}
+
+/* ── SHARE ROW ── */
+.post-share{display:flex;align-items:center;gap:.75rem;margin:2.5rem 0;padding:1.25rem 1.5rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);flex-wrap:wrap;}
+.share-label{font-size:12px;font-family:var(--mono);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-right:.25rem;}
+.share-btn{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:500;padding:6px 14px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text2);cursor:pointer;text-decoration:none;transition:all .15s;}
+.share-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--acbg);}
+
+/* ── COMMENTS ── */
+.comments-section{margin-top:2.5rem;}
+.comments-title{font-size:1.1rem;font-weight:700;margin-bottom:1.25rem;letter-spacing:-.02em;}
+.comment-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:.75rem;animation:fadeIn .3s ease;}
+.comment-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem;}
+.comment-user{font-size:13px;font-weight:600;}
+.comment-date{font-size:11px;font-family:var(--mono);color:var(--text3);}
+.comment-body{font-size:14px;color:var(--text2);line-height:1.65;}
+.comment-actions{margin-top:.6rem;display:flex;gap:.5rem;}
+.btn-translate{font-size:11px;font-family:var(--mono);background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 9px;cursor:pointer;color:var(--text2);transition:all .15s;}
+.btn-translate:hover{border-color:var(--accent);color:var(--accent);}
+.comment-translated{margin-top:.5rem;font-size:13px;color:var(--text2);background:var(--bg3);border-left:3px solid var(--accent);padding:.5rem .75rem;border-radius:0 6px 6px 0;display:none;}
+.comment-translated.show{display:block;}
+
+.comment-form{margin-top:1.75rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;}
+.comment-form-title{font-size:12px;font-family:var(--mono);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;}
+.form-input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;margin-bottom:.65rem;}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,98,42,.12);}
+textarea.form-input{min-height:90px;resize:vertical;line-height:1.6;}
+.btn-submit{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:background .15s,transform .15s;}
+.btn-submit:hover{background:var(--accent2);transform:translateY(-1px);}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.no-comments{font-size:14px;color:var(--text2);padding:1rem 0;}
+
+#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s var(--ease);pointer-events:none;z-index:999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.success{background:var(--green);}
+#toast.error{background:var(--red);}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  nav{padding:0 1rem;}
+  .nav-links{display:none;}
+  .post-wrap{padding:5.5rem 1rem 3rem;}
+  .post-title{font-size:1.5rem;}
+  .post-share{flex-direction:column;align-items:flex-start;gap:.5rem;}
+  .share-btn{width:100%;justify-content:center;}
+  .comment-form{padding:1rem;}
+  .post-slider{border-radius:8px;}
+}
+@media(max-width:380px){
+  .lang-sw{display:none;}
+  .nav-back span{display:none;}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">miuceo<span>./</span></a>
+  <div class="nav-right">
+    <a href="blog.html" class="nav-back">← <span data-i18n="nav_blog">Blog</span></a>
+    <div class="lang-sw">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn"        onclick="setLang('ru')">RU</button>
+      <button class="lang-btn"        onclick="setLang('uz')">UZ</button>
+    </div>
+    <button class="theme-btn" id="themeBtn">🌙</button>
+  </div>
+</nav>
+<div id="toast"></div>
+<div class="post-wrap" id="postWrap">
+  <div style="text-align:center;padding:4rem 0;font-family:var(--mono);font-size:12px;color:var(--text3);">Loading post…</div>
+</div>
+
+<script>
+const GITHUB_REPO  = 'miuceo/miuceo.github.io';
+// Tokens loaded from localStorage — set them in blog-admin.html → ⚙️ Keys
+function GITHUB_TOKEN(){return localStorage.getItem('mi_cfg_gh_token')||'';}
+function GEMINI_KEY(){return localStorage.getItem('mi_cfg_gemini_key')||'';}
+// Fallback model chain: try each model, skip on 429/503
+const GEMINI_MODELS = ['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-1.5-flash'];
+
+const T={
+  en:{nav_blog:"Blog",lbl_share:"Share",share_copy:"Copy link",share_tg:"Telegram",share_tw:"Twitter",lbl_comments:"Comments",lbl_leave:"Leave a comment",ph_name:"Your name",ph_comment:"Write a comment…",btn_post:"Post comment",btn_translate:"Translate to EN",btn_hide:"Hide translation",no_comments:"No comments yet. Be the first!",toast_copied:"Link copied!",toast_commented:"Comment posted!",toast_err:"Error posting comment",translating:"Translating…"},
+  ru:{nav_blog:"Блог",lbl_share:"Поделиться",share_copy:"Скопировать",share_tg:"Telegram",share_tw:"Twitter",lbl_comments:"Комментарии",lbl_leave:"Оставить комментарий",ph_name:"Ваше имя",ph_comment:"Напишите комментарий…",btn_post:"Отправить",btn_translate:"Перевести на EN",btn_hide:"Скрыть перевод",no_comments:"Пока нет комментариев. Будьте первым!",toast_copied:"Ссылка скопирована!",toast_commented:"Комментарий отправлен!",toast_err:"Ошибка при отправке",translating:"Перевожу…"},
+  uz:{nav_blog:"Blog",lbl_share:"Ulashish",share_copy:"Havolani nusxalash",share_tg:"Telegram",share_tw:"Twitter",lbl_comments:"Izohlar",lbl_leave:"Izoh qoldiring",ph_name:"Ismingiz",ph_comment:"Izoh yozing…",btn_post:"Yuborish",btn_translate:"EN ga tarjima",btn_hide:"Tarjimani yopish",no_comments:"Hali izoh yo'q. Birinchi bo'ling!",toast_copied:"Havola nusxalandi!",toast_commented:"Izoh yuborildi!",toast_err:"Xatolik yuz berdi",translating:"Tarjima qilinmoqda…"}
+};
+let curLang='en';
+function setLang(l){curLang=l;const t=T[l];document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(t[k]!==undefined)el.textContent=t[k];});document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===l));document.documentElement.lang=l;localStorage.setItem('mi_lang',l);}
+function t(k){return T[curLang][k]||T.en[k]||k;}
+
+const themeBtn=document.getElementById('themeBtn');
+function applyTheme(d){document.documentElement.setAttribute('data-theme',d?'dark':'light');themeBtn.textContent=d?'☀️':'🌙';localStorage.setItem('mi_theme',d?'dark':'light');}
+applyTheme(localStorage.getItem('mi_theme')?localStorage.getItem('mi_theme')==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches);
+themeBtn.addEventListener('click',()=>applyTheme(document.documentElement.getAttribute('data-theme')!=='dark'));
+const savedLang=localStorage.getItem('mi_lang');if(savedLang){curLang=savedLang;setLang(savedLang);}
+
+let toastTimer;
+function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className='show'+(type?' '+type:'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className='',2800);}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── Markdown → HTML (safe, correct order) ──
+function mdToHtml(md){
+  let s=md||'';
+  // fenced code blocks first
+  s=s.replace(/```([^\n]*)\n([\s\S]*?)```/g,(_,lang,code)=>`<pre><code>${esc(code.trim())}</code></pre>`);
+  // inline code
+  s=s.replace(/`([^`]+)`/g,(_,c)=>`<code>${esc(c)}</code>`);
+  // headings
+  s=s.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  s=s.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  s=s.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  // hr
+  s=s.replace(/^[-*]{3,}$/gm,'<hr>');
+  // blockquote
+  s=s.replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>');
+  // bold/italic
+  s=s.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  s=s.replace(/__(.+?)__/g,'<strong>$1</strong>');
+  s=s.replace(/_(.+?)_/g,'<em>$1</em>');
+  // images (extract before links)
+  s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" loading="lazy">');
+  // links
+  s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // lists
+  s=s.replace(/^[*\-] (.+)$/gm,'<li>$1</li>');
+  s=s.replace(/(<li>.*<\/li>(\n|$))+/g,m=>'<ul>'+m+'</ul>');
+  s=s.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  // paragraphs: split on double newlines
+  s=s.split(/\n{2,}/).map(block=>{
+    block=block.trim();
+    if(!block)return '';
+    if(/^<(h[1-3]|ul|ol|li|pre|blockquote|hr|img)/.test(block))return block;
+    return '<p>'+block.replace(/\n/g,'<br>')+'</p>';
+  }).join('');
+  return s;
+}
+
+function parseImages(body){
+  const imgs=[];
+  const re=/!\[.*?\]\((https?:\/\/[^\)]+)\)/g;
+  let m;while((m=re.exec(body))!==null)imgs.push(m[1]);
+  return imgs;
+}
+function stripMeta(body){
+  return (body||'')
+    .replace(/\*\*Author:\*\*.*?\n/g,'')
+    .replace(/\*\*Date:\*\*.*?\n/g,'')
+    .replace(/\*\*Tags:\*\*.*?\n/g,'');
+}
+
+// ── Gemini with full fallback chain + exponential backoff ──
+async function callGemini(prompt){
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  for(const model of GEMINI_MODELS){
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        const res=await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY()}`,
+          {method:'POST',headers:{'Content-Type':'application/json'},
+           body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:512,temperature:0.3}})}
+        );
+        if(res.status===429||res.status===503||res.status===500){
+          // retry with backoff
+          if(attempt<2){await sleep((Math.pow(2,attempt+1)+Math.random()*2)*1000);continue;}
+          // move to next model
+          break;
+        }
+        if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`HTTP ${res.status}`);}
+        const data=await res.json();
+        const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if(text)return text.trim();
+        throw new Error('Empty response from Gemini');
+      }catch(e){
+        if(attempt===2||(!e.message?.includes('429')&&!e.message?.includes('503')&&!e.message?.includes('500'))){
+          if(model===GEMINI_MODELS[GEMINI_MODELS.length-1])throw e;
+          break; // try next model
+        }
+        await sleep((Math.pow(2,attempt+1)+Math.random()*2)*1000);
+      }
+    }
+  }
+  throw new Error('All Gemini models failed or rate limited');
+}
+
+// ── Post slider ──
+const psState={idx:0,total:0};
+function initPostSlider(imgs){
+  const wrap=document.getElementById('postSlider');
+  if(!wrap||!imgs.length)return;
+  psState.total=imgs.length;
+  if(imgs.length===1){wrap.innerHTML=`<img src="${esc(imgs[0])}" class="active" alt="post image">`;return;}
+  const imgHtml=imgs.map((u,i)=>`<img src="${esc(u)}" class="${i===0?'active':''}" alt="post image ${i+1}">`).join('');
+  const dotsHtml=imgs.map((_,i)=>`<span class="slider-dot${i===0?' active':''}" onclick="psSlide(${i})"></span>`).join('');
+  wrap.innerHTML=`${imgHtml}<button class="slider-btn ps-prev" onclick="psStep(-1)">‹</button><button class="slider-btn ps-next" onclick="psStep(1)">›</button><div class="slider-dots">${dotsHtml}</div>`;
+}
+function psSlide(idx){
+  psState.idx=idx;
+  const wrap=document.getElementById('postSlider');
+  if(!wrap)return;
+  wrap.querySelectorAll('img').forEach((img,i)=>img.classList.toggle('active',i===idx));
+  wrap.querySelectorAll('.slider-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+function psStep(dir){psSlide((psState.idx+dir+psState.total)%psState.total);}
+
+// ── Comments ──
+async function loadComments(issueId){
+  const el=document.getElementById('commentsList');
+  el.innerHTML='<div class="spinner"></div>';
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues/${issueId}/comments?per_page=100`,
+      {headers:{'Authorization':`Bearer ${GITHUB_TOKEN()}`,'Accept':'application/vnd.github+json'}});
+    if(!res.ok)throw new Error('GitHub API '+res.status);
+    const comments=await res.json();
+    if(!comments.length){el.innerHTML=`<div class="no-comments">${t('no_comments')}</div>`;return;}
+    el.innerHTML=comments.map((c,i)=>{
+      const date=new Date(c.created_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+      return `<div class="comment-item">
+        <div class="comment-header">
+          <span class="comment-user">${esc(c.user.login)}</span>
+          <span class="comment-date">${date}</span>
+        </div>
+        <div class="comment-body" id="cbody-${i}">${esc(c.body)}</div>
+        <div class="comment-actions">
+          <button class="btn-translate" id="ctrbtn-${i}" onclick="translateComment(${i},'${esc(c.body).replace(/'/g,"\\'")}')">
+            ${t('btn_translate')}
+          </button>
+        </div>
+        <div class="comment-translated" id="ctrans-${i}"></div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<div class="no-comments">Could not load comments: ${esc(e.message)}</div>`;}
+}
+
+const transCache={};
+async function translateComment(idx,body){
+  const btn=document.getElementById(`ctrbtn-${idx}`);
+  const box=document.getElementById(`ctrans-${idx}`);
+  if(box.classList.contains('show')){box.classList.remove('show');btn.textContent=t('btn_translate');return;}
+  if(transCache[idx]){box.innerHTML=esc(transCache[idx]);box.classList.add('show');btn.textContent=t('btn_hide');return;}
+  btn.textContent=t('translating');btn.disabled=true;
+  try{
+    const result=await callGemini(`Translate the following text to English. Return ONLY the translated text, nothing else:\n\n${body}`);
+    transCache[idx]=result;
+    box.innerHTML=esc(result);
+    box.classList.add('show');
+    btn.textContent=t('btn_hide');
+  }catch(e){
+    toast('Translation failed: '+e.message,'error');
+    btn.textContent=t('btn_translate');
+  }finally{btn.disabled=false;}
+}
+
+async function submitComment(issueId){
+  const nameEl=document.getElementById('commentName');
+  const bodyEl=document.getElementById('commentBody');
+  const btn=document.getElementById('commentSubmit');
+  const name=nameEl.value.trim();
+  const body=bodyEl.value.trim();
+  if(!name||!body){toast('Please fill in all fields','error');return;}
+  btn.disabled=true;btn.textContent='…';
+  const text=`**${name}** wrote:\n\n${body}`;
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues/${issueId}/comments`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${GITHUB_TOKEN()}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({body:text})
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.message||'GitHub error');}
+    nameEl.value='';bodyEl.value='';
+    toast(t('toast_commented'),'success');
+    await loadComments(issueId);
+  }catch(e){toast(t('toast_err')+': '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent=t('btn_post');}
+}
+
+// ── Main ──
+async function loadPost(){
+  const params=new URLSearchParams(location.search);
+  const issueId=params.get('id');
+  const wrap=document.getElementById('postWrap');
+  if(!issueId){wrap.innerHTML='<div style="padding:4rem;text-align:center;color:var(--text2)">No post ID.</div>';return;}
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues/${issueId}`,
+      {headers:{'Accept':'application/vnd.github+json'}});
+    if(!res.ok)throw new Error('Issue not found');
+    const issue=await res.json();
+    const imgs=parseImages(issue.body||'');
+    const cleanBody=stripMeta(issue.body||'');
+    const bodyNoImgs=cleanBody.replace(/!\[.*?\]\(.*?\)/g,'');
+    const bodyHtml=mdToHtml(bodyNoImgs);
+    const date=new Date(issue.created_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    const postTags=issue.labels.filter(l=>l.name!=='blog').map(l=>l.name);
+    const postUrl=location.href;
+
+    document.title=`${issue.title} — Muhammadjon Ibrohimov`;
+
+    wrap.innerHTML=`
+      <div class="post-meta-top">
+        <span>${date}</span>
+        <span>·</span>
+        <span class="post-author">Muhammadjon Ibrohimov</span>
+      </div>
+      <h1 class="post-title">${esc(issue.title)}</h1>
+      ${postTags.length?`<div class="post-tags">${postTags.map(tg=>`<span class="post-tag">${esc(tg)}</span>`).join('')}</div>`:''}
+      ${imgs.length?`<div class="post-slider" id="postSlider"></div>`:''}
+      <div class="post-body">${bodyHtml}</div>
+
+      <div class="post-share">
+        <span class="share-label" data-i18n="lbl_share">${t('lbl_share')}</span>
+        <button class="share-btn" onclick="copyLink()">${t('share_copy')}</button>
+        <a class="share-btn" href="https://t.me/share/url?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(issue.title)}" target="_blank" rel="noopener">${t('share_tg')}</a>
+        <a class="share-btn" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(issue.title)}" target="_blank" rel="noopener">${t('share_tw')}</a>
+      </div>
+
+      <div class="comments-section">
+        <h2 class="comments-title" data-i18n="lbl_comments">${t('lbl_comments')}</h2>
+        <div id="commentsList"></div>
+        <div class="comment-form">
+          <div class="comment-form-title" data-i18n="lbl_leave">${t('lbl_leave')}</div>
+          <input class="form-input" id="commentName" type="text" placeholder="${t('ph_name')}">
+          <textarea class="form-input" id="commentBody" placeholder="${t('ph_comment')}"></textarea>
+          <button class="btn-submit" id="commentSubmit" onclick="submitComment('${issueId}')">${t('btn_post')}</button>
+        </div>
+      </div>
+    `;
+    if(imgs.length)initPostSlider(imgs);
+    loadComments(issueId);
+  }catch(e){wrap.innerHTML=`<div style="padding:4rem;text-align:center;color:var(--text2)">Error: ${esc(e.message)}</div>`;}
+}
+
+function copyLink(){navigator.clipboard.writeText(location.href).then(()=>toast(t('toast_copied'))).catch(()=>toast(t('toast_copied')));}
+
+loadPost();
+</script>
+</body>
+</html>

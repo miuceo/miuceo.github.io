@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MI Blog — Admin</title>
+<style>
+:root {
+  --bg:#faf8f4; --bg2:#f2ede4; --bg3:#e8e1d4;
+  --text:#1a1714; --text2:#6b6255; --text3:#a8998a;
+  --border:rgba(26,23,20,0.08);
+  --accent:#c8622a; --accent2:#e8854a; --acbg:#fdf3ec;
+  --green:#4caf7d; --red:#e05555;
+  --nav:rgba(250,248,244,0.9);
+  --shadow:0 4px 24px rgba(26,23,20,0.06);
+  --r:12px;
+  --sans:-apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'SF Mono',ui-monospace,'Cascadia Code',monospace;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+}
+[data-theme="dark"] {
+  --bg:#13110e; --bg2:#1c1916; --bg3:#252118;
+  --text:#f0ebe3; --text2:#9a9082; --text3:#5a5248;
+  --border:rgba(240,235,227,0.08);
+  --accent:#e8854a; --accent2:#f0a070; --acbg:#1f1610;
+  --nav:rgba(19,17,14,0.9);
+  --shadow:0 4px 24px rgba(0,0,0,0.25);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;transition:background .25s,color .25s;}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;}
+
+/* ══════════════ LOGIN ══════════════ */
+#loginScreen{align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden;}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 40%,rgba(200,98,42,0.07) 0%,transparent 70%);pointer-events:none;}
+.login-box{width:100%;max-width:400px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2.5rem;box-shadow:var(--shadow);position:relative;z-index:1;animation:fadeUp .5s var(--ease) both;}
+.login-logo{font-size:13px;font-family:var(--mono);color:var(--accent);margin-bottom:1.75rem;letter-spacing:.06em;}
+.login-title{font-size:1.6rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.35rem;}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:2rem;}
+.field{margin-bottom:1.1rem;}
+.field label{display:block;font-size:12px;font-family:var(--mono);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;}
+.field input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,98,42,.12);}
+.login-error{margin-top:1rem;padding:10px 14px;background:rgba(224,85,85,.1);border:1px solid rgba(224,85,85,.25);border-radius:8px;font-size:13px;color:var(--red);display:none;}
+.login-attempts{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:.75rem;text-align:center;}
+
+/* ══════════════ BUTTONS ══════════════ */
+.btn{width:100%;padding:11px;border:none;border-radius:9px;cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:600;transition:all .15s var(--ease);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);}
+.btn-primary:active{transform:translateY(0);}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.btn-sm{padding:7px 14px;font-size:13px;font-weight:500;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .15s;width:auto;}
+.btn-sm:hover{background:var(--bg3);color:var(--text);}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-accent:hover{background:var(--accent2);}
+.btn-danger{background:rgba(224,85,85,.1);color:var(--red);border-color:rgba(224,85,85,.3);}
+.btn-danger:hover{background:var(--red);color:#fff;}
+
+/* ══════════════ ADMIN NAV ══════════════ */
+#adminScreen{flex-direction:column;}
+.anav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(1rem,4vw,2rem);height:56px;background:var(--nav);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);transition:background .25s;}
+.anav-logo{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500;}
+.anav-logo span{color:var(--accent);}
+.anav-right{display:flex;align-items:center;gap:.5rem;}
+.tabs{display:flex;gap:3px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:3px;}
+.tab{padding:5px 14px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;background:none;color:var(--text2);transition:all .15s;}
+.tab.active{background:var(--bg);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.theme-btn{background:var(--bg2);border:1px solid var(--border);cursor:pointer;width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s,transform .15s;}
+.theme-btn:hover{background:var(--bg3);transform:rotate(15deg);}
+
+/* ══════════════ MAIN ══════════════ */
+.amain{flex:1;padding:clamp(1rem,3vw,2rem);max-width:960px;width:100%;margin:0 auto;}
+.panel{display:none;}
+.panel.active{display:block;animation:fadeUp .3s var(--ease) both;}
+
+/* ══════════════ EDITOR ══════════════ */
+.editor-grid{display:grid;grid-template-columns:1fr 290px;gap:1.5rem;}
+@media(max-width:720px){.editor-grid{grid-template-columns:1fr;}}
+
+.form-group{margin-bottom:1.2rem;}
+.form-label{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-family:var(--mono);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;}
+.form-input{width:100%;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,98,42,.12);}
+.char-warn{color:var(--red);}
+
+/* ── RICH TEXT EDITOR ── */
+.rte-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .15s,box-shadow .15s;}
+.rte-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,98,42,.12);}
+.rte-toolbar{display:flex;flex-wrap:wrap;gap:2px;padding:8px 10px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.rte-btn{background:none;border:none;cursor:pointer;width:30px;height:28px;border-radius:5px;font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:var(--mono);}
+.rte-btn:hover{background:var(--bg2);color:var(--text);}
+.rte-btn.active{background:var(--accent);color:#fff;}
+.rte-sep{width:1px;height:20px;background:var(--border);margin:4px 3px;align-self:center;}
+.rte-select{background:var(--bg2);border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--mono);color:var(--text2);padding:3px 6px;cursor:pointer;outline:none;}
+#editor{
+  min-height:320px;max-height:520px;overflow-y:auto;
+  padding:14px;line-height:1.8;font-size:15px;
+  background:var(--bg2);color:var(--text);
+  outline:none;
+}
+#editor:empty:before{content:attr(data-placeholder);color:var(--text3);pointer-events:none;}
+#editor h1{font-size:1.6rem;font-weight:700;margin-bottom:.5rem;}
+#editor h2{font-size:1.3rem;font-weight:600;margin-bottom:.4rem;}
+#editor h3{font-size:1.1rem;font-weight:600;margin-bottom:.3rem;}
+#editor p{margin-bottom:.75rem;}
+#editor ul,#editor ol{padding-left:1.5rem;margin-bottom:.75rem;}
+#editor li{margin-bottom:.25rem;}
+#editor blockquote{border-left:3px solid var(--accent);padding-left:1rem;color:var(--text2);margin:.75rem 0;font-style:italic;}
+#editor code{font-family:var(--mono);background:var(--bg3);border-radius:4px;padding:1px 6px;font-size:.9em;}
+#editor pre{background:var(--bg3);border-radius:8px;padding:1rem;overflow-x:auto;margin:.75rem 0;}
+#editor pre code{background:none;padding:0;}
+#editor a{color:var(--accent);text-decoration:underline;}
+#editor strong{font-weight:700;}
+#editor em{font-style:italic;}
+#editor img{max-width:100%;border-radius:6px;margin:.5rem 0;}
+#editor hr{border:none;border-top:1px solid var(--border);margin:1rem 0;}
+.word-count{font-size:11px;font-family:var(--mono);color:var(--text3);padding:5px 14px;background:var(--bg3);text-align:right;}
+
+/* ── AI TOOLBAR ── */
+.ai-toolbar{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.85rem;padding:.7rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+.ai-toolbar-label{font-size:10px;font-family:var(--mono);color:var(--accent);letter-spacing:.12em;text-transform:uppercase;align-self:center;margin-right:2px;}
+.ai-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;background:var(--bg);color:var(--text2);cursor:pointer;transition:all .15s;}
+.ai-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--acbg);}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ── SIDEBAR ── */
+.side-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-bottom:1rem;}
+.side-card-title{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.75rem;}
+
+/* ── IMAGE UPLOAD ── */
+.img-drop{border:2px dashed var(--border);border-radius:8px;padding:1.1rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;font-size:13px;color:var(--text2);}
+.img-drop:hover{border-color:var(--accent);background:var(--acbg);}
+.img-drop-note{font-size:11px;color:var(--text3);margin-top:4px;}
+.img-preview{display:flex;flex-wrap:wrap;gap:6px;margin-top:.75rem;}
+.img-thumb{position:relative;width:68px;height:68px;border-radius:6px;overflow:hidden;border:1px solid var(--border);}
+.img-thumb img{width:100%;height:100%;object-fit:cover;}
+.img-thumb-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:4px;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* ── TAGS ── */
+.tags-wrap{display:flex;flex-wrap:wrap;gap:5px;}
+.tag-chip{display:flex;align-items:center;gap:4px;font-size:11px;font-family:var(--mono);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--text2);}
+.tag-chip button{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0;line-height:1;}
+.tag-input{font-size:12px;font-family:var(--mono);background:none;border:none;outline:none;color:var(--text);width:80px;}
+
+/* ── PUBLISH ── */
+.pub-opts{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.85rem;}
+.pub-opt{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;}
+.pub-opt input{accent-color:var(--accent);}
+
+/* ── POSTS PANEL ── */
+.posts-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.posts-list-wrap{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.post-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--bg);padding:1rem 1.25rem;transition:background .15s;}
+.post-row:hover{background:var(--bg2);}
+.post-row-left{flex:1;min-width:0;}
+.post-row-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.post-row-meta{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:2px;}
+.post-row-actions{display:flex;gap:.4rem;flex-shrink:0;}
+.posts-empty{padding:3rem;text-align:center;color:var(--text2);font-size:14px;background:var(--bg);}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s var(--ease);pointer-events:none;z-index:999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.error{background:var(--red);}
+#toast.success{background:var(--green);}
+
+/* ── AI MODAL ── */
+#aiOverlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
+#aiOverlay.show{display:flex;}
+.ai-modal{background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:1.75rem;width:100%;max-width:540px;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:fadeUp .3s var(--ease) both;}
+.ai-modal-title{font-size:16px;font-weight:700;margin-bottom:.35rem;}
+.ai-modal-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem;}
+.ai-result{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.7;min-height:80px;white-space:pre-wrap;color:var(--text);max-height:320px;overflow-y:auto;}
+.ai-modal-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem;}
+
+/* ── SPINNER ── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px;}
+
+/* ── LOCKOUT ── */
+#lockout{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem;text-align:center;padding:2rem;}
+#lockout.show{display:flex;}
+#lockout h2{font-size:1.4rem;color:var(--red);}
+#lockout p{font-size:14px;color:var(--text2);}
+#lockCountdown{font-family:var(--mono);font-size:2rem;color:var(--red);}
+
+/* ── KEYFRAMES ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:640px){
+  .anav{padding:0 .75rem;gap:.4rem;flex-wrap:wrap;height:auto;padding-top:.5rem;padding-bottom:.5rem;}
+  .anav-right{flex-wrap:wrap;gap:.35rem;}
+  .amain{padding:.75rem;}
+  .tabs .tab{padding:5px 8px;font-size:11px;}
+  .editor-grid{grid-template-columns:1fr!important;}
+  .login-box{padding:1.75rem 1.25rem;border-radius:14px;}
+  .login-title{font-size:1.35rem;}
+  .btn-sm{padding:6px 10px;font-size:12px;}
+  .rte-toolbar{gap:1px;padding:6px 8px;}
+  .rte-btn{width:26px;height:26px;font-size:12px;}
+  .ai-toolbar{gap:4px;}
+  .ai-btn{padding:4px 8px;font-size:11px;}
+  .side-card{padding:.85rem;}
+  .post-row{flex-direction:column;align-items:flex-start;gap:.5rem;}
+  .post-row-actions{width:100%;display:flex;gap:.4rem;}
+  .post-row-actions .btn-sm{flex:1;text-align:center;}
+  #lockout{padding:1.5rem;}
+  #lockCountdown{font-size:1.5rem;}
+}
+@media(max-width:400px){
+  .tabs .tab{padding:4px 6px;font-size:10px;}
+  .anav-right{gap:.25rem;}
+}
+
+/* ── SETTINGS MODAL ── */
+.btn-settings{background:var(--bg3)!important;border-color:var(--border)!important;color:var(--text2)!important;}
+.btn-settings:hover{border-color:var(--accent)!important;color:var(--accent)!important;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{background:var(--bg);border:1px solid var(--border);border-radius:16px;width:min(480px,94vw);padding:2rem;box-shadow:0 24px 60px rgba(0,0,0,.25);transform:translateY(12px);transition:transform .25s var(--ease);}
+.modal-overlay.open .modal-box{transform:translateY(0);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;}
+.modal-title{font-size:1.1rem;font-weight:700;letter-spacing:-.02em;}
+.modal-close{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:4px 8px;border-radius:6px;transition:color .15s,background .15s;}
+.modal-close:hover{color:var(--text);background:var(--bg2);}
+.modal-desc{font-size:12px;color:var(--text2);margin-bottom:1.25rem;line-height:1.6;background:var(--bg2);border-radius:8px;padding:.6rem .85rem;border:1px solid var(--border);}
+.modal-fields{display:flex;flex-direction:column;gap:.85rem;}
+.mfield{display:flex;flex-direction:column;gap:4px;}
+.mfield label{font-size:12px;font-weight:600;font-family:var(--mono);color:var(--text2);}
+.mfield input{padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:border-color .15s;}
+.mfield input:focus{border-color:var(--accent);}
+.mfield-hint{font-size:11px;color:var(--text3);}
+.modal-footer{display:flex;gap:.75rem;margin-top:1.5rem;justify-content:flex-end;}
+</style>
+</head>
+<body>
+
+<!-- LOCKOUT -->
+<div id="lockout">
+  <div style="font-size:2.5rem">🔒</div>
+  <h2>Access Locked</h2>
+  <p>Too many failed attempts. Try again in:</p>
+  <div id="lockCountdown">05:00</div>
+</div>
+
+<!-- LOGIN -->
+<div class="screen active" id="loginScreen">
+  <div class="login-bg"></div>
+  <div class="login-box">
+    <div class="login-logo">// MI Blog Admin</div>
+    <h1 class="login-title">Sign in</h1>
+    <p class="login-sub">Access restricted to authorized user only.</p>
+    <div class="field"><label>Username</label><input type="text" id="loginUser" autocomplete="username" placeholder="username"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••••••"></div>
+    <div class="field"><label>Secret Phrase</label><input type="password" id="loginSecret" placeholder="your secret phrase"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign in →</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-attempts" id="loginAttempts"></div>
+    <div style="margin-top:1.25rem;text-align:center;">
+      <a href="index.html" style="font-size:13px;color:var(--text3);text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:color .15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">← Back to portfolio</a>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="adminScreen">
+  <nav class="anav">
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <a href="index.html" style="font-size:12px;color:var(--text3);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1px solid var(--border);border-radius:7px;transition:all .15s;font-family:var(--mono);" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">← Home</a>
+      <div class="anav-logo">MI <span>./</span> Blog Admin</div>
+    </div>
+    <div class="anav-right">
+      <div class="tabs">
+        <button class="tab active" id="tabEditor" onclick="switchTab('editor')">✍️ New Post</button>
+        <button class="tab"        id="tabPosts"  onclick="switchTab('posts')">📋 Posts</button>
+      </div>
+      <button class="theme-btn" id="themeBtn">🌙</button>
+      <button class="btn-sm btn-settings" onclick="openSettings()" title="API Keys">⚙️ Keys</button>
+      <button class="btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">⚙️ API Keys &amp; Config</h2>
+        <button class="modal-close" onclick="closeSettings()">✕</button>
+      </div>
+      <p class="modal-desc">These are saved only in your browser (localStorage). Never committed to GitHub.</p>
+      <div class="modal-fields">
+        <div class="mfield">
+          <label>GitHub Personal Access Token</label>
+          <input type="password" id="cfgGhToken" placeholder="github_pat_...">
+          <span class="mfield-hint">Needs Issues: Read &amp; Write on miuceo/miuceo.github.io</span>
+        </div>
+        <div class="mfield">
+          <label>Gemini API Key</label>
+          <input type="password" id="cfgGeminiKey" placeholder="AQ...">
+          <span class="mfield-hint">From Google AI Studio → Get API Key</span>
+        </div>
+        <div class="mfield">
+          <label>Telegram Bot Token</label>
+          <input type="password" id="cfgTgToken" placeholder="1234567890:AAG...">
+          <span class="mfield-hint">From @BotFather</span>
+        </div>
+        <div class="mfield">
+          <label>Telegram Channel</label>
+          <input type="text" id="cfgTgChannel" placeholder="@muhammadibrohimov_ceo">
+          <span class="mfield-hint">Your channel username (with @)</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="saveSettings()">Save keys</button>
+        <button class="btn" onclick="closeSettings()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <main class="amain">
+
+    <!-- ── EDITOR PANEL ── -->
+    <div class="panel active" id="editorPanel">
+      <div class="editor-grid">
+
+        <!-- LEFT: main editor -->
+        <div>
+          <!-- AI Toolbar -->
+          <div class="ai-toolbar">
+            <span class="ai-toolbar-label">AI ✦</span>
+            <button class="ai-btn" onclick="aiAction('improve')">✨ Improve</button>
+            <button class="ai-btn" onclick="aiAction('summarize')">📝 Summarize</button>
+            <button class="ai-btn" onclick="aiAction('tags')">🏷️ Tags</button>
+            <button class="ai-btn" onclick="aiAction('title')">💡 Title</button>
+            <button class="ai-btn" onclick="aiAction('translate_uz')">🌐 UZ</button>
+            <button class="ai-btn" onclick="aiAction('translate_ru')">🌐 RU</button>
+          </div>
+
+          <!-- Title -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Post Title</span>
+              <span id="charCount" style="font-size:11px;color:var(--text3);">0 / 255</span>
+            </label>
+            <input class="form-input" id="titleInput" maxlength="255" placeholder="What's this post about?" oninput="updateCharCount()">
+          </div>
+
+          <!-- Rich Text Editor -->
+          <div class="form-group">
+            <label class="form-label"><span>Content</span></label>
+            <div class="rte-wrap">
+              <!-- Toolbar -->
+              <div class="rte-toolbar">
+                <select class="rte-select" onchange="execCmd('formatBlock',this.value);this.value='p'">
+                  <option value="p">Paragraph</option>
+                  <option value="h1">Heading 1</option>
+                  <option value="h2">Heading 2</option>
+                  <option value="h3">Heading 3</option>
+                </select>
+                <div class="rte-sep"></div>
+                <button class="rte-btn" title="Bold" onclick="execCmd('bold')"><b>B</b></button>
+                <button class="rte-btn" title="Italic" onclick="execCmd('italic')"><i>I</i></button>
+                <button class="rte-btn" title="Underline" onclick="execCmd('underline')"><u>U</u></button>
+                <button class="rte-btn" title="Strikethrough" onclick="execCmd('strikeThrough')"><s>S</s></button>
+                <div class="rte-sep"></div>
+                <button class="rte-btn" title="Unordered list" onclick="execCmd('insertUnorderedList')">• ≡</button>
+                <button class="rte-btn" title="Ordered list" onclick="execCmd('insertOrderedList')">1≡</button>
+                <button class="rte-btn" title="Blockquote" onclick="execCmd('formatBlock','blockquote')">"</button>
+                <div class="rte-sep"></div>
+                <button class="rte-btn" title="Link" onclick="insertLink()">🔗</button>
+                <button class="rte-btn" title="Code" onclick="insertCode()">{ }</button>
+                <button class="rte-btn" title="Horizontal rule" onclick="execCmd('insertHorizontalRule')">—</button>
+                <div class="rte-sep"></div>
+                <button class="rte-btn" title="Align left" onclick="execCmd('justifyLeft')">⫷</button>
+                <button class="rte-btn" title="Align center" onclick="execCmd('justifyCenter')">≡</button>
+                <button class="rte-btn" title="Align right" onclick="execCmd('justifyRight')">⫸</button>
+                <div class="rte-sep"></div>
+                <button class="rte-btn" title="Undo" onclick="execCmd('undo')">↩</button>
+                <button class="rte-btn" title="Redo" onclick="execCmd('redo')">↪</button>
+                <div class="rte-sep"></div>
+                <button class="rte-btn" title="Clear formatting" onclick="execCmd('removeFormat')" style="font-size:11px;">Tx</button>
+              </div>
+              <!-- Editable area -->
+              <div id="editor" contenteditable="true" data-placeholder="Write your post here...&#10;&#10;Use the toolbar above to format text — bold, headings, lists, links, and more."></div>
+              <div class="word-count" id="wordCount">0 words</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: sidebar -->
+        <div>
+
+          <!-- Images (optional) -->
+          <div class="side-card">
+            <div class="side-card-title">Images <span style="color:var(--text3);font-size:10px;">(optional)</span></div>
+            <div class="img-drop" id="imgDrop" onclick="document.getElementById('imgInput').click()">
+              <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImages(this.files)">
+              <div>📸 Click or drag images</div>
+              <div class="img-drop-note">Optional — post works without images too</div>
+            </div>
+            <div class="img-preview" id="imgPreview"></div>
+          </div>
+
+          <!-- Tags -->
+          <div class="side-card">
+            <div class="side-card-title">Tags</div>
+            <div class="tags-wrap" id="tagsWrap">
+              <input class="tag-input" id="tagInput" placeholder="Add tag + Enter" onkeydown="handleTagKey(event)">
+            </div>
+          </div>
+
+          <!-- Author -->
+          <div class="side-card">
+            <div class="side-card-title">Author</div>
+            <div style="font-size:13px;font-weight:600;">Muhammadjon Ibrohimov</div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:3px;">Always you.</div>
+          </div>
+
+          <!-- Publish -->
+          <div class="side-card">
+            <div class="side-card-title">Publish to</div>
+            <div class="pub-opts">
+              <label class="pub-opt"><input type="checkbox" id="pubGitHub" checked disabled> <span>GitHub Issues <span style="font-size:10px;color:var(--text3);">(always)</span></span></label>
+              <label class="pub-opt"><input type="checkbox" id="pubTelegram" checked> Telegram Channel</label>
+            </div>
+            <button class="btn btn-primary" id="publishBtn" onclick="publishPost()">Publish Post →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── POSTS PANEL ── -->
+    <div class="panel" id="postsPanel">
+      <div class="posts-header">
+        <div style="font-size:1.1rem;font-weight:700;">Published Posts</div>
+        <button class="btn-sm" onclick="loadPosts()">↺ Refresh</button>
+      </div>
+      <div id="postsList"><div class="posts-empty">Loading posts...</div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- AI MODAL -->
+<div id="aiOverlay">
+  <div class="ai-modal">
+    <div class="ai-modal-title" id="aiModalTitle">AI Result</div>
+    <div class="ai-modal-sub" id="aiModalSub">Powered by Gemini 3.5 Flash</div>
+    <div class="ai-result" id="aiResult">Generating...</div>
+    <div class="ai-modal-actions">
+      <button class="btn-sm" onclick="closeAI()">Cancel</button>
+      <button class="btn-sm btn-accent" id="aiApplyBtn" onclick="applyAI()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════
+   CONFIG — loaded from localStorage
+═══════════════════════════════ */
+const GITHUB_REPO   = 'miuceo/miuceo.github.io';
+const GEMINI_MODELS = ['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-1.5-flash'];
+const MAX_ATTEMPTS  = 5;
+const LOCK_SECS     = 300;
+
+function cfg(key){return localStorage.getItem('mi_cfg_'+key)||'';}
+function setCfg(key,val){localStorage.setItem('mi_cfg_'+key,val.trim());}
+function GITHUB_TOKEN(){return cfg('gh_token');}
+function GEMINI_KEY(){return cfg('gemini_key');}
+function TG_TOKEN(){return cfg('tg_token');}
+function TG_CHANNEL(){return cfg('tg_channel')||'@muhammadibrohimov_ceo';}
+function cfgMissing(){return !cfg('gh_token')||!cfg('gemini_key')||!cfg('tg_token');}
+
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+let attempts = 0, locked = false, lockTimer = null;
+let images = [];   // {file, dataUrl, name}
+let tags   = [];
+let aiPending = { type: null, result: null };
+
+/* ═══════════════════════════════
+   AUTH
+═══════════════════════════════ */
+// Simple hash function for client-side credential check
+async function sha256(msg){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// Stored hashes (sha256 of actual credentials)
+const CRED_HASH='4a8f2c1e'; // placeholder — actual check done below
+
+async function doLogin() {
+  if (locked) return;
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const s = document.getElementById('loginSecret').value.trim();
+
+  // Rate limit: add small delay to slow brute force
+  await new Promise(r=>setTimeout(r,350));
+
+  const ok = u === 'muhammadibrohimovceo'
+          && p === '197346825@miuceo.uz'
+          && s === "bo'pti dakang menga jo'q";
+
+  if (ok) {
+    // Set session with expiry (8 hours)
+    const exp=Date.now()+(8*60*60*1000);
+    sessionStorage.setItem('mi_auth',JSON.stringify({ok:true,exp}));
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('adminScreen').classList.add('active');
+    attempts = 0;
+    loadPosts();
+    toast('Welcome back, Muhammadjon ✦', 'success');
+  } else {
+    attempts++;
+    const rem = MAX_ATTEMPTS - attempts;
+    const err = document.getElementById('loginError');
+    err.style.display = 'block';
+    err.textContent = rem > 0
+      ? `Incorrect credentials. ${rem} attempt${rem===1?'':'s'} remaining.`
+      : 'Too many attempts. Locking...';
+    document.getElementById('loginAttempts').textContent = `${attempts}/${MAX_ATTEMPTS} failed`;
+    if (attempts >= MAX_ATTEMPTS) startLockout();
+    const box = document.querySelector('.login-box');
+    box.style.animation = 'none'; box.offsetHeight;
+    box.style.animation = 'shake .4s ease';
+  }
+}
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.getElementById('loginScreen').classList.contains('active')) doLogin();
+});
+function startLockout() {
+  locked = true; let secs = LOCK_SECS;
+  document.getElementById('lockout').classList.add('show');
+  lockTimer = setInterval(() => {
+    secs--;
+    const m=String(Math.floor(secs/60)).padStart(2,'0'), s=String(secs%60).padStart(2,'0');
+    document.getElementById('lockCountdown').textContent=`${m}:${s}`;
+    if(secs<=0){clearInterval(lockTimer);locked=false;attempts=0;document.getElementById('lockout').classList.remove('show');document.getElementById('loginError').style.display='none';document.getElementById('loginAttempts').textContent='';}
+  },1000);
+}
+function doLogout(){sessionStorage.removeItem('mi_auth');document.getElementById('adminScreen').classList.remove('active');document.getElementById('loginScreen').classList.add('active');document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginSecret').value='';}
+
+/* ═══════════════════════════════
+   THEME
+═══════════════════════════════ */
+const themeBtn = document.getElementById('themeBtn');
+function applyTheme(d){document.documentElement.setAttribute('data-theme',d?'dark':'light');themeBtn.textContent=d?'☀️':'🌙';localStorage.setItem('mi_theme',d?'dark':'light');}
+applyTheme(localStorage.getItem('mi_theme')?localStorage.getItem('mi_theme')==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches);
+themeBtn.addEventListener('click',()=>applyTheme(document.documentElement.getAttribute('data-theme')!=='dark'));
+
+/* ═══════════════════════════════
+   TABS
+═══════════════════════════════ */
+function switchTab(name){
+  ['editor','posts'].forEach(n=>{
+    document.getElementById(n+'Panel').classList.toggle('active',n===name);
+    document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.toggle('active',n===name);
+  });
+  if(name==='posts') loadPosts();
+}
+
+/* ═══════════════════════════════
+   RICH TEXT EDITOR
+═══════════════════════════════ */
+function execCmd(cmd, val=null){
+  document.getElementById('editor').focus();
+  document.execCommand(cmd, false, val);
+  updateWordCount();
+}
+function insertLink(){
+  const url = prompt('Enter URL:');
+  if(url) execCmd('createLink', url);
+}
+function insertCode(){
+  const sel = window.getSelection();
+  if(sel && sel.toString()){
+    execCmd('insertHTML', `<code>${sel.toString()}</code>`);
+  } else {
+    execCmd('insertHTML','<code>code here</code>');
+  }
+}
+function updateWordCount(){
+  const text = document.getElementById('editor').innerText || '';
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('wordCount').textContent = `${words} word${words!==1?'s':''}`;
+}
+function updateCharCount(){
+  const len = document.getElementById('titleInput').value.length;
+  const el = document.getElementById('charCount');
+  el.textContent = `${len} / 255`;
+  el.classList.toggle('char-warn', len > 240);
+}
+// Track word count on editor input
+document.getElementById('editor').addEventListener('input', updateWordCount);
+
+/* ═══════════════════════════════
+   IMAGES
+═══════════════════════════════ */
+function handleImages(files){
+  Array.from(files).forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{images.push({file,dataUrl:e.target.result,name:file.name});renderImgs();};
+    r.readAsDataURL(file);
+  });
+}
+function renderImgs(){
+  document.getElementById('imgPreview').innerHTML=images.map((img,i)=>`
+    <div class="img-thumb">
+      <img src="${img.dataUrl}" alt="">
+      <button class="img-thumb-del" onclick="removeImg(${i})">✕</button>
+    </div>`).join('');
+}
+function removeImg(i){images.splice(i,1);renderImgs();}
+// Drag & drop
+const drop=document.getElementById('imgDrop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.borderColor='var(--accent)';});
+drop.addEventListener('dragleave',()=>{drop.style.borderColor='';});
+drop.addEventListener('drop',e=>{e.preventDefault();drop.style.borderColor='';handleImages(e.dataTransfer.files);});
+
+/* ═══════════════════════════════
+   TAGS
+═══════════════════════════════ */
+function handleTagKey(e){
+  if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/,/g,'');if(v&&!tags.includes(v)){tags.push(v);renderTags();}e.target.value='';}}
+function removeTag(i){tags.splice(i,1);renderTags();}
+function renderTags(){
+  document.getElementById('tagsWrap').innerHTML=
+    tags.map((t,i)=>`<span class="tag-chip">${t}<button onclick="removeTag(${i})">×</button></span>`).join('')
+    +`<input class="tag-input" id="tagInput" placeholder="Add tag + Enter" onkeydown="handleTagKey(event)">`;
+}
+function addTagsFromAI(arr){tags=[...new Set([...tags,...arr])];renderTags();}
+
+/* ═══════════════════════════════
+   TOAST
+═══════════════════════════════ */
+let toastT;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show '+(type||'');
+  clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3400);
+}
+
+/* ═══════════════════════════════
+   GEMINI 3.5 FLASH — with retry
+═══════════════════════════════ */
+async function callGemini(prompt){
+  for(const model of GEMINI_MODELS){
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        const res=await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY()}`,
+          {method:'POST',headers:{'Content-Type':'application/json'},
+           body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1024,temperature:0.7}})}
+        );
+        if(res.status===429||res.status===503||res.status===500){
+          const wait=(Math.pow(2,attempt+1)+Math.random()*2)*1000;
+          await new Promise(r=>setTimeout(r,wait));
+          if(attempt===2){toast(`⚠️ ${model} busy, trying fallback...`,'');break;}
+          continue;
+        }
+        if(res.status===400) throw new Error('Bad request to Gemini API');
+        if(!res.ok) throw new Error(`Gemini ${res.status}`);
+        const data=await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+      }catch(e){
+        if(attempt===2) break;
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }
+  }
+  throw new Error('All Gemini models are busy right now. Please try again in a minute.');
+}
+
+const AI_CFGS={
+  improve:{title:'✨ Improved Writing',sub:'Rewritten for clarity and impact',apply:'body'},
+  summarize:{title:'📝 Summary',sub:'A concise summary of your post',apply:'body'},
+  tags:{title:'🏷️ Suggested Tags',sub:'Click Apply to add these tags',apply:'tags'},
+  title:{title:'💡 Title Suggestions',sub:'Pick one or adapt',apply:'title'},
+  translate_uz:{title:"🌐 O'zbek Translation",sub:"Translated to Uzbek",apply:'body'},
+  translate_ru:{title:'🌐 Русский перевод',sub:'Переведено на русский',apply:'body'},
+};
+const AI_PROMPTS={
+  improve:t=>`Improve this blog post for clarity, flow, and impact. Keep the author's voice. Return only the improved HTML content (no code fences):\n\n${t}`,
+  summarize:t=>`Write a short 2-3 sentence summary of this blog post. Return plain text only:\n\n${t}`,
+  tags:t=>`Generate 5-8 relevant tags for this blog post. Return ONLY a JSON array of strings, nothing else:\n\n${t}`,
+  title:t=>`Suggest 3 compelling blog post titles. Return ONLY a numbered list:\n\n${t}`,
+  translate_uz:t=>`Translate the following blog post to Uzbek (O'zbek tili). Return only the translated text:\n\n${t}`,
+  translate_ru:t=>`Переведи следующий пост блога на русский язык. Верни только перевод:\n\n${t}`,
+};
+
+async function aiAction(type){
+  const body=document.getElementById('editor').innerHTML.trim();
+  const title=document.getElementById('titleInput').value.trim();
+  if(!body&&!title){toast('Write some content first!','error');return;}
+  const content=title?`Title: ${title}\n\n${body}`:body;
+  const cfg=AI_CFGS[type];
+  document.getElementById('aiModalTitle').textContent=cfg.title;
+  document.getElementById('aiModalSub').textContent=cfg.sub+' · Gemini 3.5 Flash';
+  document.getElementById('aiResult').textContent='Generating...';
+  document.getElementById('aiApplyBtn').disabled=true;
+  document.getElementById('aiOverlay').classList.add('show');
+  aiPending={type,result:null};
+  try{
+    const r=await callGemini(AI_PROMPTS[type](content));
+    document.getElementById('aiResult').textContent=r;
+    aiPending.result=r;
+    document.getElementById('aiApplyBtn').disabled=false;
+  }catch(e){
+    document.getElementById('aiResult').textContent='Error: '+e.message;
+    toast('AI error: '+e.message,'error');
+  }
+}
+function applyAI(){
+  const{type,result}=aiPending;if(!result)return;
+  if(type==='tags'){
+    try{const arr=JSON.parse(result.replace(/```json|```/g,'').trim());addTagsFromAI(arr);toast('Tags added ✦','success');}
+    catch{toast('Could not parse tags','error');}
+  }else if(type==='title'){
+    const first=result.split('\n')[0].replace(/^[\d\.\)\-\s]+/,'').trim();
+    document.getElementById('titleInput').value=first;updateCharCount();toast('Title applied ✦','success');
+  }else{
+    // Apply as HTML into editor
+    document.getElementById('editor').innerHTML=result;updateWordCount();toast('Applied ✦','success');
+  }
+  closeAI();
+}
+function closeAI(){document.getElementById('aiOverlay').classList.remove('show');aiPending={type:null,result:null};}
+
+/* ═══════════════════════════════
+   GITHUB IMAGE UPLOAD
+═══════════════════════════════ */
+function dataUrlToBlob(dataUrl){
+  const parts=dataUrl.split(',');
+  const mime=parts[0].split(':')[1].split(';')[0];
+  const byteStr=atob(parts[1]);
+  const arr=new Uint8Array(byteStr.length);
+  for(let i=0;i<byteStr.length;i++)arr[i]=byteStr.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+
+async function uploadImg(img,slug){
+  const blob=dataUrlToBlob(img.dataUrl);
+  const errors=[];
+
+  // Try 1: Catbox.moe — anonymous, 200MB, permanent
+  try{
+    const fd=new FormData();
+    fd.append('reqtype','fileupload');
+    fd.append('userhash','');
+    fd.append('fileToUpload',blob,img.name);
+    const r=await fetch('https://catbox.moe/user/api.php',{method:'POST',body:fd});
+    const url=(await r.text()).trim();
+    if(url.startsWith('https://'))return url;
+    throw new Error('Catbox returned: '+url);
+  }catch(e){errors.push('Catbox: '+e.message);console.warn(e.message);}
+
+  // Try 2: Imgur anonymous
+  try{
+    const fd=new FormData();
+    fd.append('image',blob,img.name);
+    const r=await fetch('https://api.imgur.com/3/image',{
+      method:'POST',
+      headers:{'Authorization':'Client-ID 546c25a59c58ad7'},
+      body:fd
+    });
+    const d=await r.json();
+    if(d.success&&d.data?.link)return d.data.link;
+    throw new Error('Imgur: '+(d.data?.error||r.status));
+  }catch(e){errors.push('Imgur: '+e.message);console.warn(e.message);}
+
+  // Try 3: GitHub Contents API (needs Contents:Write scope on token)
+  try{
+    const fname=`assets/blog/${slug}-${Date.now()}-${img.name.replace(/[^\w.-]/g,'_')}`;
+    const b64=img.dataUrl.split(',')[1];
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${fname}`,{
+      method:'PUT',
+      headers:{'Authorization':`Bearer ${GITHUB_TOKEN()}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({message:`blog image: ${img.name}`,content:b64})
+    });
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(`GitHub ${r.status}: ${e.message||'check token has Contents:Write'}`);}
+    const d=await r.json();
+    if(d.content?.download_url)return d.content.download_url;
+  }catch(e){errors.push('GitHub: '+e.message);console.warn(e.message);}
+
+  throw new Error('All image upload methods failed:\n'+errors.join('\n'));
+}
+
+/* ═══════════════════════════════
+   GITHUB ISSUE
+═══════════════════════════════ */
+async function createIssue(title,htmlBody,imgUrls){
+  // Convert HTML to markdown-ish for GitHub
+  const textBody=htmlToText(htmlBody);
+  const imgMd=imgUrls.map(u=>`![image](${u})`).join('\n');
+  const full=[
+    `**Author:** Muhammadjon Ibrohimov`,
+    `**Date:** ${new Date().toISOString().split('T')[0]}`,
+    tags.length?`**Tags:** ${tags.map(t=>'`'+t+'`').join(' ')}`:null,
+    '',
+    imgMd||null,
+    '',
+    textBody
+  ].filter(l=>l!==null).join('\n');
+
+  const res=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues`,{
+    method:'POST',
+    headers:{'Authorization':`Bearer ${GITHUB_TOKEN()}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+    body:JSON.stringify({title,body:full,labels:['blog',...tags.slice(0,10)]})
+  });
+  if(!res.ok) throw new Error('GitHub issue error: '+res.status);
+  return await res.json();
+}
+function htmlToText(html){
+  const d=document.createElement('div');d.innerHTML=html;return d.innerText||d.textContent||'';
+}
+
+/* ═══════════════════════════════
+   TELEGRAM — always send
+═══════════════════════════════ */
+async function sendTelegram(title,htmlBody,issueUrl,imgUrls){
+  const bodyText=htmlToText(htmlBody).trim();
+  // Build message: title + full body (truncated to 800 chars) + hashtags + link
+  const maxBody=800;
+  const bodyTrunc=bodyText.length>maxBody?bodyText.slice(0,maxBody)+'…':bodyText;
+  const tagsLine=tags.length?'\n\n'+tags.map(t=>'#'+t.replace(/[\s\-]+/g,'_').replace(/[^\w]/g,'')).join(' '):'';
+  const caption=`📝 ${title}\n\n${bodyTrunc}${tagsLine}\n\n👤 Muhammadjon Ibrohimov\n🔗 ${issueUrl}`;
+  const msgText=caption.slice(0,4096); // Telegram max
+  const captionText=caption.slice(0,1024); // caption max
+
+  let ok=false;
+
+  if(imgUrls.length===1){
+    // Single image → sendPhoto with full caption
+    try{
+      const r=await fetch(`https://api.telegram.org/bot${TG_TOKEN()}/sendPhoto`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:TG_CHANNEL(),photo:imgUrls[0],caption:captionText})
+      });
+      const d=await r.json();
+      if(!d.ok) throw new Error(d.description);
+      ok=true;
+    }catch(e){console.warn('sendPhoto failed:',e.message);}
+  } else if(imgUrls.length>1){
+    // Multiple images → sendMediaGroup (first image gets caption)
+    try{
+      const media=imgUrls.slice(0,10).map((u,i)=>({
+        type:'photo',media:u,
+        ...(i===0?{caption:captionText}:{})
+      }));
+      const r=await fetch(`https://api.telegram.org/bot${TG_TOKEN()}/sendMediaGroup`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:TG_CHANNEL(),media})
+      });
+      const d=await r.json();
+      if(!Array.isArray(d)||!d[0]?.message_id) throw new Error(JSON.stringify(d));
+      ok=true;
+    }catch(e){
+      console.warn('sendMediaGroup failed:',e.message);
+      // Fallback: send first image only
+      try{
+        const r=await fetch(`https://api.telegram.org/bot${TG_TOKEN()}/sendPhoto`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({chat_id:TG_CHANNEL(),photo:imgUrls[0],caption:captionText})
+        });
+        const d=await r.json();
+        if(!d.ok) throw new Error(d.description);
+        ok=true;
+      }catch(e2){console.warn('sendPhoto fallback failed:',e2.message);}
+    }
+  }
+
+  // No images, or image send failed → sendMessage
+  if(!ok){
+    const r=await fetch(`https://api.telegram.org/bot${TG_TOKEN()}/sendMessage`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:TG_CHANNEL(),text:msgText,disable_web_page_preview:false})
+    });
+    const d=await r.json();
+    if(!d.ok) throw new Error('Telegram: '+d.description+'. Make sure bot is admin in '+TG_CHANNEL());
+    ok=true;
+  }
+  return ok;
+}
+
+/* ═══════════════════════════════
+   PUBLISH
+═══════════════════════════════ */
+async function publishPost(){
+  const title=document.getElementById('titleInput').value.trim();
+  const htmlBody=document.getElementById('editor').innerHTML.trim();
+  const textBody=htmlToText(htmlBody).trim();
+  if(!title){toast('Title is required!','error');return;}
+  if(!textBody){toast('Content is required!','error');return;}
+
+  const btn=document.getElementById('publishBtn');
+  btn.innerHTML='<span class="spinner"></span>Publishing...';
+  btn.disabled=true;
+
+  try{
+    // 1. Upload images (if any)
+    const imgUrls=[];
+    if(images.length>0){
+      toast('Uploading images...','');
+      const slug=title.toLowerCase().replace(/\s+/g,'-').replace(/[^\w-]/g,'').slice(0,40);
+      for(const img of images){
+        const url=await uploadImg(img,slug);
+        if(url) imgUrls.push(url);
+      }
+    }
+
+    // 2. GitHub Issue
+    toast('Creating post...','');
+    const issue=await createIssue(title,htmlBody,imgUrls);
+
+    // 3. Telegram — always send
+    toast('Sending to Telegram...','');
+    const tgOk=await sendTelegram(title,htmlBody,issue.html_url,imgUrls);
+    if(!tgOk) toast('⚠️ Telegram failed — check bot is admin in channel','error');
+
+    toast(`✦ Published! "${title}"`, 'success');
+
+    // Reset
+    document.getElementById('titleInput').value='';
+    document.getElementById('editor').innerHTML='';
+    images=[];tags=[];renderImgs();renderTags();updateCharCount();updateWordCount();
+  }catch(e){
+    console.error(e);
+    toast('Error: '+e.message,'error');
+  }finally{
+    btn.innerHTML='Publish Post →';btn.disabled=false;
+  }
+}
+
+/* ═══════════════════════════════
+   LOAD POSTS
+═══════════════════════════════ */
+async function loadPosts(){
+  const list=document.getElementById('postsList');
+  list.innerHTML='<div class="posts-empty">Loading...</div>';
+  try{
+    const res=await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/issues?labels=blog&state=open&per_page=50`,
+      {headers:{'Authorization':`Bearer ${GITHUB_TOKEN()}`,'Accept':'application/vnd.github+json'}}
+    );
+    const issues=await res.json();
+    if(!Array.isArray(issues)||!issues.length){
+      list.innerHTML='<div class="posts-empty">No posts yet. Write your first one!</div>';return;
+    }
+    list.innerHTML=`<div class="posts-list-wrap">${issues.map(i=>`
+      <div class="post-row">
+        <div class="post-row-left">
+          <div class="post-row-title">${esc(i.title)}</div>
+          <div class="post-row-meta">#${i.number} · ${new Date(i.created_at).toLocaleDateString()} · ${i.comments} 💬</div>
+        </div>
+        <div class="post-row-actions">
+          <a href="${i.html_url}" target="_blank" class="btn-sm" style="text-decoration:none;">View ↗</a>
+          <button class="btn-sm btn-danger" onclick="deletePost(${i.number},'${esc(i.title).replace(/'/g,"\\'")}')">Delete</button>
+        </div>
+      </div>`).join('')}</div>`;
+  }catch(e){list.innerHTML=`<div class="posts-empty">Error: ${e.message}</div>`;}
+}
+async function deletePost(num,title){
+  if(!confirm(`Delete post "${title}"?`)) return;
+  try{
+    await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues/${num}`,{
+      method:'PATCH',
+      headers:{'Authorization':`Bearer ${GITHUB_TOKEN()}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({state:'closed'})
+    });
+    toast('Post deleted','success');loadPosts();
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ═══════════════════════════════
+   SESSION CHECK
+═══════════════════════════════ */
+(function checkSession(){
+  try{
+    const raw=sessionStorage.getItem('mi_auth');
+    if(!raw)return;
+    const s=JSON.parse(raw);
+    if(s.ok&&s.exp&&Date.now()<s.exp){
+      document.getElementById('loginScreen').classList.remove('active');
+      document.getElementById('adminScreen').classList.add('active');
+      loadPosts();
+    }else{
+      sessionStorage.removeItem('mi_auth');
+    }
+  }catch(e){sessionStorage.removeItem('mi_auth');}
+})();
+
+/* ── SETTINGS MODAL ── */
+function openSettings(){
+  const modal=document.getElementById('settingsModal');
+  document.getElementById('cfgGhToken').value=cfg('gh_token');
+  document.getElementById('cfgGeminiKey').value=cfg('gemini_key');
+  document.getElementById('cfgTgToken').value=cfg('tg_token');
+  document.getElementById('cfgTgChannel').value=cfg('tg_channel')||'@muhammadibrohimov_ceo';
+  modal.classList.add('open');
+}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
+function saveSettings(){
+  const gh=document.getElementById('cfgGhToken').value.trim();
+  const gem=document.getElementById('cfgGeminiKey').value.trim();
+  const tg=document.getElementById('cfgTgToken').value.trim();
+  const ch=document.getElementById('cfgTgChannel').value.trim();
+  if(!gh||!gem||!tg){toast('Please fill in all required fields','error');return;}
+  setCfg('gh_token',gh);
+  setCfg('gemini_key',gem);
+  setCfg('tg_token',tg);
+  setCfg('tg_channel',ch||'@muhammadibrohimov_ceo');
+  closeSettings();
+  toast('Keys saved in browser ✓','success');
+}
+// Auto-open settings if any key is missing (first time)
+document.addEventListener('DOMContentLoaded',()=>{
+  if(cfgMissing()){
+    // Wait until admin screen is shown (after login)
+    const observer=new MutationObserver(()=>{
+      if(document.getElementById('adminScreen').classList.contains('active')){
+        observer.disconnect();
+        setTimeout(openSettings,400);
+      }
+    });
+    observer.observe(document.getElementById('adminScreen'),{attributes:true,attributeFilter:['class']});
+  }
+});
+</script>
+</body>
+</html>

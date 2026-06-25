@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — Muhammadjon Ibrohimov</title>
+<link rel="icon" href="favicon.ico">
+<style>
+:root{--bg:#faf8f4;--bg2:#f2ede4;--bg3:#e8e1d4;--text:#1a1714;--text2:#6b6255;--text3:#a8998a;--border:rgba(26,23,20,0.08);--accent:#c8622a;--accent2:#e8854a;--acbg:#fdf3ec;--nav-bg:rgba(250,248,244,0.88);--r:14px;--sans:-apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',sans-serif;--mono:'SF Mono',ui-monospace,'Cascadia Code',monospace;--ease:cubic-bezier(0.22,1,0.36,1);}
+[data-theme="dark"]{--bg:#13110e;--bg2:#1c1916;--bg3:#252118;--text:#f0ebe3;--text2:#9a9082;--text3:#5a5248;--border:rgba(240,235,227,0.08);--accent:#e8854a;--accent2:#f0a070;--acbg:#1f1610;--nav-bg:rgba(19,17,14,0.85);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s;}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(1.25rem,5vw,3rem);height:60px;background:var(--nav-bg);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--border);}
+.nav-logo{font-size:16px;font-weight:600;color:var(--text);text-decoration:none;font-family:var(--mono);letter-spacing:-.02em;}
+.nav-logo span{color:var(--accent);}
+.nav-right{display:flex;align-items:center;gap:.5rem;}
+.nav-links{display:flex;gap:.1rem;list-style:none;margin-right:.5rem;}
+.nav-links a{font-size:13px;color:var(--text2);text-decoration:none;padding:5px 10px;border-radius:7px;transition:color .15s,background .15s;}
+.nav-links a:hover{color:var(--text);background:var(--bg2);}
+.lang-sw{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.lang-btn{background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text2);padding:4px 9px;border-radius:5px;transition:all .15s;}
+.lang-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.theme-btn{background:var(--bg2);border:1px solid var(--border);cursor:pointer;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .15s,transform .15s;}
+.theme-btn:hover{background:var(--bg3);transform:rotate(15deg);}
+
+.main{max-width:900px;margin:0 auto;padding:7.5rem clamp(1.25rem,5vw,3rem) 4rem;}
+.page-header{margin-bottom:2.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.page-title{font-size:2.2rem;font-weight:700;letter-spacing:-.04em;}
+
+/* ── NEW POST BUTTON — standout ── */
+.btn-new-post{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:var(--sans);transition:background .15s,transform .15s,box-shadow .15s;box-shadow:0 2px 10px rgba(200,98,42,.3);}
+.btn-new-post:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,98,42,.4);}
+.btn-new-post:active{transform:translateY(0);}
+.btn-new-post .icon{font-size:13px;}
+
+/* ── MASONRY COLUMNS ── */
+.blog-masonry{columns:2;column-gap:1.1rem;}
+@media(max-width:620px){.blog-masonry{columns:1;}}
+
+.blog-card{break-inside:avoid;display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:1.1rem;cursor:pointer;transition:background .15s,transform .22s var(--ease),box-shadow .22s;}
+.blog-card:hover{background:var(--bg3);transform:translateY(-3px);box-shadow:0 8px 32px rgba(26,23,20,.08);}
+[data-theme="dark"] .blog-card:hover{box-shadow:0 8px 32px rgba(0,0,0,.32);}
+
+/* no-image card is smaller/compact */
+.blog-card.no-img .blog-card-body{padding:.9rem 1.15rem;}
+.blog-card.no-img .blog-card-title{font-size:14px;}
+
+/* ── SLIDER ── */
+.blog-card-slider{position:relative;width:100%;height:185px;overflow:hidden;background:var(--bg3);flex-shrink:0;}
+.blog-card-slider img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s ease;}
+.blog-card-slider img.active{opacity:1;}
+.slider-dots{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:2;}
+.slider-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:background .2s;}
+.slider-dot.active{background:#fff;}
+.slider-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.36);border:none;color:#fff;width:27px;height:27px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;z-index:2;opacity:0;transition:opacity .2s;}
+.blog-card-slider:hover .slider-btn{opacity:1;}
+.slider-prev{left:7px;}.slider-next{right:7px;}
+
+.blog-card-body{padding:1.1rem 1.25rem;flex:1;display:flex;flex-direction:column;}
+.blog-card-meta{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;}
+.blog-card-title{font-size:15px;font-weight:600;line-height:1.35;margin-bottom:.4rem;flex:1;}
+.blog-card-preview{font-size:12px;color:var(--text2);line-height:1.65;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.blog-card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:.55rem;}
+.blog-card-tag{font-size:10px;font-family:var(--mono);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 6px;color:var(--text3);}
+.blog-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:.85rem;padding-top:.7rem;border-top:1px solid var(--border);}
+.blog-card-author{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.blog-card-actions{display:flex;align-items:center;gap:.4rem;}
+.icon-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3);padding:3px 6px;border-radius:5px;transition:color .15s,background .15s;}
+.icon-btn:hover{color:var(--accent);background:var(--acbg);}
+.blog-card-arrow{font-size:14px;color:var(--text3);transition:transform .2s var(--ease),color .15s;}
+.blog-card:hover .blog-card-arrow{transform:translate(3px,-3px);color:var(--accent);}
+
+.blog-empty{padding:4rem;text-align:center;color:var(--text2);font-size:15px;}
+.blog-loading{padding:3rem;text-align:center;color:var(--text3);font-family:var(--mono);font-size:12px;}
+
+footer{border-top:1px solid var(--border);padding:1.75rem clamp(1.25rem,5vw,3rem);max-width:900px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-family:var(--mono);font-size:11px;color:var(--text3);}
+footer a{color:var(--text3);text-decoration:none;}footer a:hover{color:var(--accent);}
+
+#mainToast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap;}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  nav{padding:0 1rem;}
+  .nav-links{display:none;}
+  .main{padding:5.5rem 1rem 3rem;}
+  .page-header{flex-direction:column;align-items:flex-start;}
+  .page-title{font-size:1.6rem;}
+  .blog-masonry{columns:1;}
+  .blog-card-slider{height:200px;}
+}
+@media(max-width:380px){
+  .btn-new-post{padding:6px 11px;font-size:11px;}
+  .lang-sw{display:none;}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">miuceo<span>./</span></a>
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+      <li><a href="index.html#contact" data-i18n="nav_contact">Contact</a></li>
+    </ul>
+    <div class="lang-sw">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn"        onclick="setLang('ru')">RU</button>
+      <button class="lang-btn"        onclick="setLang('uz')">UZ</button>
+    </div>
+    <a href="blog-admin.html" class="btn-new-post" id="newPostBtn">
+      <span class="icon">✍️</span>
+      <span data-i18n="btn_new">New Post</span>
+    </a>
+    <button class="theme-btn" id="themeBtn">🌙</button>
+  </div>
+</nav>
+<div id="mainToast"></div>
+<main class="main">
+  <div class="page-header">
+    <h1 class="page-title" data-i18n="page_title">Blog</h1>
+  </div>
+  <div id="blogMasonry" class="blog-masonry"><div class="blog-loading">Loading posts…</div></div>
+</main>
+<footer>
+  <span>© 2025 Muhammadjon Ibrohimov</span>
+  <span><a href="index.html">Portfolio</a> · <a href="blog-admin.html" data-i18n="footer_admin">Admin</a></span>
+</footer>
+<script>
+const GITHUB_REPO='miuceo/miuceo.github.io';
+const T={
+  en:{nav_home:"Home",nav_contact:"Contact",page_title:"Blog",btn_new:"New Post",footer_admin:"Admin"},
+  ru:{nav_home:"Главная",nav_contact:"Контакт",page_title:"Блог",btn_new:"Новый пост",footer_admin:"Админ"},
+  uz:{nav_home:"Bosh sahifa",nav_contact:"Aloqa",page_title:"Blog",btn_new:"Yangi post",footer_admin:"Admin"}
+};
+function setLang(l){const t=T[l];document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(t[k])el.textContent=t[k];});document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase()===l));document.documentElement.lang=l;localStorage.setItem('mi_lang',l);}
+const themeBtn=document.getElementById('themeBtn');
+function applyTheme(d){document.documentElement.setAttribute('data-theme',d?'dark':'light');themeBtn.textContent=d?'☀️':'🌙';localStorage.setItem('mi_theme',d?'dark':'light');}
+applyTheme(localStorage.getItem('mi_theme')?localStorage.getItem('mi_theme')==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches);
+themeBtn.addEventListener('click',()=>applyTheme(document.documentElement.getAttribute('data-theme')!=='dark'));
+const savedLang=localStorage.getItem('mi_lang');if(savedLang)setLang(savedLang);
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function parseImages(body){const imgs=[];const re=/!\[.*?\]\((https?:\/\/[^\)]+)\)/g;let m;while((m=re.exec(body))!==null)imgs.push(m[1]);return imgs;}
+function parsePreview(body){return (body||'').replace(/!\[.*?\]\(.*?\)/g,'').replace(/\*\*Author:.*?\n/,'').replace(/\*\*Date:.*?\n/,'').replace(/\*\*Tags:.*?\n/,'').replace(/[#*`\[\]]/g,'').replace(/\n+/g,' ').trim().slice(0,200);}
+
+const sliderState={};
+function makeSlider(imgs,id){
+  if(!imgs.length)return '';
+  if(imgs.length===1)return `<div class="blog-card-slider"><img src="${esc(imgs[0])}" class="active" loading="lazy" alt=""></div>`;
+  const dotHtml=imgs.map((_,i)=>`<span class="slider-dot${i===0?' active':''}" onclick="slideTo(event,${id},${i})"></span>`).join('');
+  const imgHtml=imgs.map((u,i)=>`<img src="${esc(u)}" class="${i===0?'active':''}" loading="lazy" alt="">`).join('');
+  return `<div class="blog-card-slider" id="slider-${id}">${imgHtml}<button class="slider-btn slider-prev" onclick="slideStep(event,${id},-1)">‹</button><button class="slider-btn slider-next" onclick="slideStep(event,${id},1)">›</button><div class="slider-dots">${dotHtml}</div></div>`;
+}
+function slideTo(e,id,idx){e.preventDefault();e.stopPropagation();const el=document.getElementById('slider-'+id);if(!el)return;const imgs=el.querySelectorAll('img'),dots=el.querySelectorAll('.slider-dot');sliderState[id]=idx;imgs.forEach((img,i)=>img.classList.toggle('active',i===idx));dots.forEach((d,i)=>d.classList.toggle('active',i===idx));}
+function slideStep(e,id,dir){e.preventDefault();e.stopPropagation();const el=document.getElementById('slider-'+id);if(!el)return;const total=el.querySelectorAll('img').length;const cur=sliderState[id]||0;slideTo(e,id,(cur+dir+total)%total);}
+
+let toastT;
+function showToast(msg){const t=document.getElementById('mainToast');t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';clearTimeout(toastT);toastT=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';},2800);}
+function sharePost(e,title,url){e.preventDefault();e.stopPropagation();if(navigator.share){navigator.share({title,url});}else{navigator.clipboard.writeText(url);showToast('Link copied!');}}
+
+async function loadPosts(){
+  const grid=document.getElementById('blogMasonry');
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues?labels=blog&state=open&per_page=50&sort=created&direction=desc`,{headers:{'Accept':'application/vnd.github+json'}});
+    if(!res.ok)throw new Error('GitHub API: '+res.status);
+    const issues=await res.json();
+    if(!Array.isArray(issues)||!issues.length){grid.innerHTML='<div class="blog-empty">No posts yet.</div>';return;}
+    grid.innerHTML=issues.map((issue,i)=>{
+      const imgs=parseImages(issue.body||'');
+      const preview=parsePreview(issue.body||'');
+      const date=new Date(issue.created_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+      const postTags=issue.labels.filter(l=>l.name!=='blog').map(l=>l.name).slice(0,4);
+      const postUrl=`post.html?id=${issue.number}`;
+      const shareUrl=`${location.origin}${location.pathname.replace('blog.html','')}${postUrl}`;
+      const noImg=imgs.length===0;
+      return `<div class="blog-card${noImg?' no-img':''}" onclick="location.href='${postUrl}'" style="opacity:0;transform:translateY(16px);transition:opacity .5s var(--ease) ${.06*i}s,transform .5s var(--ease) ${.06*i}s,background .15s,box-shadow .22s">
+        ${makeSlider(imgs,issue.number)}
+        <div class="blog-card-body">
+          <div class="blog-card-meta">${date}</div>
+          <div class="blog-card-title">${esc(issue.title)}</div>
+          ${preview?`<div class="blog-card-preview">${esc(preview)}</div>`:''}
+          ${postTags.length?`<div class="blog-card-tags">${postTags.map(t=>`<span class="blog-card-tag">${esc(t)}</span>`).join('')}</div>`:''}
+          <div class="blog-card-footer">
+            <span class="blog-card-author">Muhammadjon Ibrohimov</span>
+            <div class="blog-card-actions">
+              <button class="icon-btn" title="Share" onclick="sharePost(event,'${esc(issue.title)}','${shareUrl}')">⬆</button>
+              <span class="blog-card-arrow">↗</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    setTimeout(()=>document.querySelectorAll('.blog-card').forEach(c=>{c.style.opacity='1';c.style.transform='translateY(0)';}),80);
+  }catch(e){grid.innerHTML=`<div class="blog-empty">Could not load posts: ${esc(e.message)}</div>`;}
+}
+loadPosts();
+</script>
+</body>
+</html>
