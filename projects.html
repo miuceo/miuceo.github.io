@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projects — miuceo</title>
+<meta name="description" content="Muhammadjon Ibrohimovning loyihalari.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F1EA; --cream-2:#EEE9DF; --cream-3:#E7E1D3;
+    --ink:#1F1B16; --ink-soft:#4A443C; --clay:#D97757; --clay-dark:#B85C3F;
+    --line:#DDD5C7; --white:#FFFFFF;
+    --serif:'Newsreader', Georgia, serif;
+    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; }
+  a{ text-decoration:none; color:inherit; }
+  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; }
+
+  .navbar{ display:flex; justify-content:space-between; align-items:center; padding:22px 0; border-bottom:1px solid var(--line); }
+  .brand{ font-family:var(--sans); font-weight:800; font-size:20px; letter-spacing:-0.01em; }
+  .nav-links{ display:flex; align-items:center; gap:36px; }
+  .nav-links a{ font-size:15px; font-weight:500; color:var(--ink); }
+  .nav-links a:hover{ color:var(--clay); }
+  .nav-links a.active{ color:var(--clay); }
+  .btn-admin{ background:var(--ink); color:var(--cream) !important; padding:10px 20px; border-radius:6px; font-size:14px; font-weight:600; }
+  .btn-admin:hover{ background:var(--clay-dark); }
+
+  .page-header{ padding:80px 0 50px; border-bottom:1px solid var(--line); }
+  .page-header h1{ font-family:var(--sans); font-weight:800; font-size:44px; letter-spacing:-0.02em; margin:0 0 16px; }
+  .page-header p{ font-family:var(--serif); font-size:18px; color:var(--ink-soft); max-width:600px; margin:0; line-height:1.6; }
+
+  .projects-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:24px; padding:60px 0 100px; }
+  @media (max-width:860px){ .projects-grid{ grid-template-columns:1fr; } }
+
+  .project-card{ background:var(--cream-3); border-radius:14px; padding:36px; display:flex; flex-direction:column; }
+  .project-card h2{ font-family:var(--sans); font-weight:700; font-size:24px; margin:0 0 12px; }
+  .project-card p{ font-size:15px; color:var(--ink-soft); line-height:1.65; margin:0 0 20px; flex:1; }
+  .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .tag{ font-family:var(--mono); font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); background:var(--cream-2); border:1px solid var(--line); padding:5px 10px; border-radius:5px; }
+  .project-link{ display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:var(--cream); padding:12px 20px; border-radius:6px; font-size:14px; font-weight:600; width:fit-content; }
+  .project-link:hover{ background:var(--clay-dark); }
+
+  footer{ border-top:1px solid var(--line); padding:32px 0; font-family:var(--mono); font-size:13px; color:var(--ink-soft); display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="navbar">
+    <a href="index.html" class="brand">MIUCEO\</a>
+    <div class="nav-links">
+      <a href="index.html#latest-posts">Posts</a>
+      <a href="projects.html" class="active">Projects</a>
+      <a href="contact.html">Contact</a>
+      <a href="admin.html" class="btn-admin">Admin panel</a>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <h1>Loyihalar</h1>
+    <p>Men qurgan va o'rgangan narsalarim — Machine Learning'dan tortib backend tizimlarigacha.</p>
+  </section>
+
+  <div class="projects-grid">
+    <div class="project-card">
+      <h2>miuceo.github.io</h2>
+      <p>Shaxsiy portfolio va blog saytim. Telegram-first pipeline orqali ishlaydi — postlarni Telegram kanalimga yozaman, tizim ularni avtomatik saytga sinxronlaydi.</p>
+      <div class="tags"><span class="tag">HTML/CSS/JS</span><span class="tag">GitHub Actions</span><span class="tag">Telegram API</span></div>
+      <a href="https://github.com/miuceo/miuceo.github.io" target="_blank" rel="noopener" class="project-link">GitHub'da ko'rish →</a>
+    </div>
+
+    <div class="project-card">
+      <h2>Post Builder</h2>
+      <p>Blok asosidagi post yaratish vositasi — matn, rasm va YouTube videolarni istalgan tartibda birlashtirib, tayyor HTML sahifa generatsiya qiladi va GitHub'ga avtomatik joylaydi.</p>
+      <div class="tags"><span class="tag">JavaScript</span><span class="tag">GitHub API</span><span class="tag">Telegram Bot API</span></div>
+      <a href="post-builder.html" class="project-link">Vositani ochish →</a>
+    </div>
+
+    <div class="project-card">
+      <h2>Neyron tarmoqlarni noldan qurish</h2>
+      <p>Andrej Karpathy darslari asosida neyron tarmoqlarni faqat matematik asoslar bilan, hech qanday tayyor kutubxonasiz noldan qurish — backpropagation va gradient tushishni chuqur tushunish uchun.</p>
+      <div class="tags"><span class="tag">Jupyter Notebook</span><span class="tag">Deep Learning</span><span class="tag">NumPy</span></div>
+      <a href="https://github.com/miuceo/a-karpathy_nn-from-scratch" target="_blank" rel="noopener" class="project-link">GitHub'da ko'rish →</a>
+    </div>
+
+    <div class="project-card">
+      <h2>Local RAG Agent</h2>
+      <p>Kompyuterda mahalliy ishlaydigan Retrieval-Augmented Generation (RAG) agent — hujjatlar asosida savol-javob beradigan AI tizimi, bulutli servisga bog'liq bo'lmagan holda.</p>
+      <div class="tags"><span class="tag">Python</span><span class="tag">RAG</span><span class="tag">LLM</span></div>
+      <a href="https://github.com/miuceo/local-rag-agent" target="_blank" rel="noopener" class="project-link">GitHub'da ko'rish →</a>
+    </div>
+
+    <div class="project-card">
+      <h2>Local Voice Agent</h2>
+      <p>To'liq mahalliy (offline) ishlaydigan ovozli AI agent — nutqni matnga, matnni javobga aylantiruvchi quvur liniyasi, tashqi API'larga muhtoj bo'lmasdan.</p>
+      <div class="tags"><span class="tag">Python</span><span class="tag">Speech-to-Text</span><span class="tag">AI Agent</span></div>
+      <a href="https://github.com/miuceo/local-voice-agent" target="_blank" rel="noopener" class="project-link">GitHub'da ko'rish →</a>
+    </div>
+
+    <div class="project-card">
+      <h2>Customer Churn Prediction</h2>
+      <p>Mijozlarning xizmatdan voz kechish ehtimolini tarixiy ma'lumotlar asosida bashorat qiluvchi machine learning modeli.</p>
+      <div class="tags"><span class="tag">Jupyter Notebook</span><span class="tag">scikit-learn</span><span class="tag">ML</span></div>
+      <a href="https://github.com/miuceo/Customer_churn_prediction_model" target="_blank" rel="noopener" class="project-link">GitHub'da ko'rish →</a>
+    </div>
+
+    <div class="project-card">
+      <h2>Cirrhosis Survival Prediction</h2>
+      <p>Bemorlarning tibbiy ko'rsatkichlari asosida tirishish kasalligida (cirrhosis) yashab qolish ehtimolini bashorat qiluvchi model.</p>
+      <div class="tags"><span class="tag">Jupyter Notebook</span><span class="tag">Medical ML</span><span class="tag">Classification</span></div>
+      <a href="https://github.com/miuceo/cirrosis-survival-prediciton" target="_blank" rel="noopener" class="project-link">GitHub'da ko'rish →</a>
+    </div>
+  </div>
+
+  <footer>
+    <span>&copy; 2026 Muhammadjon Ibrohimov</span>
+    <span>miuceo.github.io</span>
+  </footer>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — miuceo</title>
+<meta name="description" content="Muhammadjon Ibrohimov bilan bog'lanish.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F1EA; --cream-2:#EEE9DF; --cream-3:#E7E1D3;
+    --ink:#1F1B16; --ink-soft:#4A443C; --clay:#D97757; --clay-dark:#B85C3F;
+    --line:#DDD5C7; --white:#FFFFFF;
+    --serif:'Newsreader', Georgia, serif;
+    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; }
+  a{ text-decoration:none; color:inherit; }
+  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; }
+
+  .navbar{ display:flex; justify-content:space-between; align-items:center; padding:22px 0; border-bottom:1px solid var(--line); }
+  .brand{ font-family:var(--sans); font-weight:800; font-size:20px; letter-spacing:-0.01em; }
+  .nav-links{ display:flex; align-items:center; gap:36px; }
+  .nav-links a{ font-size:15px; font-weight:500; color:var(--ink); }
+  .nav-links a:hover{ color:var(--clay); }
+  .nav-links a.active{ color:var(--clay); }
+  .btn-admin{ background:var(--ink); color:var(--cream) !important; padding:10px 20px; border-radius:6px; font-size:14px; font-weight:600; }
+  .btn-admin:hover{ background:var(--clay-dark); }
+
+  .page-header{ padding:80px 0 50px; border-bottom:1px solid var(--line); }
+  .page-header h1{ font-family:var(--sans); font-weight:800; font-size:44px; letter-spacing:-0.02em; margin:0 0 16px; }
+  .page-header p{ font-family:var(--serif); font-size:18px; color:var(--ink-soft); max-width:600px; margin:0; line-height:1.6; }
+
+  .contact-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; padding:60px 0 100px; }
+  @media (max-width:860px){ .contact-grid{ grid-template-columns:1fr; } }
+
+  .contact-card{ background:var(--cream-3); border-radius:14px; padding:32px; display:flex; flex-direction:column; gap:14px; }
+  .contact-card .label{ font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); }
+  .contact-card h2{ font-family:var(--sans); font-weight:700; font-size:22px; margin:0; }
+  .contact-card p{ font-size:15px; color:var(--ink-soft); line-height:1.6; margin:0; }
+  .contact-link{ display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:var(--cream); padding:12px 20px; border-radius:6px; font-size:14px; font-weight:600; width:fit-content; margin-top:6px; }
+  .contact-link:hover{ background:var(--clay-dark); }
+
+  footer{ border-top:1px solid var(--line); padding:32px 0; font-family:var(--mono); font-size:13px; color:var(--ink-soft); display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="navbar">
+    <a href="index.html" class="brand">MIUCEO\</a>
+    <div class="nav-links">
+      <a href="index.html#latest-posts">Posts</a>
+      <a href="projects.html">Projects</a>
+      <a href="contact.html" class="active">Contact</a>
+      <a href="admin.html" class="btn-admin">Admin panel</a>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <h1>Bog'lanish</h1>
+    <p>Savol, taklif yoki hamkorlik bo'yicha murojaat qilmoqchi bo'lsang, quyidagi kanallardan birortasi orqali yoz.</p>
+  </section>
+
+  <div class="contact-grid">
+    <div class="contact-card">
+      <span class="label">Telegram</span>
+      <h2>@muhammadibrohimov_ceo</h2>
+      <p>Yozganlarim, o'ylarim va yangiliklarim shu kanalda chiqadi. Savollaringizni ham shu yerga yozishingiz mumkin.</p>
+      <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="contact-link">Kanalga o'tish →</a>
+    </div>
+
+    <div class="contact-card">
+      <span class="label">GitHub</span>
+      <h2>@miuceo</h2>
+      <p>Loyihalarim, kod va sahifaning manba fayllari shu yerda ochiq saqlanadi.</p>
+      <a href="https://github.com/miuceo" target="_blank" rel="noopener" class="contact-link">Profilni ko'rish →</a>
+    </div>
+
+    <div class="contact-card">
+      <span class="label">Email</span>
+      <h2>ibrokhimovmiu@example.com</h2>
+      <p>Rasmiy yoki batafsilroq murojaatlar uchun email orqali yozishingiz mumkin.</p>
+      <a href="mailto:ibrokhimovmiu@example.com" class="contact-link">Xat yozish →</a>
+    </div>
+  </div>
+
+  <footer>
+    <span>&copy; 2026 Muhammadjon Ibrohimov</span>
+    <span>miuceo.github.io</span>
+  </footer>
+</div>
+
+</body>
+</html>
