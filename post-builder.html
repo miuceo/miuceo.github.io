@@ -581,15 +581,19 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
   try{
     appendLog(`Slug: ${slug}`);
 
+    // MUHIM TUZATISH: fayl GitHub'da mavjudmi yoki yo'qmi — bu "isEdit" UI holatiga emas,
+    // GitHub'ning haqiqiy holatiga qarab tekshiriladi. Shu sababli endi ghGetFile
+    // isEdit shartisiz, har doim chaqiriladi. Agar fayl topilsa, uning "sha" qiymati
+    // olinadi va PUT so'roviga qo'shiladi; topilmasa, sha o'rniga null yuboriladi.
     appendLog('HTML post fayli tayyorlanmoqda...');
     const postHtml = generatePostHtml(title, postUrl);
-    const existingPostFile = isEdit ? await ghGetFile(`posts/${slug}.html`) : null;
+    const existingPostFile = await ghGetFile(`posts/${slug}.html`);
     await ghPutFile(`posts/${slug}.html`, postHtml, `${isEdit ? 'Update' : 'Create'} post: ${title}`, existingPostFile ? existingPostFile.sha : null);
     appendLog('✓ posts/' + slug + '.html GitHub\'ga yuklandi');
 
     appendLog('Post ma\'lumotlari (posts-data) saqlanmoqda...');
     const postData = { title, slug, blocks: blocks.map(({id, ...rest}) => rest), created_at: currentCreatedAt, updated_at: nowIso, telegram_message_id: currentTelegramMsgId };
-    const existingDataFile = isEdit ? await ghGetFile(`posts-data/${slug}.json`) : null;
+    const existingDataFile = await ghGetFile(`posts-data/${slug}.json`);
     await ghPutFile(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `${isEdit ? 'Update' : 'Create'} post data: ${title}`, existingDataFile ? existingDataFile.sha : null);
     appendLog('✓ posts-data/' + slug + '.json saqlandi');
 
