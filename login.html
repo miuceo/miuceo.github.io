@@ -6,6 +6,7 @@
 <title>Kirish — miuceo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root{
     --cream:#F5F1EA; --cream-2:#EEE9DF; --ink:#1F1B16; --ink-soft:#4A443C;
@@ -57,7 +58,7 @@
     <button class="theme-toggle" id="themeToggle">🌙</button>
   </div>
   <h1>Admin panel</h1>
-  <p>Faqat sayt egasi kira oladi.<br>Telegram orqali tasdiqlang.</p>
+  <p id="cardHint">Faqat sayt egasi kira oladi.<br>Telegram orqali tasdiqlang.</p>
 
 
   <div id="telegramLoginBox"></div>
@@ -105,7 +106,7 @@ function grantAccess(identity){
   setTimeout(() => { window.location.href = 'admin.html'; }, 500);
 }
 
-/* ---------- TELEGRAM AUTH VERIFICATION ---------- */
+/* ---------- TELEGRAM AUTH VERIFICATION (Login Widget) ---------- */
 function hexFromBuffer(buf){
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
@@ -144,8 +145,67 @@ window.onTelegramAuth = async function(user){
   grantAccess(user.username || user.first_name);
 };
 
-/* ---------- RENDER TELEGRAM WIDGET ---------- */
-(function renderTelegramWidget(){
+/* ---------- TELEGRAM MINI APP (WebApp) AUTH ---------- */
+async function verifyWebAppInitData(initData, botToken){
+  const params = new URLSearchParams(initData);
+  const hash = params.get('hash');
+  if(!hash) return false;
+  params.delete('hash');
+  const pairs = [];
+  for(const [k, v] of params.entries()) pairs.push(`${k}=${v}`);
+  pairs.sort();
+  const checkString = pairs.join('\n');
+
+  const encoder = new TextEncoder();
+  const secretKeyMaterial = await crypto.subtle.importKey('raw', encoder.encode('WebAppData'), { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+  const secretKeyBuf = await crypto.subtle.sign('HMAC', secretKeyMaterial, encoder.encode(botToken));
+  const hmacKey = await crypto.subtle.importKey('raw', secretKeyBuf, { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(checkString));
+  return hexFromBuffer(sig) === hash;
+}
+
+async function tryMiniAppAuth(){
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if(!tg || !tg.initData){
+    return false; // Mini App ichida emasmiz, oddiy vidjetga o'tamiz
+  }
+
+  tg.ready();
+  if(tg.expand) tg.expand();
+
+  document.getElementById('cardHint').textContent = 'Telegram orqali avtomatik tasdiqlanmoqda...';
+  document.getElementById('telegramLoginBox').style.display = 'none';
+
+  const pbSettings = getPbSettings();
+  if(!pbSettings.tgToken){
+    showStatus('Avval Post Builder\'da Telegram Bot Token\'ni sozlash kerak, keyin Mini App\'dan qaytadan urin.', true);
+    return true;
+  }
+
+  const valid = await verifyWebAppInitData(tg.initData, pbSettings.tgToken);
+  if(!valid){
+    showStatus('Telegram Mini App imzosi tasdiqlanmadi.', true);
+    return true;
+  }
+
+  const authAge = Date.now()/1000 - (tg.initDataUnsafe.auth_date || 0);
+  if(authAge > 86400){
+    showStatus('Sessiya eskirgan, Telegram\'da botni qaytadan oching.', true);
+    return true;
+  }
+
+  const user = tg.initDataUnsafe.user;
+  if(!user || String(user.id) !== ALLOWED_TELEGRAM_ID){
+    showStatus('Sen admin emassan', true);
+    return true;
+  }
+
+  grantAccess(user.username || user.first_name);
+  return true;
+}
+
+/* ---------- RENDER TELEGRAM WIDGET (oddiy brauzer uchun) ---------- */
+function renderTelegramWidget(){
   const box = document.getElementById('telegramLoginBox');
   if(TELEGRAM_BOT_USERNAME === 'YOUR_BOT_USERNAME'){
     box.innerHTML = '<div style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);">Kodda TELEGRAM_BOT_USERNAME hali to\'ldirilmagan</div>';
@@ -156,9 +216,18 @@ window.onTelegramAuth = async function(user){
   script.src = 'https://telegram.org/js/telegram-widget.js?22';
   script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME);
   script.setAttribute('data-size', 'large');
+  script.setAttribute('data-radius', '8');
   script.setAttribute('data-onauth', 'onTelegramAuth(user)');
   script.setAttribute('data-request-access', 'write');
   box.appendChild(script);
+}
+
+/* ---------- INIT: avval Mini App, bo'lmasa oddiy vidjet ---------- */
+(async function init(){
+  const handledByMiniApp = await tryMiniAppAuth();
+  if(!handledByMiniApp){
+    renderTelegramWidget();
+  }
 })();
 </script>
 </body>
