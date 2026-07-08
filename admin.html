@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
+<script>
+(function(){
+  try{
+    const auth = JSON.parse(localStorage.getItem('miuceo_auth') || 'null');
+    if(!auth || !auth.ok || Date.now() > auth.expires){
+      window.location.replace('index.html');
+    }
+  }catch(e){
+    window.location.replace('index.html');
+  }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin panel — miuceo</title>
@@ -13,6 +25,12 @@
     --serif:'Newsreader', Georgia, serif; --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --mono:'IBM Plex Mono', monospace;
   }
+  [data-theme="dark"]{
+    --cream:#1A1714; --cream-2:#242019; --cream-3:#2C2620;
+    --ink:#F0EAE0; --ink-soft:#B8AF9E; --line:#3A342B; --white:#242019;
+  }
+  body{ transition:background .2s, color .2s; }
+  .theme-toggle{ background:none; border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; }
   a{ text-decoration:none; color:inherit; }
@@ -55,14 +73,29 @@
   #logModal{ display:none; position:fixed; inset:0; background:rgba(31,27,22,0.5); align-items:center; justify-content:center; z-index:100; }
   #logModal .box{ background:var(--white); border-radius:10px; padding:24px; width:min(600px, 90vw); }
   #logModal .log{ font-family:var(--mono); font-size:12px; background:var(--cream-2); border-radius:6px; padding:12px; max-height:200px; overflow-y:auto; white-space:pre-wrap; margin-bottom:14px; }
+
+  @media (max-width:640px){
+    .wrap{ padding:0 18px 60px; }
+    .navbar{ flex-wrap:wrap; gap:10px; }
+    .page-header{ flex-wrap:wrap; gap:14px; }
+    .page-header h1{ font-size:26px; }
+    .settings-grid{ grid-template-columns:1fr; }
+    .post-row{ flex-direction:column; align-items:flex-start; gap:14px; }
+    .post-actions{ flex-wrap:wrap; }
+  }
 </style>
 </head>
 <body>
 
+<button class="theme-toggle" id="themeToggle" style="position:fixed; top:16px; right:16px; z-index:60;">🌙</button>
+
 <div class="wrap">
   <nav class="navbar">
     <span class="brand">MIUCEO\</span>
-    <a href="index.html" class="back-link">← Bosh sahifaga</a>
+    <div style="display:flex; gap:16px; align-items:center;">
+      <button class="btn ghost small" id="logoutBtn">Chiqish</button>
+      <a href="index.html" class="back-link">← Bosh sahifaga</a>
+    </div>
   </nav>
 
   <details class="settings">
@@ -111,6 +144,19 @@
 <script>
 let posts = [];
 let slugToDelete = null;
+
+function initTheme(){
+  const saved = localStorage.getItem('miuceo_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('miuceo_theme', next);
+  initTheme();
+});
+initTheme();
 
 function loadSettings(){
   try{
@@ -283,6 +329,10 @@ document.getElementById('closeLogBtn').addEventListener('click', () => {
   document.getElementById('logModal').style.display = 'none';
 });
 document.getElementById('refreshBtn').addEventListener('click', loadPosts);
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('miuceo_auth');
+  window.location.href = 'index.html';
+});
 
 loadPosts();
 </script>

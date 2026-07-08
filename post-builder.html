@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
+<script>
+(function(){
+  try{
+    const auth = JSON.parse(localStorage.getItem('miuceo_auth') || 'null');
+    if(!auth || !auth.ok || Date.now() > auth.expires){
+      window.location.replace('index.html');
+    }
+  }catch(e){
+    window.location.replace('index.html');
+  }
+})();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Post Builder — miuceo</title>
@@ -13,6 +26,12 @@
     --mono:'IBM Plex Mono', monospace; --serif:'Newsreader', Georgia, serif;
     --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
+  [data-theme="dark"]{
+    --cream:#1A1714; --cream-2:#242019; --ink:#F0EAE0; --ink-soft:#B8AF9E;
+    --line:#3A342B; --white:#242019;
+  }
+  body{ transition:background .2s, color .2s; }
+  .theme-toggle{ background:none; border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; }
   .app{ max-width:1400px; margin:0 auto; padding:32px 32px 140px; }
@@ -96,18 +115,33 @@
   #copyModal .box{ background:var(--white); border-radius:10px; padding:24px; width:min(720px, 90vw); max-height:80vh; display:flex; flex-direction:column; gap:12px; }
   #copyModal textarea{ width:100%; height:280px; font-family:var(--mono); font-size:12px; border:1px solid var(--line); border-radius:6px; padding:12px; resize:none; }
   #copyModal .log{ font-family:var(--mono); font-size:12px; background:var(--cream-2); border-radius:6px; padding:12px; max-height:160px; overflow-y:auto; white-space:pre-wrap; }
+
+  @media (max-width:900px){
+    .app{ padding:20px 18px 160px; }
+    .top{ flex-wrap:wrap; gap:12px; }
+    .top-actions{ flex-wrap:wrap; }
+    .settings-grid{ grid-template-columns:1fr; }
+    .edit-bar{ flex-wrap:wrap; }
+    .edit-bar select{ width:100%; }
+    .title-field{ font-size:24px; padding:14px 16px; }
+    footer.actions{ flex-wrap:wrap; padding:12px 18px; }
+  }
 </style>
 </head>
 <body>
+
+<button class="theme-toggle" id="themeToggle" style="position:fixed; top:16px; right:16px; z-index:60;">🌙</button>
 
 <div class="app">
   <div class="top">
     <a href="index.html" class="back-link">← Orqaga</a>
     <div class="top-actions">
+      <button class="btn ghost" id="logoutBtn">Chiqish</button>
       <button class="btn ghost" id="clearBtn">Tozalash</button>
       <button class="btn primary" id="generateBtn">Generate &amp; Publish</button>
     </div>
   </div>
+
 
   <details class="settings">
     <summary>Sozlamalar (GitHub &amp; Telegram)</summary>
@@ -176,7 +210,21 @@ let idCounter = 0;
 let currentSlug = null;
 let currentCreatedAt = null;
 let currentTelegramMsgId = null;
+let currentTelegramHasMedia = false;
 let allPosts = [];
+
+function initTheme(){
+  const saved = localStorage.getItem('miuceo_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('miuceo_theme', next);
+  initTheme();
+});
+initTheme();
 
 function uid(){ return 'b' + (idCounter++); }
 function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -261,11 +309,12 @@ function getCoverImage(){
   return m ? m.url : null;
 }
 function slugify(title){
-  return title.toLowerCase().trim()
+  const slug = title.toLowerCase().trim()
     .replace(/[^a-z0-9\s-]/g,'')
     .replace(/\s+/g,'-')
     .replace(/-+/g,'-')
     .replace(/(^-|-$)/g,'');
+  return slug || ('post-' + Date.now());
 }
 
 function render(){
@@ -360,11 +409,15 @@ function renderPreview(){
 }
 
 document.getElementById('addTextBtn').addEventListener('click', addTextBlock);
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('miuceo_auth');
+  window.location.href = 'index.html';
+});
 document.getElementById('addMediaBtn').addEventListener('click', addMediaBlock);
 document.getElementById('titleInput').addEventListener('input', renderPreview);
 document.getElementById('clearBtn').addEventListener('click', () => {
   if(confirm('Hammasini tozalaysanmi?')){
-    blocks = []; currentSlug = null; currentCreatedAt = null; currentTelegramMsgId = null;
+    blocks = []; currentSlug = null; currentCreatedAt = null; currentTelegramMsgId = null; currentTelegramHasMedia = false;
     document.getElementById('titleInput').value = '';
     document.getElementById('titleInput').disabled = false;
     document.getElementById('postSelect').value = '';
@@ -396,6 +449,17 @@ async function ghPutFile(path, contentStr, message, sha){
   if(!res.ok){ const t = await res.text(); throw new Error(`GitHub PUT ${path} xato: ${res.status} ${t}`); }
   return res.json();
 }
+async function ghPutFileSafe(path, contentStr, message, sha){
+  try{
+    return await ghPutFile(path, contentStr, message, sha);
+  }catch(err){
+    if(/40[9]|422/.test(err.message)){
+      const fresh = await ghGetFile(path);
+      return await ghPutFile(path, contentStr, message, fresh ? fresh.sha : null);
+    }
+    throw err;
+  }
+}
 
 /* ---------- TELEGRAM API ---------- */
 async function tgSendPost(title, excerpt, coverImage, postUrl){
@@ -414,16 +478,19 @@ async function tgSendPost(title, excerpt, coverImage, postUrl){
   if(!data.ok) throw new Error('Telegram yuborish xatosi: ' + (data.description || JSON.stringify(data)));
   return data.result.message_id;
 }
-async function tgEditPost(messageId, title, excerpt, coverImage, postUrl){
+async function tgEditPost(messageId, title, excerpt, coverImage, postUrl, hadMediaOriginally){
   const s = getSettings();
   const caption = `${title}\n\n${excerpt}\n\n${postUrl}`;
-  const method = coverImage ? 'editMessageCaption' : 'editMessageText';
-  const params = coverImage
+  const method = hadMediaOriginally ? 'editMessageCaption' : 'editMessageText';
+  const params = hadMediaOriginally
     ? { chat_id: s.tgChannel, message_id: messageId, caption }
     : { chat_id: s.tgChannel, message_id: messageId, text: caption };
   const res = await fetch(`https://api.telegram.org/bot${s.tgToken}/${method}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(params) });
   const data = await res.json();
-  if(!data.ok) throw new Error('Telegram tahrirlash xatosi: ' + (data.description || JSON.stringify(data)));
+  if(!data.ok){
+    if(/message is not modified/i.test(data.description || '')) return;
+    throw new Error('Telegram tahrirlash xatosi: ' + (data.description || JSON.stringify(data)));
+  }
 }
 
 /* ---------- LOAD EXISTING POSTS ---------- */
@@ -446,7 +513,7 @@ document.getElementById('loadPostsBtn').addEventListener('click', async () => {
 document.getElementById('postSelect').addEventListener('change', async (e) => {
   const slug = e.target.value;
   if(!slug){
-    blocks = []; currentSlug = null; currentCreatedAt = null; currentTelegramMsgId = null;
+    blocks = []; currentSlug = null; currentCreatedAt = null; currentTelegramMsgId = null; currentTelegramHasMedia = false;
     document.getElementById('titleInput').value = '';
     document.getElementById('titleInput').disabled = false;
     document.getElementById('modeText').textContent = 'Yangi post';
@@ -460,6 +527,7 @@ document.getElementById('postSelect').addEventListener('change', async (e) => {
     currentSlug = slug;
     currentCreatedAt = data.created_at;
     currentTelegramMsgId = data.telegram_message_id || null;
+    currentTelegramHasMedia = !!data.telegram_has_media;
     idCounter = 0;
     blocks = data.blocks.map(b => ({ ...b, id: uid() }));
     document.getElementById('titleInput').value = data.title;
@@ -581,49 +649,50 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
   try{
     appendLog(`Slug: ${slug}`);
 
-    // MUHIM TUZATISH: fayl GitHub'da mavjudmi yoki yo'qmi — bu "isEdit" UI holatiga emas,
-    // GitHub'ning haqiqiy holatiga qarab tekshiriladi. Shu sababli endi ghGetFile
-    // isEdit shartisiz, har doim chaqiriladi. Agar fayl topilsa, uning "sha" qiymati
-    // olinadi va PUT so'roviga qo'shiladi; topilmasa, sha o'rniga null yuboriladi.
     appendLog('HTML post fayli tayyorlanmoqda...');
     const postHtml = generatePostHtml(title, postUrl);
-    const existingPostFile = await ghGetFile(`posts/${slug}.html`);
-    await ghPutFile(`posts/${slug}.html`, postHtml, `${isEdit ? 'Update' : 'Create'} post: ${title}`, existingPostFile ? existingPostFile.sha : null);
+    const existingPostFile = isEdit ? await ghGetFile(`posts/${slug}.html`) : null;
+    await ghPutFileSafe(`posts/${slug}.html`, postHtml, `${isEdit ? 'Update' : 'Create'} post: ${title}`, existingPostFile ? existingPostFile.sha : null);
     appendLog('✓ posts/' + slug + '.html GitHub\'ga yuklandi');
 
     appendLog('Post ma\'lumotlari (posts-data) saqlanmoqda...');
-    const postData = { title, slug, blocks: blocks.map(({id, ...rest}) => rest), created_at: currentCreatedAt, updated_at: nowIso, telegram_message_id: currentTelegramMsgId };
-    const existingDataFile = await ghGetFile(`posts-data/${slug}.json`);
-    await ghPutFile(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `${isEdit ? 'Update' : 'Create'} post data: ${title}`, existingDataFile ? existingDataFile.sha : null);
+    const postData = { title, slug, blocks: blocks.map(({id, ...rest}) => rest), created_at: currentCreatedAt, updated_at: nowIso, telegram_message_id: currentTelegramMsgId, telegram_has_media: currentTelegramHasMedia };
+    const existingDataFile = isEdit ? await ghGetFile(`posts-data/${slug}.json`) : null;
+    const dataPutResult = await ghPutFileSafe(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `${isEdit ? 'Update' : 'Create'} post data: ${title}`, existingDataFile ? existingDataFile.sha : null);
+    let postDataSha = dataPutResult.content.sha;
     appendLog('✓ posts-data/' + slug + '.json saqlandi');
 
     appendLog('posts.json yangilanmoqda...');
     const indexFile = await ghGetFile('posts.json');
     let index = indexFile ? JSON.parse(indexFile.content) : [];
-    const entry = { slug, title, excerpt, cover_image: coverImage, created_at: currentCreatedAt, updated_at: nowIso, telegram_message_id: currentTelegramMsgId };
+    const entry = { slug, title, excerpt, cover_image: coverImage, created_at: currentCreatedAt, updated_at: nowIso, telegram_message_id: currentTelegramMsgId, telegram_has_media: currentTelegramHasMedia };
     const existingIdx = index.findIndex(p => p.slug === slug);
     if(existingIdx >= 0) index[existingIdx] = entry; else index.push(entry);
-    await ghPutFile('posts.json', JSON.stringify(index, null, 2), `Update posts index: ${title}`, indexFile ? indexFile.sha : null);
+    const indexPutResult = await ghPutFileSafe('posts.json', JSON.stringify(index, null, 2), `Update posts index: ${title}`, indexFile ? indexFile.sha : null);
+    let indexSha = indexPutResult.content.sha;
     appendLog('✓ posts.json yangilandi');
 
     if(s.tgToken && s.tgChannel){
       if(isEdit && currentTelegramMsgId){
         appendLog('Telegram xabari tahrirlanmoqda...');
-        await tgEditPost(currentTelegramMsgId, title, excerpt, coverImage, postUrl);
+        await tgEditPost(currentTelegramMsgId, title, excerpt, coverImage, postUrl, currentTelegramHasMedia);
         appendLog('✓ Telegram xabari yangilandi');
       } else if(!isEdit){
         appendLog('Telegram kanaliga yuborilmoqda...');
         const msgId = await tgSendPost(title, excerpt, coverImage, postUrl);
         currentTelegramMsgId = msgId;
+        currentTelegramHasMedia = !!coverImage;
         appendLog('✓ Telegram\'ga yuborildi (message_id: ' + msgId + ')');
         appendLog('posts.json va posts-data qayta yangilanmoqda (telegram_message_id bilan)...');
         entry.telegram_message_id = msgId;
+        entry.telegram_has_media = currentTelegramHasMedia;
         index[index.findIndex(p => p.slug === slug)] = entry;
-        const idxFile2 = await ghGetFile('posts.json');
-        await ghPutFile('posts.json', JSON.stringify(index, null, 2), `Set telegram id: ${title}`, idxFile2.sha);
+        const indexPutResult2 = await ghPutFileSafe('posts.json', JSON.stringify(index, null, 2), `Set telegram id: ${title}`, indexSha);
+        indexSha = indexPutResult2.content.sha;
         postData.telegram_message_id = msgId;
-        const dataFile2 = await ghGetFile(`posts-data/${slug}.json`);
-        await ghPutFile(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `Set telegram id: ${title}`, dataFile2.sha);
+        postData.telegram_has_media = currentTelegramHasMedia;
+        const dataPutResult2 = await ghPutFileSafe(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `Set telegram id: ${title}`, postDataSha);
+        postDataSha = dataPutResult2.content.sha;
         appendLog('✓ Tayyor');
       }
     } else {

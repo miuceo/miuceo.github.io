@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirish — miuceo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F1EA; --cream-2:#EEE9DF; --ink:#1F1B16; --ink-soft:#4A443C;
+    --clay:#D97757; --clay-dark:#B85C3F; --line:#DDD5C7; --white:#FFFFFF;
+    --serif:'Newsreader', Georgia, serif; --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  [data-theme="dark"]{
+    --cream:#1A1714; --cream-2:#242019; --ink:#F0EAE0; --ink-soft:#B8AF9E;
+    --line:#3A342B; --white:#242019;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    transition:background .2s, color .2s;
+  }
+  .theme-toggle{ position:fixed; top:20px; right:20px; background:none; border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
+
+  .card{
+    background:var(--white); border:1px solid var(--line); border-radius:16px;
+    padding:48px 40px; text-align:center; width:min(400px, 90vw);
+  }
+  .brand{ font-weight:800; font-size:18px; margin-bottom:28px; }
+  .card h1{ font-family:var(--serif); font-size:26px; font-weight:500; margin:0 0 10px; }
+  .card p{ font-size:14px; color:var(--ink-soft); margin:0 0 32px; line-height:1.5; }
+
+  #telegramLoginBox{ display:flex; justify-content:center; min-height:40px; }
+
+  .status-msg{ font-family:var(--mono); font-size:13px; margin-top:24px; padding:12px; border-radius:8px; display:none; }
+  .status-msg.error{ display:block; background:#FBE9E7; color:#B23A2E; }
+  .status-msg.ok{ display:block; background:#E6F4EA; color:#2E7D46; }
+
+  .back{ margin-top:24px; }
+  .back a{ text-decoration:none; font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
+  .back a:hover{ color:var(--clay); }
+
+  @media (max-width:480px){
+    .card{ padding:36px 24px; }
+    .theme-toggle{ top:12px; right:12px; padding:6px 10px; font-size:12px; }
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">🌙</button>
+
+<div class="card">
+  <div class="brand">MIUCEO\</div>
+  <h1>Admin panel</h1>
+  <p>Faqat sayt egasi kira oladi.<br>Telegram orqali tasdiqlang.</p>
+
+  <div id="telegramLoginBox"></div>
+  <div id="statusMsg" class="status-msg"></div>
+
+  <div class="back"><a href="index.html">← Bosh sahifaga qaytish</a></div>
+</div>
+
+<script>
+/* ================================================================
+   FAQAT SHU TELEGRAM ID KIRA OLADI
+   ================================================================ */
+const ALLOWED_TELEGRAM_ID = '7197666892';
+
+/* Bot username'ni shu yerga yoz (@ siz), masalan: 'muhammadjon_admin_bot' */
+const TELEGRAM_BOT_USERNAME = 'miuceo_pws_bot';
+
+/* ---------- THEME ---------- */
+function initTheme(){
+  const saved = localStorage.getItem('miuceo_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('miuceo_theme', next);
+  initTheme();
+});
+initTheme();
+
+function getPbSettings(){
+  try{ return JSON.parse(localStorage.getItem('pb_settings') || '{}'); }catch(e){ return {}; }
+}
+function showStatus(msg, isError){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg ' + (isError ? 'error' : 'ok');
+}
+
+function grantAccess(identity){
+  const auth = { ok: true, method: 'Telegram', identity, expires: Date.now() + 7*24*60*60*1000 };
+  localStorage.setItem('miuceo_auth', JSON.stringify(auth));
+  showStatus('Xush kelibsiz! Admin panelga o\'tilmoqda...', false);
+  setTimeout(() => { window.location.href = 'admin.html'; }, 500);
+}
+
+/* ---------- TELEGRAM AUTH VERIFICATION ---------- */
+function hexFromBuffer(buf){
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function verifyTelegramAuth(user, botToken){
+  const { hash, ...data } = user;
+  const checkString = Object.keys(data).sort().map(k => `${k}=${data[k]}`).join('\n');
+  const encoder = new TextEncoder();
+  const secretKey = await crypto.subtle.digest('SHA-256', encoder.encode(botToken));
+  const key = await crypto.subtle.importKey('raw', secretKey, { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(checkString));
+  return hexFromBuffer(sig) === hash;
+}
+
+window.onTelegramAuth = async function(user){
+  const pbSettings = getPbSettings();
+
+  // Signature tekshiruvi (agar bot token hali sozlanmagan bo'lsa, shu qadam o'tkazib yuboriladi)
+  if(pbSettings.tgToken){
+    const validSignature = await verifyTelegramAuth(user, pbSettings.tgToken);
+    if(!validSignature){
+      showStatus('Telegram imzosi tasdiqlanmadi.', true);
+      return;
+    }
+    const authDateAge = Date.now()/1000 - user.auth_date;
+    if(authDateAge > 300){
+      showStatus('Login vaqti eskirgan, qaytadan urinib ko\'ring.', true);
+      return;
+    }
+  }
+
+  if(String(user.id) !== ALLOWED_TELEGRAM_ID){
+    showStatus('Sen admin emassan', true);
+    return;
+  }
+
+  grantAccess(user.username || user.first_name);
+};
+
+/* ---------- RENDER TELEGRAM WIDGET ---------- */
+(function renderTelegramWidget(){
+  const box = document.getElementById('telegramLoginBox');
+  if(TELEGRAM_BOT_USERNAME === 'YOUR_BOT_USERNAME'){
+    box.innerHTML = '<div style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);">Kodda TELEGRAM_BOT_USERNAME hali to\'ldirilmagan</div>';
+    return;
+  }
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = 'https://telegram.org/js/telegram-widget.js?22';
+  script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME);
+  script.setAttribute('data-size', 'large');
+  script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  script.setAttribute('data-request-access', 'write');
+  box.appendChild(script);
+})();
+</script>
+</body>
+</html>

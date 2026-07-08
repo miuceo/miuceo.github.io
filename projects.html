@@ -16,6 +16,12 @@
     --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --mono:'IBM Plex Mono', monospace;
   }
+  [data-theme="dark"]{
+    --cream:#1A1714; --cream-2:#242019; --cream-3:#2C2620;
+    --ink:#F0EAE0; --ink-soft:#B8AF9E; --line:#3A342B; --white:#242019;
+  }
+  body{ transition:background .2s, color .2s; }
+  .theme-toggle{ position:fixed; top:20px; right:20px; z-index:50; background:none; border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; }
   a{ text-decoration:none; color:inherit; }
@@ -46,9 +52,21 @@
   .project-link:hover{ background:var(--clay-dark); }
 
   footer{ border-top:1px solid var(--line); padding:32px 0; font-family:var(--mono); font-size:13px; color:var(--ink-soft); display:flex; justify-content:space-between; }
+
+  @media (max-width:640px){
+    .wrap{ padding:0 18px; }
+    .navbar{ flex-wrap:wrap; gap:12px; padding:16px 0; }
+    .nav-links{ gap:14px; flex-wrap:wrap; width:100%; }
+    .page-header{ padding:40px 0 30px; }
+    .page-header h1{ font-size:30px; }
+    .project-card{ padding:24px; }
+    footer{ flex-direction:column; gap:8px; text-align:center; padding:24px 0; }
+  }
 </style>
 </head>
 <body>
+
+<button class="theme-toggle" id="themeToggle">🌙</button>
 
 <div class="wrap">
   <nav class="navbar">
@@ -57,7 +75,7 @@
       <a href="index.html#latest-posts">Posts</a>
       <a href="projects.html" class="active">Projects</a>
       <a href="contact.html">Contact</a>
-      <a href="admin.html" class="btn-admin">Admin panel</a>
+      <a href="login.html" class="btn-admin">Admin panel</a>
     </div>
   </nav>
 
@@ -123,5 +141,19 @@
   </footer>
 </div>
 
+<script>
+function initTheme(){
+  const saved = localStorage.getItem('miuceo_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('miuceo_theme', next);
+  initTheme();
+});
+initTheme();
+</script>
 </body>
 </html>
