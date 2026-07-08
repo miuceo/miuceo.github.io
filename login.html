@@ -23,13 +23,14 @@
     min-height:100vh; display:flex; align-items:center; justify-content:center;
     transition:background .2s, color .2s;
   }
-  .theme-toggle{ position:fixed; top:20px; right:20px; background:none; border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
+  .theme-toggle{ background:none; border:1px solid var(--line); border-radius:20px; padding:6px 12px; font-size:12px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
+  .brand-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
 
   .card{
     background:var(--white); border:1px solid var(--line); border-radius:16px;
     padding:48px 40px; text-align:center; width:min(400px, 90vw);
   }
-  .brand{ font-weight:800; font-size:18px; margin-bottom:28px; }
+  .brand{ font-weight:800; font-size:18px; }
   .card h1{ font-family:var(--serif); font-size:26px; font-weight:500; margin:0 0 10px; }
   .card p{ font-size:14px; color:var(--ink-soft); margin:0 0 32px; line-height:1.5; }
 
@@ -45,18 +46,19 @@
 
   @media (max-width:480px){
     .card{ padding:36px 24px; }
-    .theme-toggle{ top:12px; right:12px; padding:6px 10px; font-size:12px; }
   }
 </style>
 </head>
 <body>
 
-<button class="theme-toggle" id="themeToggle">🌙</button>
-
 <div class="card">
-  <div class="brand">MIUCEO\</div>
+  <div class="brand-row">
+    <div class="brand">MIUCEO\</div>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+  </div>
   <h1>Admin panel</h1>
   <p>Faqat sayt egasi kira oladi.<br>Telegram orqali tasdiqlang.</p>
+
 
   <div id="telegramLoginBox"></div>
   <div id="statusMsg" class="status-msg"></div>
@@ -97,7 +99,7 @@ function showStatus(msg, isError){
 }
 
 function grantAccess(identity){
-  const auth = { ok: true, method: 'Telegram', identity, expires: Date.now() + 7*24*60*60*1000 };
+  const auth = { ok: true, method: 'Telegram', identity, expires: Date.now() + 15*60*1000 };
   localStorage.setItem('miuceo_auth', JSON.stringify(auth));
   showStatus('Xush kelibsiz! Admin panelga o\'tilmoqda...', false);
   setTimeout(() => { window.location.href = 'admin.html'; }, 500);
