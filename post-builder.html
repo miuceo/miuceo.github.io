@@ -19,6 +19,7 @@
 <title>Post Builder — miuceo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.umd.min.js"></script>
 <style>
   :root{
     --cream:#F5F1EA; --cream-2:#EEE9DF; --ink:#1F1B16; --ink-soft:#4A443C;
@@ -101,6 +102,16 @@
   .preview-block p{ margin:0 0 14px; font-size:16px; color:var(--ink); line-height:1.7; }
   .preview-block h2{ font-family:var(--serif); font-size:24px; margin:24px 0 12px; }
   .preview-block h3{ font-family:var(--serif); font-size:20px; margin:20px 0 10px; }
+  .preview-block ul, .preview-block ol{ margin:0 0 14px; padding-left:24px; }
+  .preview-block li{ font-size:16px; line-height:1.7; margin-bottom:4px; }
+  .preview-block blockquote{ margin:16px 0; padding:4px 18px; border-left:3px solid var(--clay); color:var(--ink-soft); font-style:italic; }
+  .preview-block code{ font-family:var(--mono); font-size:0.9em; background:var(--cream-2); padding:2px 6px; border-radius:4px; }
+  .preview-block pre{ background:var(--cream-2); border-radius:8px; padding:14px 16px; overflow-x:auto; margin:16px 0; }
+  .preview-block pre code{ background:none; padding:0; }
+  .preview-block hr{ border:none; border-top:1px solid var(--line); margin:24px 0; }
+  .preview-block table{ border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+  .preview-block th, .preview-block td{ border:1px solid var(--line); padding:8px 10px; text-align:left; }
+  .preview-block strong{ font-weight:700; }
   .preview-block img{ max-width:100%; border-radius:8px; display:block; }
   .preview-block iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:8px; }
   .preview-share{ padding:16px 28px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; color:var(--ink-soft); text-align:center; }
@@ -279,28 +290,24 @@ function getYoutubeId(url){
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
   return m ? m[1] : null;
 }
+marked.setOptions({ breaks: true, gfm: true });
 function mdToHtml(text){
   if(!text) return '';
-  let esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const lines = esc.split(/\n/);
-  let html = '';
-  for(let line of lines){
-    if(/^###\s+/.test(line)){ html += `<h3>${line.replace(/^###\s+/,'')}</h3>`; continue; }
-    if(/^##\s+/.test(line)){ html += `<h2>${line.replace(/^##\s+/,'')}</h2>`; continue; }
-    if(line.trim() === ''){ continue; }
-    let p = line
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-    html += `<p>${p}</p>`;
-  }
-  return html;
+  return marked.parse(text);
 }
 function plainTextFromBlocks(){
   return blocks.filter(b => b.type === 'text').map(b => b.content).join(' ');
 }
 function getExcerpt(){
-  const text = plainTextFromBlocks().replace(/[#*\[\]()]/g,'').trim();
+  const text = plainTextFromBlocks()
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/[#*_`~\[\]()>|-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
   return sentences.slice(0,2).join(' ').slice(0, 240);
 }
@@ -339,7 +346,7 @@ function renderEditor(){
             <button class="btn ghost icon" data-act="del">✕</button>
           </div>
         </div>
-        <textarea class="text-input" placeholder="Matningizni shu yerga yozing... (**qalin**, *qiya*, ## sarlavha, [link](url))">${b.content}</textarea>
+        <textarea class="text-input" placeholder="Markdown to'liq qo'llab-quvvatlanadi: # sarlavha, **qalin**, *qiya*, - ro'yxat, 1. raqamli ro'yxat, > iqtibos, kod uchun backtick, [link](url), --- chiziq...">${b.content}</textarea>
       `;
       el.querySelector('textarea').addEventListener('input', e => { b.content = e.target.value; renderPreview(); });
     } else {
@@ -582,6 +589,15 @@ function generatePostHtml(title, postUrl){
   .post-content p{ font-size:17px; line-height:1.75; margin:0 0 18px; }
   .post-content h2{ font-family:var(--serif); font-size:28px; margin:32px 0 14px; }
   .post-content h3{ font-family:var(--serif); font-size:22px; margin:26px 0 12px; }
+  .post-content ul, .post-content ol{ margin:0 0 18px; padding-left:26px; }
+  .post-content li{ font-size:17px; line-height:1.75; margin-bottom:6px; }
+  .post-content blockquote{ margin:22px 0; padding:6px 20px; border-left:3px solid var(--clay); color:var(--ink-soft); font-style:italic; }
+  .post-content code{ font-family:'IBM Plex Mono', monospace; font-size:0.9em; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px; }
+  .post-content pre{ background:rgba(0,0,0,0.05); border-radius:8px; padding:16px 18px; overflow-x:auto; margin:22px 0; }
+  .post-content pre code{ background:none; padding:0; }
+  .post-content hr{ border:none; border-top:1px solid var(--line); margin:32px 0; }
+  .post-content table{ border-collapse:collapse; width:100%; margin:22px 0; font-size:15px; }
+  .post-content th, .post-content td{ border:1px solid var(--line); padding:10px 12px; text-align:left; }
   .post-content a{ color:var(--clay); }
   .post-image{ width:100%; border-radius:8px; margin:22px 0; display:block; }
   .media-embed{ margin:22px 0; }
