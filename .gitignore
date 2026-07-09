@@ -4,3 +4,9 @@ venv
 env
 .env
 CLAUDE.md
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
