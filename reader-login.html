@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirish — miuceo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F1EA; --cream-2:#EEE9DF; --ink:#1F1B16; --ink-soft:#4A443C;
+    --clay:#D97757; --clay-dark:#B85C3F; --line:#DDD5C7; --white:#FFFFFF;
+    --serif:'Newsreader', Georgia, serif; --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  [data-theme="dark"]{
+    --cream:#1A1714; --cream-2:#242019; --ink:#FFFFFF; --ink-soft:#D8D8D8;
+    --line:#3A342B; --white:#242019;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    transition:background .2s, color .2s;
+  }
+  .card{
+    background:var(--white); border:1px solid var(--line); border-radius:16px;
+    padding:48px 40px; text-align:center; width:min(400px, 90vw);
+  }
+  .brand-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+  .brand{ font-weight:800; font-size:18px; }
+  .theme-toggle{ background:none; border:1px solid var(--line); border-radius:20px; padding:6px 12px; font-size:12px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
+  .card h1{ font-family:var(--serif); font-size:26px; font-weight:500; margin:0 0 10px; }
+  .card p{ font-size:14px; color:var(--ink-soft); margin:0 0 32px; line-height:1.5; }
+
+  #telegramLoginBox{ display:flex; justify-content:center; min-height:40px; }
+
+  .status-msg{ font-family:var(--mono); font-size:13px; margin-top:24px; padding:12px; border-radius:8px; display:none; }
+  .status-msg.error{ display:block; background:#FBE9E7; color:#B23A2E; }
+  .status-msg.ok{ display:block; background:#E6F4EA; color:#2E7D46; }
+
+  .back{ margin-top:24px; }
+  .back a{ text-decoration:none; font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
+  .back a:hover{ color:var(--clay); }
+
+  @media (max-width:480px){ .card{ padding:36px 24px; } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand-row">
+    <div class="brand">MIUCEO\</div>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+  </div>
+  <h1>Postni o'qish uchun kiring</h1>
+  <p>Postlarni o'qish uchun Telegram orqali tasdiqlash kerak.</p>
+
+  <div id="telegramLoginBox"></div>
+  <div id="statusMsg" class="status-msg"></div>
+
+  <div class="back"><a href="index.html">← Bosh sahifaga qaytish</a></div>
+</div>
+
+<script>
+/* Worker manzilini shu yerga yoz (Cloudflare'ga joylagandan keyin) */
+const WORKER_URL = 'https://miuceo-reader-auth.SENING-NOMING.workers.dev';
+
+
+/* Bot username (@ siz) */
+const TELEGRAM_BOT_USERNAME = 'miuceo_pws_bot';
+
+/* ---------- THEME ---------- */
+function initTheme(){
+  const saved = localStorage.getItem('miuceo_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('miuceo_theme', next);
+  initTheme();
+});
+initTheme();
+
+function showStatus(msg, isError){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg ' + (isError ? 'error' : 'ok');
+}
+function getReturnUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const ret = params.get('return');
+  return ret ? decodeURIComponent(ret) : 'index.html';
+}
+
+window.onTelegramAuth = async function(user){
+  showStatus('Tekshirilmoqda...', false);
+  try{
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+    const data = await res.json();
+    if(!data.ok){
+      showStatus('Tasdiqlanmadi: ' + (data.error || 'noma\'lum xato'), true);
+      return;
+    }
+    const auth = { ok: true, id: user.id, expires: Date.now() + 30*24*60*60*1000 };
+    localStorage.setItem('miuceo_reader_auth', JSON.stringify(auth));
+    showStatus('Xush kelibsiz! Postga qaytilmoqda...', false);
+    setTimeout(() => { window.location.href = getReturnUrl(); }, 500);
+  }catch(err){
+    showStatus('Tarmoq xatosi: ' + err.message, true);
+  }
+};
+
+function renderTelegramWidget(){
+  const box = document.getElementById('telegramLoginBox');
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = 'https://telegram.org/js/telegram-widget.js?22';
+  script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME);
+  script.setAttribute('data-size', 'large');
+  script.setAttribute('data-radius', '8');
+  script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  box.appendChild(script);
+}
+renderTelegramWidget();
+</script>
+</body>
+</html>

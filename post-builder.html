@@ -28,7 +28,7 @@
     --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   [data-theme="dark"]{
-    --cream:#1A1714; --cream-2:#242019; --ink:#F0EAE0; --ink-soft:#B8AF9E;
+    --cream:#1A1714; --cream-2:#242019; --ink:#FFFFFF; --ink-soft:#D8D8D8;
     --line:#3A342B; --white:#242019;
   }
   body{ transition:background .2s, color .2s; }
@@ -571,6 +571,18 @@ function generatePostHtml(title, postUrl){
   return `<!DOCTYPE html>
 <html lang="uz">
 <head>
+<script>
+(function(){
+  try{
+    var auth = JSON.parse(localStorage.getItem('miuceo_reader_auth') || 'null');
+    if(!auth || !auth.ok || Date.now() > auth.expires){
+      window.location.replace('../reader-login.html?return=' + encodeURIComponent(window.location.href));
+    }
+  }catch(e){
+    window.location.replace('../reader-login.html?return=' + encodeURIComponent(window.location.href));
+  }
+})();
+<\/script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(title)} — miuceo</title>
