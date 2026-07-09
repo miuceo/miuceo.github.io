@@ -19,7 +19,7 @@
 <title>Post Builder — miuceo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <style>
   :root{
     --cream:#F5F1EA; --cream-2:#EEE9DF; --ink:#1F1B16; --ink-soft:#4A443C;
@@ -59,7 +59,7 @@
   .settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
   .field{ display:flex; flex-direction:column; gap:6px; }
   .field label{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); }
-  .field input{ font-family:var(--mono); font-size:13px; padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:var(--cream-2); color:var(--ink); }
+  .field input{ font-family:var(--mono); font-size:13px; padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:var(--cream-2); }
   .field input:focus{ outline:none; border-color:var(--clay); }
   .settings-note{ font-size:12px; color:var(--ink-soft); margin-top:12px; grid-column:1/-1; }
 
@@ -156,13 +156,13 @@
   <details class="settings">
     <summary>Sozlamalar (GitHub &amp; Telegram)</summary>
     <div class="settings-grid">
-      <div class="field"><label>GitHub Personal Access Token</label><input type="password" id="ghToken"></div>
-      <div class="field"><label>GitHub Owner</label><input type="text" id="ghOwner"></div>
-      <div class="field"><label>GitHub Repo</label><input type="text" id="ghRepo"></div>
-      <div class="field"><label>Branch</label><input type="text" id="ghBranch"></div>
-      <div class="field"><label>Sayt bazaviy URL</label><input type="text" id="siteUrl"></div>
-      <div class="field"><label>Telegram Bot Token</label><input type="password" id="tgToken"></div>
-      <div class="field"><label>Telegram Kanal (@username)</label><input type="text" id="tgChannel"></div>
+      <div class="field"><label>GitHub Personal Access Token</label><input type="password" id="ghToken" placeholder="ghp_..."></div>
+      <div class="field"><label>GitHub Owner</label><input type="text" id="ghOwner" placeholder="miuceo"></div>
+      <div class="field"><label>GitHub Repo</label><input type="text" id="ghRepo" placeholder="miuceo.github.io"></div>
+      <div class="field"><label>Branch</label><input type="text" id="ghBranch" placeholder="main"></div>
+      <div class="field"><label>Sayt bazaviy URL</label><input type="text" id="siteUrl" placeholder="https://muhammadjon.me"></div>
+      <div class="field"><label>Telegram Bot Token</label><input type="password" id="tgToken" placeholder="123456:ABC-..."></div>
+      <div class="field"><label>Telegram Kanal (@username)</label><input type="text" id="tgChannel" placeholder="@muhammadibrohimov_ceo"></div>
       <div class="settings-note">Bu ma'lumotlar faqat sening brauzeringda (localStorage) saqlanadi va hech qayerga yuborilmaydi — faqat GitHub va Telegram API'ga to'g'ridan-to'g'ri murojaat qilish uchun ishlatiladi. Token'larni hech kimga, hatto chatda ham ulashma.</div>
     </div>
     <div class="add-row" style="margin-top:14px;">
@@ -237,7 +237,7 @@ document.getElementById('themeToggle').addEventListener('click', () => {
 initTheme();
 
 function uid(){ return 'b' + (idCounter++); }
-function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ---------- SETTINGS ---------- */
 function loadSettings(){
@@ -292,12 +292,7 @@ function getYoutubeId(url){
 marked.setOptions({ breaks: true, gfm: true });
 function mdToHtml(text){
   if(!text) return '';
-  try{
-    return marked.parse(text);
-  }catch(e){
-    console.error('Markdown parse xatosi:', e);
-    return `<p>${escapeHtml(text).replace(/\n/g,'<br>')}</p>`;
-  }
+  return marked.parse(text);
 }
 function plainTextFromBlocks(){
   return blocks.filter(b => b.type === 'text').map(b => b.content).join(' ');
@@ -350,11 +345,9 @@ function renderEditor(){
             <button class="btn ghost icon" data-act="del">✕</button>
           </div>
         </div>
-        <textarea class="text-input" placeholder="Markdown to'liq qo'llab-quvvatlanadi: # sarlavha, **qalin**, *qiya*, - ro'yxat, 1. raqamli ro'yxat, > iqtibos, kod uchun backtick, [link](url), --- chiziq..."></textarea>
+        <textarea class="text-input" placeholder="Markdown to'liq qo'llab-quvvatlanadi: # sarlavha, **qalin**, *qiya*, - ro'yxat, 1. raqamli ro'yxat, > iqtibos, kod uchun backtick, [link](url), --- chiziq...">${b.content}</textarea>
       `;
-      const ta = el.querySelector('textarea');
-      ta.value = b.content;
-      ta.addEventListener('input', e => { b.content = e.target.value; renderPreview(); });
+      el.querySelector('textarea').addEventListener('input', e => { b.content = e.target.value; renderPreview(); });
     } else {
       const mtype = detectMediaType(b.url);
       let previewHtml = '<div class="media-empty">Link kiriting</div>';
