@@ -4,7 +4,7 @@ excerpt: "Claude Sonnet 5 hozirgacha yaratilgan eng agentik Sonnet modeli bo‘l
 coverImage: "https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F458ea645ef6b729f6847cba16932716e6b547f2f-2880x1620.png&w=3840&q=75"
 createdAt: "2026-07-07T03:18:34.439Z"
 updatedAt: "2026-08-10T17:24:20.966Z"
-telegramMessageId: 64
+telegramMessageId: 65
 telegramHasMedia: true
 ---
 ![](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F458ea645ef6b729f6847cba16932716e6b547f2f-2880x1620.png&w=3840&q=75)
