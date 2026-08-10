@@ -15,18 +15,10 @@
       "type": "media",
       "url": "https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F9941d610909f28a504e16dd5af823df172ec6035-2600x1234.png&w=3840&q=75",
       "mediaType": "image"
-    },
-    {
-      "type": "text",
-      "content": "**Hafta yangiliklari: **"
-    },
-    {
-      "type": "media",
-      "url": "https://youtu.be/U27IubGtupw",
-      "mediaType": "youtube"
     }
   ],
   "created_at": "2026-07-07T03:18:34.439Z",
-  "updated_at": "2026-07-07T03:18:34.439Z",
-  "telegram_message_id": 38
+  "updated_at": "2026-08-10T04:22:52.341Z",
+  "telegram_message_id": 38,
+  "telegram_has_media": false
 }
