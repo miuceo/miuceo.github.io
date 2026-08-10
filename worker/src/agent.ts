@@ -44,10 +44,23 @@ export interface AgentResult {
  * produced truncated replies on a long post — see the header comment on
  * parseModelOutput.
  */
-export const MAX_INPUT_CHARS = 12000;
+export const MAX_INPUT_CHARS = 20000;
 
-/** Generous enough that a full-length body plus reasoning fits. */
-const MAX_OUTPUT_TOKENS = 16000;
+/**
+ * Sized from the real limits, not guessed: gpt-oss-120b on Groq allows 65,536
+ * output tokens against a 131,072 context, so this is well inside them.
+ *
+ * The budget that matters is output. 20,000 chars of English source becomes
+ * roughly 22,000 chars of Russian (Cyrillic runs longer), and Cyrillic
+ * tokenises at about 2 chars/token — so ~11,000 tokens of document, plus a
+ * few thousand reasoning tokens. 32,000 leaves roughly 2x headroom.
+ *
+ * Raising the cap is only safe because truncation is now a hard failure
+ * (finish_reason=length throws and advances the ladder). Before that fix an
+ * over-large cap meant silently published garbage; now the worst case is a
+ * clear error.
+ */
+const MAX_OUTPUT_TOKENS = 32000;
 
 const LANG_NAMES: Record<Lang, string> = {
   uz: 'Uzbek (Latin script)',
