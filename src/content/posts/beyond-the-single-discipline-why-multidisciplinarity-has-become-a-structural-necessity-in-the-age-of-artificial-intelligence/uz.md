@@ -3,7 +3,7 @@ title: "Beyond the Single Discipline: Why Multidisciplinarity Has Become a Struc
 excerpt: "Abstract This paper argues that multidisciplinarity has shifted from being an intellectual preference to becoming a structural condition for producing significant knowledge in the age of artificial intelligence. Drawing on three independent"
 coverImage: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUnt4dXyRpYZ8GSnyxmjn4s9AJ-KXYpMXQmsduBARkecyerbgyHEhJ8VMg&s=10"
 createdAt: "2026-08-10T05:09:22.594Z"
-updatedAt: "2026-08-10T09:03:15.223Z"
+updatedAt: "2026-08-10T16:18:29.859Z"
 telegramMessageId: 63
 telegramHasMedia: true
 ---
