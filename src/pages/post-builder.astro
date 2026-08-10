@@ -104,8 +104,16 @@ import '../islands/PostBuilder/styles.css';
           body: JSON.stringify({ initData: tg.initData }),
         });
         const data = await res.json();
-        if (data.ok) reveal();
-        else denyAndRedirect();
+        if (data.ok) {
+          // Telegram's embedded Mini App webview blocks the cross-site
+          // session cookie (confirmed live), so also keep the session id
+          // in localStorage and send it as a Bearer token on every
+          // subsequent request — see worker/src/auth.ts readSessionToken.
+          if (data.sessionId) localStorage.setItem('miuceo_session_token', data.sessionId);
+          reveal();
+        } else {
+          denyAndRedirect();
+        }
       } catch {
         denyAndRedirect();
       }

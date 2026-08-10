@@ -206,11 +206,21 @@ function renderPreview() {
 }
 
 /* ---------- WORKER API (holds every secret server-side) ---------- */
+// Telegram's embedded Mini App webview blocks the cross-site session
+// cookie (confirmed live) — post-builder.astro's auth gate stores the
+// session id from a successful Mini App login here, and every call below
+// sends it as a Bearer token too. Harmless no-op in a normal browser,
+// where the cookie already works and this key is simply empty.
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem('miuceo_session_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function ghGetFile(path: string): Promise<{ sha: string; content: string } | null> {
   const res = await fetch(`${WORKER_URL}/api/github/get`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ path }),
   });
   const data = await res.json();
@@ -221,7 +231,7 @@ async function ghPutFileSafe(path: string, contentStr: string, message: string, 
   const res = await fetch(`${WORKER_URL}/api/github/put`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ path, content: contentStr, message, sha: sha || null }),
   });
   const data = await res.json();
@@ -232,7 +242,7 @@ async function tgSendPost(title: string, excerpt: string, coverImage: string | n
   const res = await fetch(`${WORKER_URL}/api/telegram/send`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ title, excerpt, coverImage, postUrl }),
   });
   const data = await res.json();
@@ -250,7 +260,7 @@ async function tgEditPost(
   const res = await fetch(`${WORKER_URL}/api/telegram/edit`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ messageId, title, excerpt, postUrl, hadMedia: hadMediaOriginally }),
   });
   const data = await res.json();
@@ -671,8 +681,9 @@ export function initPostBuilder() {
   document.getElementById('generateBtn')?.addEventListener('click', publish);
   document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     try {
-      await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+      await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include', headers: authHeaders() });
     } catch {}
+    localStorage.removeItem('miuceo_session_token');
     window.location.href = '/uz/';
   });
   document.getElementById('clearBtn')?.addEventListener('click', () => {

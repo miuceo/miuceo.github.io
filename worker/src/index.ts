@@ -1,7 +1,7 @@
 import type { Env } from './types';
 import {
   verifyLoginWidgetAuth, verifyMiniAppInitData, loginWidgetAuthDateAgeSeconds, AUTH_MAX_AGE,
-  createSession, requireSession, revokeSession, readSessionCookie,
+  createSession, requireSession, revokeSession, readSessionToken,
   buildSessionCookie, buildClearCookie,
 } from './auth';
 import { isAllowedPath, ghGetFile, ghPutFile, ghPutFileSafe, ghDeleteFile } from './github';
@@ -12,7 +12,7 @@ function corsHeaders(env: Env): Record<string, string> {
     'Access-Control-Allow-Origin': env.SITE_ORIGIN,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 }
 
@@ -60,7 +60,7 @@ export default {
           return errorResponse(env, 'Sen admin emassan', 403);
         }
         const session = await createSession(env, String(user.id));
-        return json(env, { ok: true }, 200, {
+        return json(env, { ok: true, sessionId: session.id }, 200, {
           'Set-Cookie': buildSessionCookie(env, session.id, Number(env.SESSION_TTL_SECONDS)),
         });
       }
@@ -76,14 +76,14 @@ export default {
           return errorResponse(env, 'Sen admin emassan', 403);
         }
         const session = await createSession(env, String(result.user.id));
-        return json(env, { ok: true }, 200, {
+        return json(env, { ok: true, sessionId: session.id }, 200, {
           'Set-Cookie': buildSessionCookie(env, session.id, Number(env.SESSION_TTL_SECONDS)),
         });
       }
 
       if (path === '/auth/logout' && req.method === 'POST') {
-        const cookie = readSessionCookie(req, env);
-        if (cookie) await revokeSession(env, cookie);
+        const token = readSessionToken(req, env);
+        if (token) await revokeSession(env, token);
         return json(env, { ok: true }, 200, { 'Set-Cookie': buildClearCookie(env) });
       }
 

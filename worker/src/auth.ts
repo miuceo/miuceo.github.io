@@ -122,9 +122,27 @@ export function readSessionCookie(req: Request, env: Env): string | null {
   return match && match[1] ? match[1] : null;
 }
 
+/**
+ * Embedded webviews (confirmed: Telegram Desktop's Mini App browser) can
+ * block the cross-site session cookie — the Worker's domain differs from
+ * the site's, so SameSite=None cookies get treated as third-party and
+ * silently dropped even though they're set correctly. The `Authorization:
+ * Bearer <sessionId>` header is the fallback: same session id, just carried
+ * explicitly by the client (localStorage, not a cookie) instead of relying
+ * on the browser to attach it automatically. Cookie auth stays the default
+ * for normal browser flows (login.html/admin.html/post-builder.html) —
+ * this is additive, not a replacement.
+ */
+export function readSessionToken(req: Request, env: Env): string | null {
+  const authHeader = req.headers.get('Authorization') || '';
+  const bearerMatch = authHeader.match(/^Bearer (.+)$/);
+  if (bearerMatch && bearerMatch[1]) return bearerMatch[1];
+  return readSessionCookie(req, env);
+}
+
 /** Every route except /auth/* must call this before doing anything else. */
 export async function requireSession(req: Request, env: Env): Promise<Session | null> {
-  const cookie = readSessionCookie(req, env);
-  if (!cookie) return null;
-  return getValidSession(env, cookie);
+  const token = readSessionToken(req, env);
+  if (!token) return null;
+  return getValidSession(env, token);
 }
