@@ -82,7 +82,10 @@ function authHeaders(){
     <h1>Postlar</h1>
     <div style="display:flex; gap:10px;">
       <button class="btn ghost" id="refreshBtn">Yangilash</button>
-      <a href="post-builder.html" class="btn">+ Yangi post</a>
+      <!-- The v2 editor (/post-builder/) — same Worker API, plus the AI
+           translate/improve tools. v1's post-builder.html stays reachable
+           directly as a fallback; nothing about it changed. -->
+      <a href="/post-builder/" class="btn">+ Yangi post</a>
     </div>
   </div>
 
@@ -217,7 +220,7 @@ function renderPosts(){
         <div class="meta">Yaratildi: ${formatDate(p.created_at)} · Yangilandi: ${formatDate(p.updated_at)}</div>
       </div>
       <div class="post-actions">
-        <a href="post-builder.html?edit=${encodeURIComponent(p.slug)}" class="btn ghost small">Tahrirlash</a>
+        <a href="/post-builder/?edit=${encodeURIComponent(p.slug)}" class="btn ghost small">Tahrirlash</a>
         <a href="posts/${p.slug}.html" target="_blank" class="btn ghost small">Ko'rish</a>
         <button class="btn danger small" data-slug="${p.slug}" data-title="${escapeHtml(p.title)}">O'chirish</button>
       </div>
