@@ -1,15 +1,15 @@
 name: Build & deploy Astro site
 
-# On every push to main: builds the Astro site and uploads it as a Pages
-# artifact — a pure build check, inspectable under the Actions tab. It does
-# NOT publish anything by itself.
+# Builds and publishes the Astro site to GitHub Pages on every push to main,
+# and on manual dispatch.
 #
-# The "deploy" job only runs when this workflow is triggered manually
-# (workflow_dispatch) — a deliberate choice, not an accident. Even then it
-# only takes effect once GitHub Pages' "Build and deployment" source is
-# switched from the current branch/root setting to "GitHub Actions" (see
-# ARCHITECTURE.md §9 Phase 3); until that switch happens, the live site
-# keeps being served from the branch regardless of this workflow.
+# The deploy job was originally gated to manual dispatch only, back when the
+# Astro site was unproven and pushes must not silently replace the live v1
+# site. That cutover is done (ARCHITECTURE.md §9 Phase 3) and Pages now
+# serves this workflow's artifact, so the gate was only causing confusion —
+# a push would build green while the live site kept serving the previous
+# deploy. To roll back a bad deploy, revert the commit and push, or re-run
+# an older successful run from the Actions tab.
 
 on:
   push:
@@ -55,7 +55,6 @@ jobs:
 
   deploy:
     needs: build
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
