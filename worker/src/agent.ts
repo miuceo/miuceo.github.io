@@ -36,8 +36,18 @@ export interface AgentResult {
   model: string;
 }
 
-/** Rejected before any provider call — see the cap rationale in index.ts. */
-export const MAX_INPUT_CHARS = 24000;
+/**
+ * Rejected before any provider call. Sized against the *output* budget, not
+ * the context window: a translation is roughly as long as its source, and
+ * MAX_OUTPUT_TOKENS has to cover that plus any reasoning tokens the model
+ * emits. The first version of this file allowed 24,000 chars, which silently
+ * produced truncated replies on a long post — see the header comment on
+ * parseModelOutput.
+ */
+export const MAX_INPUT_CHARS = 12000;
+
+/** Generous enough that a full-length body plus reasoning fits. */
+const MAX_OUTPUT_TOKENS = 16000;
 
 const LANG_NAMES: Record<Lang, string> = {
   uz: 'Uzbek (Latin script)',
@@ -52,69 +62,102 @@ function parseModelList(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
-function buildPrompt(task: AgentTask, input: AgentInput): string {
-  const shape =
-    'Respond with ONLY a JSON object, no prose and no code fence, shaped exactly:\n' +
-    '{"title": "...", "excerpt": "...", "body": "..."}\n' +
-    'The "body" value is Markdown. Preserve every Markdown construct from the source ' +
-    'exactly: heading levels, lists, links, image syntax ![](url), code blocks and their ' +
-    'language tags, blockquotes and tables. Never translate, alter or drop a URL.';
+/**
+ * The body is requested as plain Markdown, NOT wrapped in JSON.
+ *
+ * Asking a model to return a multi-kilobyte Markdown document as a JSON
+ * string value is needlessly fragile: every newline and quote has to survive
+ * escaping, and a reply truncated anywhere in the middle yields nothing
+ * parseable at all. Plain text has no such failure mode — a truncated reply
+ * is still valid Markdown, and truncation is detected separately via
+ * finish_reason. Title and excerpt are short, so they get their own tiny
+ * call where JSON is cheap and safe.
+ */
+const PRESERVE_RULES =
+  'Preserve every Markdown construct exactly: heading levels, lists, links, ' +
+  'image syntax ![](url), code blocks and their language tags, blockquotes and ' +
+  'tables. Never translate, alter or drop a URL. ' +
+  'Output ONLY the resulting Markdown — no preamble, no explanation, no code fence ' +
+  'around the whole document, no commentary about what you did.';
 
+function buildBodyPrompt(task: AgentTask, input: AgentInput): string {
   if (task === 'translate') {
     const target = LANG_NAMES[input.targetLang || 'en'];
     return (
-      `Translate the following blog post into ${target}.\n\n` +
-      `Translate the title, the excerpt and the body. Keep the author's voice and register — ` +
-      `this is a personal technical blog, not marketing copy. Do not summarise, do not expand, ` +
-      `do not add commentary. Technical terms and product names stay in their original form.\n\n` +
-      `${shape}\n\n` +
-      `TITLE: ${input.title}\n` +
-      `EXCERPT: ${input.excerpt || ''}\n` +
-      `BODY:\n${input.markdown}`
+      `Translate the Markdown document below into ${target}.\n\n` +
+      `Keep the author's voice and register — this is a personal technical blog, not ` +
+      `marketing copy. Do not summarise, do not expand, do not add commentary. ` +
+      `Technical terms and product names stay in their original form.\n${PRESERVE_RULES}\n\n` +
+      `---\n${input.markdown}`
     );
   }
-
   return (
-    `Improve the writing of the following blog post without changing its meaning, ` +
+    `Improve the writing of the Markdown document below without changing its meaning, ` +
     `its language, or its structure. Fix grammar, awkward phrasing and typos. Keep the ` +
-    `author's voice. Do not add new claims, do not remove content, do not add commentary.\n\n` +
-    `${shape}\n\n` +
+    `author's voice. Do not add new claims, do not remove content.\n${PRESERVE_RULES}\n\n` +
+    `---\n${input.markdown}`
+  );
+}
+
+function buildMetaPrompt(task: AgentTask, input: AgentInput): string {
+  const instruction =
+    task === 'translate'
+      ? `Translate the title and excerpt below into ${LANG_NAMES[input.targetLang || 'en']}.`
+      : 'Improve the wording of the title and excerpt below, keeping the same language and meaning.';
+  return (
+    `${instruction}\n\n` +
+    'Respond with ONLY a JSON object, no code fence:\n' +
+    '{"title": "...", "excerpt": "..."}\n\n' +
     `TITLE: ${input.title}\n` +
-    `EXCERPT: ${input.excerpt || ''}\n` +
-    `BODY:\n${input.markdown}`
+    `EXCERPT: ${input.excerpt || ''}`
   );
 }
 
 /**
- * Small models frequently wrap JSON in a code fence or add a sentence before
- * it, so parse defensively. A parse failure is NOT treated as a hard failure:
- * we fall back to using the raw output as the body and keeping the original
- * title, which is far more useful to the author than an error — they review
- * everything before it goes anywhere regardless (D6).
+ * Reasoning models (gpt-oss among them) emit a <think> block before the real
+ * answer. Strip it, or it ends up in the article body.
  */
-function parseModelOutput(raw: string, input: AgentInput): { title: string; excerpt: string; markdown: string } {
-  const fallback = { title: input.title, excerpt: input.excerpt || '', markdown: raw.trim() };
-  if (!raw.trim()) return fallback;
+function stripReasoning(raw: string): string {
+  return raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*$/i, '') // truncated mid-think — nothing usable follows
+    .trim();
+}
 
+/**
+ * Rejects output that is obviously machine scaffolding rather than prose.
+ *
+ * This exists because of a real incident: the first version of this file
+ * treated any parse failure as "fall back to using the raw output as the
+ * body", on the theory that raw text beats an error. That was wrong. When a
+ * reply was truncated mid-JSON or mid-<think>, the fallback produced
+ * plausible-looking garbage — a chain-of-thought transcript, or a literal
+ * `{"title":"...` string — which then got published. Failing loudly is
+ * strictly better than handing the author something that looks saveable.
+ */
+function looksLikeScaffolding(text: string): boolean {
+  const head = text.slice(0, 200).trimStart();
+  return head.startsWith('{') || head.startsWith('<think') || /^"?(title|excerpt|body)"?\s*:/i.test(head);
+}
+
+/** Title/excerpt only — small enough that JSON is safe here. */
+function parseMeta(raw: string): { title?: string; excerpt?: string } {
   let candidate = raw.trim();
   const fenced = candidate.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenced && fenced[1]) candidate = fenced[1].trim();
 
   const start = candidate.indexOf('{');
   const end = candidate.lastIndexOf('}');
-  if (start === -1 || end === -1 || end <= start) return fallback;
+  if (start === -1 || end === -1 || end <= start) return {};
 
   try {
     const parsed = JSON.parse(candidate.slice(start, end + 1)) as Record<string, unknown>;
-    const body = typeof parsed.body === 'string' ? parsed.body.trim() : '';
-    if (!body) return fallback;
     return {
-      title: typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title.trim() : input.title,
-      excerpt: typeof parsed.excerpt === 'string' ? parsed.excerpt.trim() : '',
-      markdown: body,
+      title: typeof parsed.title === 'string' ? parsed.title.trim() : undefined,
+      excerpt: typeof parsed.excerpt === 'string' ? parsed.excerpt.trim() : undefined,
     };
   } catch {
-    return fallback;
+    return {};
   }
 }
 
@@ -139,6 +182,7 @@ async function callChatCompletions(
       model,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
+      max_tokens: MAX_OUTPUT_TOKENS,
     }),
   });
 
@@ -146,8 +190,20 @@ async function callChatCompletions(
     throw new Error(`${model} failed: ${res.status} ${(await res.text()).slice(0, 300)}`);
   }
 
-  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const content = data.choices?.[0]?.message?.content;
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+  };
+  const choice = data.choices?.[0];
+
+  // The bug that shipped broken translations: a reply cut off at the output
+  // limit still arrives as HTTP 200 with usable-looking content. Treat it as
+  // a hard failure so the ladder tries the next candidate instead of handing
+  // back half a document.
+  if (choice?.finish_reason === 'length') {
+    throw new Error(`${model} truncated at the output limit (finish_reason=length)`);
+  }
+
+  const content = choice?.message?.content;
   if (!content) throw new Error(`${model} returned no content`);
   return content;
 }
@@ -166,8 +222,6 @@ interface ProviderAttempt {
  * Only when every candidate is exhausted does this throw.
  */
 export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Promise<AgentResult> {
-  const prompt = buildPrompt(task, input);
-
   const providers: ProviderAttempt[] = [
     {
       name: 'groq',
@@ -184,6 +238,7 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
   ];
 
   const failures: string[] = [];
+  const bodyPrompt = buildBodyPrompt(task, input);
 
   for (const provider of providers) {
     if (!provider.apiKey) {
@@ -196,9 +251,38 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
     }
     for (const model of provider.models) {
       try {
-        const raw = await callChatCompletions(provider.endpoint, provider.apiKey, model, prompt);
-        const parsed = parseModelOutput(raw, input);
-        return { ...parsed, provider: provider.name, model };
+        const rawBody = await callChatCompletions(provider.endpoint, provider.apiKey, model, bodyPrompt);
+        const markdown = stripReasoning(rawBody);
+
+        if (!markdown) {
+          throw new Error(`${model} returned only reasoning, no document`);
+        }
+        if (looksLikeScaffolding(markdown)) {
+          throw new Error(`${model} returned scaffolding instead of prose: ${markdown.slice(0, 120)}`);
+        }
+
+        // Title/excerpt are short and independent. If this second call fails,
+        // it must not throw away a perfectly good body — fall back to the
+        // originals and let the author edit two short fields in the review
+        // modal. That is a real graceful degradation, unlike the one this
+        // function used to do for the body.
+        let title = input.title;
+        let excerpt = input.excerpt || '';
+        try {
+          const rawMeta = await callChatCompletions(
+            provider.endpoint,
+            provider.apiKey,
+            model,
+            buildMetaPrompt(task, input)
+          );
+          const meta = parseMeta(stripReasoning(rawMeta));
+          if (meta.title) title = meta.title;
+          if (meta.excerpt) excerpt = meta.excerpt;
+        } catch (metaErr) {
+          console.warn(`meta call failed for ${model}, keeping originals: ${(metaErr as Error).message}`);
+        }
+
+        return { title, excerpt, markdown, provider: provider.name, model };
       } catch (err) {
         failures.push(`${provider.name}/${model}: ${(err as Error).message}`);
       }
