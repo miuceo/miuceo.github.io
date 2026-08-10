@@ -650,11 +650,18 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     let indexSha = indexPutResult.content.sha;
     appendLog('✓ posts.json yangilandi');
 
-    if(isEdit && currentTelegramMsgId){
-      appendLog('Telegram xabari tahrirlanmoqda...');
-      await tgEditPost(currentTelegramMsgId, title, excerpt, coverImage, postUrl, currentTelegramHasMedia);
-      appendLog('✓ Telegram xabari yangilandi');
-    } else if(!isEdit){
+    let telegramUpdated = false;
+    if(currentTelegramMsgId){
+      try{
+        appendLog('Telegram xabari tahrirlanmoqda...');
+        await tgEditPost(currentTelegramMsgId, title, excerpt, coverImage, postUrl, currentTelegramHasMedia);
+        appendLog('✓ Telegram xabari yangilandi');
+        telegramUpdated = true;
+      }catch(err){
+        appendLog('⚠ Telegram xabarini tahrirlab bo\'lmadi (' + err.message + '), yangi xabar yuborilmoqda...');
+      }
+    }
+    if(!telegramUpdated){
       appendLog('Telegram kanaliga yuborilmoqda...');
       const msgId = await tgSendPost(title, excerpt, coverImage, postUrl);
       currentTelegramMsgId = msgId;
