@@ -261,30 +261,34 @@ ARCHITECTURE.md                        # this file
 
 Ordered so the site keeps working throughout. Nothing here breaks publishing before its replacement exists.
 
-**Phase 0 — stop the bleeding**
-- Remove the reader gate that makes every new post unreadable.
-- Delete the dead `reader-login.html` and the 892 KB unreferenced favicon.
+**Phase 0 — stop the bleeding — ✅ DONE**
+- Removed the reader gate that made every new post unreadable.
+- Deleted the dead `reader-login.html` and the 892 KB unreferenced favicon.
 
-**Phase 1 — reach** *(no new infrastructure)*
-- Open Graph + Twitter cards, `sitemap.xml`, `robots.txt`, `404.html`, RSS, JSON-LD.
-- Start the **LinkedIn app review** now — it has the longest lead time and gates the best channel.
+**Phase 1 — reach — ✅ DONE** *(no new infrastructure)*
+- Open Graph + Twitter cards, `sitemap.xml`, `robots.txt`, `404.html`, RSS, JSON-LD — all live.
+- LinkedIn app review **not yet started** — still the long pole before Phase 5 can fan out there.
 
-**Phase 2 — the Worker** *(the unlock)*
-- Auth endpoint with real HMAC verification, session cookies, secrets moved out of `localStorage`.
-- Publish endpoint replacing direct browser-to-GitHub calls.
-- **Rotate the GitHub and Telegram tokens** — assume anything that lived in a browser is compromised.
+**Phase 2 — the Worker — ✅ DONE** *(the unlock)*
+- `worker/` deployed at `https://miuceo-worker.ibrokhimovmiu.workers.dev`. Real Telegram HMAC verification (both Login Widget and Mini App constructions), D1-backed revocable sessions, session cookie auth.
+- `login.html` / `admin.html` / `post-builder.html` cut over — no GitHub PAT or Telegram bot token in the browser anymore. Live-tested end to end: login, create, edit, delete all confirmed working on `muhammadjon.me`.
+- Bot switched mid-project to `@muhammadjon_me_bot`; the old `@miuceo_pws_bot` message IDs on existing posts can't be edited by the new bot (Telegram restriction) — `post-builder.html` now falls back to sending a fresh message when an edit fails, so this self-heals per post on its next save.
+- The pre-Worker GitHub PAT that lived in `localStorage` has been **revoked** (2026-08-10). Phase 2 is fully closed.
 
-**Phase 3 — Astro rebuild**
-- Port the design into a real component system with single-source tokens.
-- Trilingual routing, per-language feeds, the zoned motion system.
+**Phase 3 — Astro rebuild — ⚠️ PARTIAL, AND DIVERGED FROM THE ORIGINAL PLAN**
+- Done: single-source design tokens (`assets/theme.css`, `assets/theme.js`) replacing the old 7-file duplication — this was a Phase 3 goal, delivered early, directly on v1 HTML.
+- **Not done:** the actual Astro migration, component system, trilingual routing, per-language feeds.
+- **Design direction changed.** §7 above still describes the original plan (warm paper base + zoned liquid-glass/brutalism/scroll-motion). What actually shipped is a full pivot: JetBrains Mono everywhere, near-black terminal palette, neon green/cyan glow, applied directly to v1 pages — not the zoned system, not built in Astro. A code-window with a 5-language (JS/Python/Go/Java/Rust) typewriter effect sits in the homepage hero. §7 needs a rewrite to match reality before starting Astro work, or the two will keep contradicting each other.
+- Still open: trilingual (uz/en/ru) routing hasn't started — the site is Uzbek-only today, same as v1.
 
-**Phase 4 — Mini App**
+**Phase 4 — Mini App — ❌ NOT STARTED**
 - Rebuild the block editor as an island against the Worker API.
 
-**Phase 5 — agent, voice & distribution**
+**Phase 5 — agent, voice & distribution — ❌ NOT STARTED**
+- No AI agent exists yet. Posts publish exactly as typed, no translation, no improvement pass.
 - OpenRouter + Groq behind the single agent interface: translation, improvement, media understanding.
 - Voice in (Whisper) before voice out (TTS) — speaking a post is the higher-value half, and does not depend on Preview-status models.
-- Approval flow in Telegram, then platform fan-out one channel at a time — Telegram first (already working), LinkedIn next.
+- Approval flow in Telegram, then platform fan-out one channel at a time — Telegram first (already working, manual only), LinkedIn next (blocked on the Phase 1 app review above).
 
 ---
 
