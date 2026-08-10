@@ -4,9 +4,17 @@
 <style>html:not(.authed) body{ visibility:hidden; }</style>
 <script>
 const WORKER_URL = 'https://miuceo-worker.ibrokhimovmiu.workers.dev';
+/* Telegram's embedded webview blocks the cross-site session cookie, so also
+   send the session id (saved at login) as a Bearer token. Harmless no-op in a
+   normal browser, where the cookie works and this key is empty. Without it,
+   admin.html bounces back to login.html in Telegram — an endless redirect loop. */
+function authHeaders(){
+  var t = localStorage.getItem('miuceo_session_token');
+  return t ? { 'Authorization': 'Bearer ' + t } : {};
+}
 (async function(){
   try{
-    const res = await fetch(`${WORKER_URL}/api/session`, { credentials: 'include' });
+    const res = await fetch(`${WORKER_URL}/api/session`, { credentials: 'include', headers: authHeaders() });
     if(!res.ok){ window.location.replace('login.html'); return; }
     document.documentElement.classList.add('authed');
   }catch(e){
@@ -116,7 +124,7 @@ function formatDate(iso){
 async function apiGithubGet(path){
   const res = await fetch(`${WORKER_URL}/api/github/get`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ path }),
   });
   const data = await res.json();
@@ -126,7 +134,7 @@ async function apiGithubGet(path){
 async function apiGithubPut(path, contentStr, message, sha){
   const res = await fetch(`${WORKER_URL}/api/github/put`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ path, content: contentStr, message, sha: sha || null }),
   });
   const data = await res.json();
@@ -136,7 +144,7 @@ async function apiGithubPut(path, contentStr, message, sha){
 async function apiGithubDelete(path, message, sha){
   const res = await fetch(`${WORKER_URL}/api/github/delete`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ path, message, sha }),
   });
   const data = await res.json();
@@ -146,7 +154,7 @@ async function apiTelegramDelete(messageId){
   if(!messageId) return;
   await fetch(`${WORKER_URL}/api/telegram/delete`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ messageId }),
   });
 }
@@ -288,7 +296,8 @@ document.getElementById('closeLogBtn').addEventListener('click', () => {
 });
 document.getElementById('refreshBtn').addEventListener('click', loadPosts);
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  try{ await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include' }); }catch(e){}
+  try{ await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include', headers: authHeaders() });
+  localStorage.removeItem('miuceo_session_token'); }catch(e){}
   window.location.href = 'index.html';
 });
 

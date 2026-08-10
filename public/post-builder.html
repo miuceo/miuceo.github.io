@@ -5,9 +5,16 @@
 <script>
 const WORKER_URL = 'https://miuceo-worker.ibrokhimovmiu.workers.dev';
 const SITE_URL = 'https://muhammadjon.me';
+/* Telegram's embedded webview blocks the cross-site session cookie, so also
+   send the session id (saved at login) as a Bearer token. Harmless no-op in a
+   normal browser, where the cookie works and this key is empty. */
+function authHeaders(){
+  var t = localStorage.getItem('miuceo_session_token');
+  return t ? { 'Authorization': 'Bearer ' + t } : {};
+}
 (async function(){
   try{
-    const res = await fetch(`${WORKER_URL}/api/session`, { credentials: 'include' });
+    const res = await fetch(`${WORKER_URL}/api/session`, { credentials: 'include', headers: authHeaders() });
     if(!res.ok){ window.location.replace('login.html'); return; }
     document.documentElement.classList.add('authed');
   }catch(e){
@@ -331,7 +338,8 @@ function renderPreview(){
 
 document.getElementById('addTextBtn').addEventListener('click', addTextBlock);
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  try{ await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include' }); }catch(e){}
+  try{ await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include', headers: authHeaders() }); }catch(e){}
+  localStorage.removeItem('miuceo_session_token');
   window.location.href = 'index.html';
 });
 document.getElementById('addMediaBtn').addEventListener('click', addMediaBlock);
@@ -351,7 +359,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 async function ghGetFile(path){
   const res = await fetch(`${WORKER_URL}/api/github/get`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ path }),
   });
   const data = await res.json();
@@ -361,7 +369,7 @@ async function ghGetFile(path){
 async function ghPutFileSafe(path, contentStr, message, sha){
   const res = await fetch(`${WORKER_URL}/api/github/put`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ path, content: contentStr, message, sha: sha || null }),
   });
   const data = await res.json();
@@ -371,7 +379,7 @@ async function ghPutFileSafe(path, contentStr, message, sha){
 async function tgSendPost(title, excerpt, coverImage, postUrl){
   const res = await fetch(`${WORKER_URL}/api/telegram/send`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ title, excerpt, coverImage, postUrl }),
   });
   const data = await res.json();
@@ -381,7 +389,7 @@ async function tgSendPost(title, excerpt, coverImage, postUrl){
 async function tgEditPost(messageId, title, excerpt, coverImage, postUrl, hadMediaOriginally){
   const res = await fetch(`${WORKER_URL}/api/telegram/edit`, {
     method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ messageId, title, excerpt, postUrl, hadMedia: hadMediaOriginally }),
   });
   const data = await res.json();

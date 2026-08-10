@@ -60,6 +60,13 @@
 const WORKER_URL = 'https://miuceo-worker.ibrokhimovmiu.workers.dev';
 const TELEGRAM_BOT_USERNAME = 'muhammadjon_me_bot';
 
+/* Telegram's embedded webview blocks the cross-site session cookie, so keep
+   the session id here too and send it as a Bearer token from admin.html /
+   post-builder.html. Harmless in a normal browser, where the cookie works. */
+function saveSessionToken(data){
+  if(data && data.sessionId) localStorage.setItem('miuceo_session_token', data.sessionId);
+}
+
 function showStatus(msg, isError){
   const el = document.getElementById('statusMsg');
   el.textContent = msg;
@@ -83,6 +90,7 @@ window.onTelegramAuth = async function(user){
     });
     const data = await res.json();
     if(!data.ok){ showStatus(data.error || 'Kirish rad etildi.', true); return; }
+    saveSessionToken(data);
     goToAdmin();
   }catch(err){
     showStatus('Tarmoq xatosi: ' + err.message, true);
@@ -112,6 +120,7 @@ async function tryMiniAppAuth(){
     });
     const data = await res.json();
     if(!data.ok){ showStatus(data.error || 'Kirish rad etildi.', true); return true; }
+    saveSessionToken(data);
     goToAdmin();
   }catch(err){
     showStatus('Tarmoq xatosi: ' + err.message, true);
