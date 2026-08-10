@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { DEFAULT_LANG, t } from '../lib/i18n';
+
+// GitHub Pages serves this for any unmatched path regardless of language
+// prefix, so it stays in the default language (matches v1's single 404.html).
+const strings = t(DEFAULT_LANG);
+---
+
+<BaseLayout
+  lang={DEFAULT_LANG}
+  title={`${strings.notFound.title} — miuceo`}
+  description={strings.notFound.desc}
+  canonicalPath="/404/"
+  hreflangPaths={{}}
+  noindex={true}
+>
+  <div class="card">
+    <div class="code">404</div>
+    <h1>{strings.notFound.title}</h1>
+    <p>{strings.notFound.desc}</p>
+    <a href="/" class="btn">{strings.notFound.backHome}</a>
+  </div>
+</BaseLayout>
+
+<style>
+  :global(body){ min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card{ text-align:center; padding:40px; max-width:440px; }
+  .code{ font-size:14px; color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); letter-spacing:0.08em; margin-bottom:14px; }
+  h1{ font-size:30px; font-weight:700; margin:0 0 14px; }
+  p{ font-size:15px; color:var(--ink-soft); line-height:1.6; margin:0 0 32px; }
+</style>

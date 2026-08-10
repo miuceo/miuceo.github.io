@@ -10,6 +10,9 @@ export function isAllowedPath(path: string): boolean {
   if (path === 'posts.json' || path === 'rss.xml') return true;
   if (/^posts\/[a-z0-9-]+\.html$/.test(path)) return true;
   if (/^posts-data\/[a-z0-9-]+\.json$/.test(path)) return true;
+  // v2 Astro content collection — post-builder.html dual-writes here so the
+  // Astro build (ARCHITECTURE.md §9 Phase 3) stays in sync with v1 publishes.
+  if (/^src\/content\/posts\/[a-z0-9-]+\/uz\.md$/.test(path)) return true;
   return false;
 }
 

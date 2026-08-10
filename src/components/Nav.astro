@@ -1,0 +1,30 @@
+---
+import type { Lang } from '../lib/i18n';
+import { LANGS, t } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  active: 'posts' | 'projects' | 'contact' | 'none';
+  /** slug of the equivalent page in each language, e.g. { uz: '/uz/', en: '/en/', ru: '/ru/' } */
+  langPaths: Record<Lang, string>;
+}
+
+const { lang, active, langPaths } = Astro.props;
+const strings = t(lang);
+---
+
+<nav class="navbar">
+  <a href={`/${lang}/`} class="brand">{strings.nav.brand}</a>
+  <div class="nav-links">
+    <a href={`/${lang}/#latest-posts`} class={active === 'posts' ? 'active' : ''}>{strings.nav.posts}</a>
+    <a href={`/${lang}/projects/`} class={active === 'projects' ? 'active' : ''}>{strings.nav.projects}</a>
+    <a href={`/${lang}/contact/`} class={active === 'contact' ? 'active' : ''}>{strings.nav.contact}</a>
+    <div class="lang-switch">
+      {LANGS.map((l) => (
+        <a href={langPaths[l]} class={l === lang ? 'active' : ''}>{l.toUpperCase()}</a>
+      ))}
+    </div>
+    <button class="theme-toggle" id="themeToggle">☀️</button>
+    <a href="/login.html" class="btn-admin">{strings.nav.admin}</a>
+  </div>
+</nav>

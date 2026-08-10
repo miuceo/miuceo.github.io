@@ -1,0 +1,36 @@
+---
+import type { Lang } from '../lib/i18n';
+import { t } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  slug: string;
+  title: string;
+  excerpt?: string;
+  createdAt: Date;
+}
+
+const { lang, slug, title, excerpt, createdAt } = Astro.props;
+const strings = t(lang);
+const localeMap: Record<Lang, string> = { uz: 'uz-UZ', en: 'en-US', ru: 'ru-RU' };
+const formattedDate = createdAt.toLocaleDateString(localeMap[lang], { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<div class="post-card">
+  <h3>{title}</h3>
+  <p>{excerpt}</p>
+  <div class="post-meta">
+    <span>{formattedDate}</span>
+  </div>
+  <a href={`/${lang}/posts/${slug}/`} class="post-link">{strings.home.readPost}</a>
+</div>
+
+<style>
+  .post-card{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:28px; display:flex; flex-direction:column; min-height:260px; transition:box-shadow .2s, border-color .2s; }
+  .post-card:hover{ border-color:var(--neon-cyan); box-shadow:var(--glow-md) rgba(56,232,255,0.2); }
+  .post-card h3{ font-weight:700; font-size:19px; margin:0 0 12px; }
+  .post-card p{ font-size:14px; color:var(--ink-soft); line-height:1.7; margin:0; flex:1; }
+  .post-meta{ display:flex; justify-content:space-between; font-size:12px; color:var(--ink-soft); border-top:1px solid var(--line-soft); padding-top:14px; margin-top:24px; }
+  .post-link{ display:inline-flex; align-items:center; gap:6px; color:var(--neon-green); font-size:13px; font-weight:600; margin-top:16px; width:fit-content; }
+  .post-link:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
+</style>

@@ -1,0 +1,121 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import CodeWindowHero from '../../components/CodeWindowHero.astro';
+import PostCard from '../../components/PostCard.astro';
+import { LANGS, t, type Lang } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const strings = t(lang);
+
+const allPosts = await getCollection('posts');
+const postsForLang = allPosts
+  .filter((entry) => entry.slug.endsWith(`/${lang}`))
+  .map((entry) => ({ slug: entry.slug.split('/')[0], data: entry.data }))
+  .sort((a, b) => b.data.createdAt.valueOf() - a.data.createdAt.valueOf());
+
+const [latest, ...rest] = postsForLang;
+
+const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/`])) as Record<Lang, string>;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Muhammadjon Ibrohimov',
+  alternateName: 'miuceo',
+  url: 'https://muhammadjon.me/',
+  sameAs: ['https://t.me/muhammadibrohimov_ceo', 'https://github.com/miuceo'],
+  jobTitle: 'AI/ML Engineer',
+};
+---
+
+<BaseLayout
+  lang={lang}
+  title={strings.meta.siteTitle}
+  description={strings.meta.siteDescription}
+  canonicalPath={`/${lang}/`}
+  hreflangPaths={langPaths}
+  jsonLd={jsonLd}
+>
+  <Nav lang={lang} active="posts" langPaths={langPaths} />
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="prompt-line">{strings.hero.prompt}<span class="cursor"></span></div>
+      <h1>{strings.hero.titlePre} <span class="accent">{strings.hero.titleAccent1}</span> {strings.hero.titleMid} <span class="accent">{strings.hero.titleAccent2}</span></h1>
+      <p class="hero-desc">{strings.hero.desc}</p>
+    </div>
+    <CodeWindowHero />
+  </section>
+
+  <div class="section-label" id="latest-posts">{strings.home.latestPost}</div>
+  {latest ? (
+    <a href={`/${lang}/posts/${latest.slug}/`} class="featured">
+      <div class="featured-text">
+        <h2>{latest.data.title}</h2>
+        <p>{latest.data.excerpt}</p>
+        <span class="post-link">{strings.home.continueReading}</span>
+      </div>
+      {latest.data.coverImage
+        ? <div class="featured-img"><img src={latest.data.coverImage} alt={latest.data.title}></div>
+        : <div class="featured-img"></div>}
+    </a>
+  ) : (
+    <div class="empty-state">{strings.home.noPosts}</div>
+  )}
+
+  <div class="section-label">{strings.home.latestPosts}</div>
+  <div class="posts-grid">
+    {rest.length === 0
+      ? <div class="empty-state">{strings.home.noOtherPosts}</div>
+      : rest.map((p) => (
+          <PostCard lang={lang} slug={p.slug} title={p.data.title} excerpt={p.data.excerpt} createdAt={p.data.createdAt} />
+        ))}
+  </div>
+
+  <Footer lang={lang} />
+</BaseLayout>
+
+<style>
+  .hero{ position:relative; overflow:hidden; padding:110px 0 90px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:1.1fr 1fr; gap:48px; align-items:center; }
+  .hero-inner{ position:relative; z-index:1; }
+  .prompt-line{ font-size:14px; color:var(--neon-green); margin-bottom:18px; }
+  .prompt-line::before{ content:'$ '; opacity:0.7; }
+  .cursor{ display:inline-block; width:9px; height:1.1em; background:var(--neon-green); margin-left:4px; vertical-align:text-bottom; animation:blink 1.1s step-end infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+  .hero h1{ font-weight:800; font-size:44px; line-height:1.15; letter-spacing:-0.01em; margin:0 0 22px; }
+  .hero h1 .accent{ color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); }
+  .hero-desc{ font-size:16px; line-height:1.7; color:var(--ink-soft); }
+  @media (max-width:960px){ .hero{ grid-template-columns:1fr; } }
+  @media (max-width:860px){ .hero{ padding:60px 0; } .hero h1{ font-size:30px; } }
+
+  .featured{ display:block; text-decoration:none; background:var(--bg-2); border:1px solid var(--line); border-radius:8px; overflow:hidden; display:grid; grid-template-columns:1fr 1fr; min-height:340px; transition:box-shadow .2s, border-color .2s; }
+  .featured:hover{ border-color:var(--neon-green); box-shadow:var(--glow-md) rgba(61,255,162,0.25); }
+  .featured-text{ padding:56px; display:flex; flex-direction:column; justify-content:center; }
+  .featured-text h2{ font-size:32px; font-weight:700; margin:0 0 16px; line-height:1.25; }
+  .featured-text p{ font-size:15px; color:var(--ink-soft); margin:0 0 28px; line-height:1.7; }
+  .featured-img{ background:var(--bg-3); }
+  .featured-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .post-link{ display:inline-flex; align-items:center; gap:6px; color:var(--neon-green); font-size:13px; font-weight:600; margin-top:16px; width:fit-content; }
+  .post-link:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
+  @media (max-width:860px){ .featured{ grid-template-columns:1fr; } .featured-img{ min-height:220px; order:-1; } .featured-text{ padding:36px; } }
+
+  .posts-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; margin-bottom:80px; }
+  @media (max-width:900px){ .posts-grid{ grid-template-columns:1fr; } }
+
+  .empty-state{ grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--ink-soft); font-style:italic; font-size:15px; }
+
+  @media (max-width:640px){
+    .hero{ padding:40px 0; }
+    .hero h1{ font-size:26px; }
+    .hero-desc{ font-size:14px; }
+    .featured-text{ padding:24px; }
+    .featured-text h2{ font-size:24px; }
+  }
+</style>

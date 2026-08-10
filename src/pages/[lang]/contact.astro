@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import { LANGS, t, type Lang } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const strings = t(lang);
+const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/contact/`])) as Record<Lang, string>;
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${strings.contact.title} — miuceo`}
+  description={strings.contact.desc}
+  canonicalPath={`/${lang}/contact/`}
+  hreflangPaths={langPaths}
+>
+  <Nav lang={lang} active="contact" langPaths={langPaths} />
+
+  <section class="page-header">
+    <h1>{strings.contact.title}</h1>
+    <p>{strings.contact.desc}</p>
+  </section>
+
+  <div class="contact-grid">
+    <div class="contact-card">
+      <span class="label">Telegram</span>
+      <h2>@muhammadibrohimov_ceo</h2>
+      <p>{strings.contact.telegramDesc}</p>
+      <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="contact-link">{strings.contact.telegramLink}</a>
+    </div>
+
+    <div class="contact-card">
+      <span class="label">GitHub</span>
+      <h2>@miuceo</h2>
+      <p>{strings.contact.githubDesc}</p>
+      <a href="https://github.com/miuceo" target="_blank" rel="noopener" class="contact-link">{strings.contact.githubLink}</a>
+    </div>
+
+    <div class="contact-card">
+      <span class="label">Email</span>
+      <h2>ibrokhimovmiu@gmail.com</h2>
+      <p>{strings.contact.emailDesc}</p>
+      <a href="mailto:ibrokhimovmiu@gmail.com" class="contact-link">{strings.contact.emailLink}</a>
+    </div>
+  </div>
+
+  <Footer lang={lang} />
+</BaseLayout>
+
+<style>
+  .contact-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:60px 0 100px; }
+  @media (max-width:860px){ .contact-grid{ grid-template-columns:1fr; } }
+  .contact-card{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:28px; display:flex; flex-direction:column; gap:14px; transition:box-shadow .2s, border-color .2s; }
+  .contact-card:hover{ border-color:var(--neon-green); box-shadow:var(--glow-md) rgba(61,255,162,0.2); }
+  .contact-card .label{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--neon-cyan); }
+  .contact-card h2{ font-weight:700; font-size:19px; margin:0; }
+  .contact-card p{ font-size:14px; color:var(--ink-soft); line-height:1.7; margin:0; }
+  .contact-link{ display:inline-flex; align-items:center; gap:8px; color:var(--neon-green); font-size:13px; font-weight:600; width:fit-content; margin-top:6px; }
+  .contact-link:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
+</style>

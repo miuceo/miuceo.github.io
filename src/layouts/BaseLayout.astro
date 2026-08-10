@@ -1,0 +1,141 @@
+---
+import '../styles/tokens.css';
+import type { Lang } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  canonicalPath: string; // e.g. "/uz/" or "/uz/posts/my-slug/"
+  hreflangPaths: Partial<Record<Lang, string>>; // lang -> full path, for pages that exist in that lang
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>;
+}
+
+const {
+  lang,
+  title,
+  description,
+  canonicalPath,
+  hreflangPaths,
+  ogImage,
+  ogType = 'website',
+  noindex = false,
+  jsonLd,
+} = Astro.props;
+
+const site = Astro.site?.origin ?? 'https://muhammadjon.me';
+const canonicalUrl = new URL(canonicalPath, site).toString();
+const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' };
+---
+
+<!DOCTYPE html>
+<html lang={lang} data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{title}</title>
+<meta name="description" content={description}>
+<link rel="canonical" href={canonicalUrl}>
+{noindex && <meta name="robots" content="noindex">}
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate" type="application/rss+xml" title="miuceo — RSS" href={`/${lang}/rss.xml`}>
+
+{Object.entries(hreflangPaths).map(([hrefLang, path]) => (
+  <link rel="alternate" hreflang={hrefLang} href={new URL(path, site).toString()} />
+))}
+{hreflangPaths.uz && <link rel="alternate" hreflang="x-default" href={new URL(hreflangPaths.uz, site).toString()} />}
+
+<meta property="og:type" content={ogType}>
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:url" content={canonicalUrl}>
+<meta property="og:site_name" content="miuceo">
+<meta property="og:locale" content={localeMap[lang]}>
+{ogImage && <meta property="og:image" content={ogImage}>}
+<meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'}>
+<meta name="twitter:title" content={title}>
+<meta name="twitter:description" content={description}>
+{ogImage && <meta name="twitter:image" content={ogImage}>}
+
+{jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script is:inline>
+  (function(){
+    var saved = localStorage.getItem('miuceo_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+
+<!-- Cloudflare Web Analytics (free, cookie-less). Replace token before Phase 3 goes live —
+     get it from the Cloudflare dashboard under Analytics > Web Analytics > Add a site. -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "REPLACE_WITH_CF_BEACON_TOKEN"}'></script>
+</head>
+<body>
+<div class="wrap">
+  <slot />
+</div>
+<script is:inline>
+  (function(){
+    function applyTheme(theme){
+      document.documentElement.setAttribute('data-theme', theme);
+      var btn = document.getElementById('themeToggle');
+      if(btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+    }
+    function init(){
+      applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+      var btn = document.getElementById('themeToggle');
+      if(btn){
+        btn.addEventListener('click', function(){
+          var current = document.documentElement.getAttribute('data-theme') || 'dark';
+          var next = current === 'light' ? 'dark' : 'light';
+          localStorage.setItem('miuceo_theme', next);
+          applyTheme(next);
+        });
+      }
+    }
+    init();
+  })();
+</script>
+</body>
+</html>
+
+<style is:global>
+  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; position:relative; }
+
+  .navbar{ display:flex; justify-content:space-between; align-items:center; padding:22px 0; border-bottom:1px solid var(--line); position:relative; z-index:2; }
+  .brand{ font-weight:800; font-size:20px; letter-spacing:-0.01em; color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); }
+  .nav-links{ display:flex; align-items:center; gap:32px; }
+  .nav-links a{ font-size:14px; font-weight:500; color:var(--ink-soft); transition:color .15s; }
+  .nav-links a:hover{ color:var(--neon-cyan); }
+  .nav-links a.active{ color:var(--neon-green); }
+  .lang-switch{ display:flex; gap:6px; }
+  .lang-switch a{ font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--line-soft); }
+  .lang-switch a.active{ color:var(--neon-green); border-color:var(--neon-green); }
+  .btn-admin{ border:1px solid var(--neon-green); color:var(--neon-green) !important; padding:9px 18px; border-radius:4px; font-size:13px; font-weight:600; transition:box-shadow .2s, background .2s, color .2s; }
+  .btn-admin:hover{ background:var(--neon-green); color:var(--bg) !important; box-shadow:var(--glow-md) var(--neon-green); }
+
+  .page-header{ padding:80px 0 50px; border-bottom:1px solid var(--line); }
+  .page-header h1{ font-weight:800; font-size:40px; letter-spacing:-0.01em; margin:0 0 16px; }
+  .page-header p{ font-size:16px; color:var(--ink-soft); max-width:600px; margin:0; line-height:1.7; }
+
+  .section-label{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--neon-cyan); margin:64px 0 20px; }
+  .section-label::before{ content:'// '; opacity:0.6; }
+
+  footer{ border-top:1px solid var(--line); padding:32px 0; font-size:13px; color:var(--ink-soft); display:flex; justify-content:space-between; }
+
+  @media (max-width:640px){
+    .wrap{ padding:0 18px; }
+    .navbar{ flex-wrap:wrap; gap:12px; padding:16px 0; }
+    .nav-links{ gap:14px; flex-wrap:wrap; width:100%; }
+    .page-header{ padding:40px 0 30px; }
+    .page-header h1{ font-size:28px; }
+    .section-label{ margin:40px 0 16px; }
+    footer{ flex-direction:column; gap:8px; text-align:center; padding:24px 0; }
+  }
+</style>

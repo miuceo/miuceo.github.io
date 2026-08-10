@@ -1,0 +1,172 @@
+---
+// Ports the typewriter code-window from v1's index.html largely as-is.
+---
+
+<div class="code-window">
+  <div class="code-titlebar">
+    <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+    <div class="code-tabs" id="codeTabs">
+      <button class="code-tab active" data-lang="javascript">muhammadjon.js</button>
+      <button class="code-tab" data-lang="python">muhammadjon.py</button>
+      <button class="code-tab" data-lang="go">muhammadjon.go</button>
+      <button class="code-tab" data-lang="java">Muhammadjon.java</button>
+      <button class="code-tab" data-lang="rust">muhammadjon.rs</button>
+    </div>
+  </div>
+  <pre class="code-body"><code id="codeBody"></code></pre>
+</div>
+
+<style>
+  .code-window{ position:relative; z-index:1; background:var(--bg-2); border:1px solid var(--line); border-radius:8px; overflow:hidden; box-shadow:var(--glow-md) rgba(61,255,162,0.06); }
+  .code-titlebar{ display:flex; align-items:center; gap:7px; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--bg-3); }
+  .code-dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .code-dot.red{ background:#FF5C5C; }
+  .code-dot.yellow{ background:#FFD166; }
+  .code-dot.green{ background:var(--neon-green); }
+  .code-tabs{ display:flex; gap:2px; overflow-x:auto; margin-left:6px; scrollbar-width:none; }
+  .code-tabs::-webkit-scrollbar{ display:none; }
+  .code-tab{ background:none; border:none; border-bottom:2px solid transparent; padding:6px 10px; font-family:var(--mono); font-size:11px; color:var(--ink-soft); cursor:pointer; white-space:nowrap; }
+  .code-tab:hover{ color:var(--ink); }
+  .code-tab.active{ color:var(--neon-green); border-bottom-color:var(--neon-green); }
+  .code-body{ margin:0; padding:22px 24px; font-size:13px; line-height:1.85; overflow-x:auto; min-height:280px; }
+  .code-body :global(.kw){ color:var(--neon-cyan); }
+  .code-body :global(.str){ color:var(--neon-green); }
+  .code-body :global(.cmt){ color:var(--ink-soft); font-style:italic; }
+  .type-cursor{ display:inline-block; width:7px; height:1em; background:var(--neon-green); vertical-align:text-bottom; animation:blink 1s step-end infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+  @media (max-width:640px){ .code-body{ font-size:12px; padding:18px; } }
+</style>
+
+<script is:inline>
+(function(){
+  const CODE_SNIPPETS = {
+    javascript: [
+      ['cmt', '// $ whoami\n'],
+      ['kw', 'const'], ['plain', ' muhammadjon = {\n  role: '],
+      ['str', "'AI/ML Engineer'"], ['plain', ',\n  based_in: '],
+      ['str', "'Uzbekistan'"], ['plain', ',\n  stack: ['],
+      ['str', "'Python'"], ['plain', ', '], ['str', "'PyTorch'"], ['plain', ', '],
+      ['str', "'FastAPI'"], ['plain', ', '], ['str', "'LLMs'"], ['plain', '],\n  focus: '],
+      ['str', "'agentic AI & backend systems'"], ['plain', ',\n  currently: '],
+      ['str', "'building this site with an AI agent'"], ['plain', ',\n};\n\n'],
+      ['kw', 'export default'], ['plain', ' muhammadjon;'],
+    ],
+    python: [
+      ['cmt', '# $ whoami\n'],
+      ['kw', 'class'], ['plain', ' Muhammadjon:\n    role = '],
+      ['str', '"AI/ML Engineer"'], ['plain', '\n    based_in = '],
+      ['str', '"Uzbekistan"'], ['plain', '\n    stack = ['],
+      ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+      ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', ']\n    focus = '],
+      ['str', '"agentic AI & backend systems"'], ['plain', '\n    currently = '],
+      ['str', '"building this site with an AI agent"'],
+    ],
+    go: [
+      ['cmt', '// $ whoami\n'],
+      ['kw', 'type'], ['plain', ' Muhammadjon '], ['kw', 'struct'],
+      ['plain', ' {\n    Role      string\n    BasedIn   string\n    Stack     []string\n    Focus     string\n    Currently string\n}\n\n'],
+      ['kw', 'var'], ['plain', ' Me = Muhammadjon{\n    Role:      '],
+      ['str', '"AI/ML Engineer"'], ['plain', ',\n    BasedIn:   '],
+      ['str', '"Uzbekistan"'], ['plain', ',\n    Stack:     []string{'],
+      ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+      ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', '},\n    Focus:     '],
+      ['str', '"agentic AI & backend systems"'], ['plain', ',\n    Currently: '],
+      ['str', '"building this site with an AI agent"'], ['plain', ',\n}'],
+    ],
+    java: [
+      ['cmt', '// $ whoami\n'],
+      ['kw', 'public class'], ['plain', ' Muhammadjon {\n    String role = '],
+      ['str', '"AI/ML Engineer"'], ['plain', ';\n    String basedIn = '],
+      ['str', '"Uzbekistan"'], ['plain', ';\n    String[] stack = {'],
+      ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+      ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', '};\n    String focus = '],
+      ['str', '"agentic AI & backend systems"'], ['plain', ';\n    String currently =\n        '],
+      ['str', '"building this site with an AI agent"'], ['plain', ';\n}'],
+    ],
+    rust: [
+      ['cmt', '// $ whoami\n'],
+      ['kw', 'struct'], ['plain', " Muhammadjon<'a> {\n    role: &'a str,\n    based_in: &'a str,\n    stack: [&'a str; 4],\n    focus: &'a str,\n    currently: &'a str,\n}\n\n"],
+      ['kw', 'const'], ['plain', ' ME: Muhammadjon = Muhammadjon {\n    role: '],
+      ['str', '"AI/ML Engineer"'], ['plain', ',\n    based_in: '],
+      ['str', '"Uzbekistan"'], ['plain', ',\n    stack: ['],
+      ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+      ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', '],\n    focus: '],
+      ['str', '"agentic AI & backend systems"'], ['plain', ',\n    currently: '],
+      ['str', '"building this site with an AI agent"'], ['plain', ',\n};'],
+    ],
+  };
+
+  function escapeCode(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function flattenTokens(tokens){
+    const chars = [];
+    tokens.forEach(([cls, text]) => { for(const ch of text) chars.push({ ch, cls }); });
+    return chars;
+  }
+  function renderChars(chars, count, withCursor){
+    let html = '';
+    let i = 0;
+    while(i < count){
+      const cls = chars[i].cls;
+      let chunk = '';
+      while(i < count && chars[i].cls === cls){ chunk += chars[i].ch; i++; }
+      const esc = escapeCode(chunk);
+      html += cls === 'plain' ? esc : `<span class="${cls}">${esc}</span>`;
+    }
+    if(withCursor) html += '<span class="type-cursor"></span>';
+    return html;
+  }
+
+  let currentLang = 'javascript';
+  let typingTimer = null;
+  let autoAdvanceTimer = null;
+  const LANGS = Object.keys(CODE_SNIPPETS);
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function typeLanguage(lang){
+    clearTimeout(typingTimer);
+    const codeBody = document.getElementById('codeBody');
+    if(!codeBody) return;
+    const chars = flattenTokens(CODE_SNIPPETS[lang]);
+
+    document.querySelectorAll('.code-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.lang === lang);
+    });
+
+    if(prefersReducedMotion){
+      codeBody.innerHTML = renderChars(chars, chars.length, false);
+      return;
+    }
+
+    let i = 0;
+    const SPEED_MS = 16;
+    (function tick(){
+      i = Math.min(i + 1, chars.length);
+      codeBody.innerHTML = renderChars(chars, i, i < chars.length);
+      if(i < chars.length) typingTimer = setTimeout(tick, SPEED_MS);
+    })();
+  }
+
+  function scheduleAutoAdvance(){
+    clearTimeout(autoAdvanceTimer);
+    if(prefersReducedMotion) return;
+    autoAdvanceTimer = setTimeout(() => {
+      currentLang = LANGS[(LANGS.indexOf(currentLang) + 1) % LANGS.length];
+      typeLanguage(currentLang);
+      scheduleAutoAdvance();
+    }, 8000);
+  }
+
+  document.querySelectorAll('.code-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentLang = btn.dataset.lang;
+      typeLanguage(currentLang);
+      scheduleAutoAdvance();
+    });
+  });
+
+  typeLanguage(currentLang);
+  scheduleAutoAdvance();
+})();
+</script>

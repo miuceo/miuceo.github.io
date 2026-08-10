@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirish — miuceo</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body{ min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .brand-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+
+  .card{
+    background:var(--bg-2); border:1px solid var(--line); border-radius:8px;
+    padding:48px 40px; text-align:center; width:min(400px, 90vw);
+  }
+  .brand{ font-weight:800; font-size:18px; color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); }
+  .card h1{ font-size:22px; font-weight:700; margin:0 0 10px; }
+  .card p{ font-size:14px; color:var(--ink-soft); margin:0 0 32px; line-height:1.6; }
+
+  #telegramLoginBox{ display:flex; justify-content:center; min-height:40px; }
+
+  .status-msg{ font-size:13px; margin-top:24px; padding:12px; border-radius:6px; display:none; border:1px solid; }
+  .status-msg.error{ display:block; background:rgba(255,92,122,0.1); color:var(--danger); border-color:var(--danger); }
+  .status-msg.ok{ display:block; background:rgba(61,255,162,0.1); color:var(--neon-green); border-color:var(--neon-green); }
+
+  .back{ margin-top:24px; }
+  .back a{ font-size:12px; color:var(--ink-soft); }
+  .back a:hover{ color:var(--neon-cyan); }
+
+  @media (max-width:480px){
+    .card{ padding:36px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand-row">
+    <div class="brand">MIUCEO\</div>
+    <button class="theme-toggle" id="themeToggle">☀️</button>
+  </div>
+  <h1>Admin panel</h1>
+  <p id="cardHint">Faqat sayt egasi kira oladi.<br>Telegram orqali tasdiqlang.</p>
+
+
+  <div id="telegramLoginBox"></div>
+  <div id="statusMsg" class="status-msg"></div>
+
+  <div class="back"><a href="index.html">← Bosh sahifaga qaytish</a></div>
+</div>
+
+<script src="assets/theme.js"></script>
+<script>
+/* Worker haqiqiy tekshiruvni bajaradi — bot token hech qachon brauzerga tushmaydi. */
+const WORKER_URL = 'https://miuceo-worker.ibrokhimovmiu.workers.dev';
+const TELEGRAM_BOT_USERNAME = 'muhammadjon_me_bot';
+
+function showStatus(msg, isError){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg ' + (isError ? 'error' : 'ok');
+}
+
+function goToAdmin(){
+  showStatus('Xush kelibsiz! Admin panelga o\'tilmoqda...', false);
+  setTimeout(() => { window.location.href = 'admin.html'; }, 500);
+}
+
+/* ---------- TELEGRAM LOGIN WIDGET ---------- */
+window.onTelegramAuth = async function(user){
+  showStatus('Tekshirilmoqda...', false);
+  try{
+    const res = await fetch(`${WORKER_URL}/auth/telegram-widget`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user),
+    });
+    const data = await res.json();
+    if(!data.ok){ showStatus(data.error || 'Kirish rad etildi.', true); return; }
+    goToAdmin();
+  }catch(err){
+    showStatus('Tarmoq xatosi: ' + err.message, true);
+  }
+};
+
+/* ---------- TELEGRAM MINI APP (WebApp) ---------- */
+async function tryMiniAppAuth(){
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if(!tg || !tg.initData){
+    return false; // Mini App ichida emasmiz, oddiy vidjetga o'tamiz
+  }
+
+  tg.ready();
+  if(tg.expand) tg.expand();
+
+  document.getElementById('cardHint').textContent = 'Telegram orqali avtomatik tasdiqlanmoqda...';
+  document.getElementById('telegramLoginBox').style.display = 'none';
+  showStatus('Tekshirilmoqda...', false);
+
+  try{
+    const res = await fetch(`${WORKER_URL}/auth/telegram-miniapp`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tg.initData }),
+    });
+    const data = await res.json();
+    if(!data.ok){ showStatus(data.error || 'Kirish rad etildi.', true); return true; }
+    goToAdmin();
+  }catch(err){
+    showStatus('Tarmoq xatosi: ' + err.message, true);
+  }
+  return true;
+}
+
+/* ---------- RENDER TELEGRAM WIDGET (oddiy brauzer uchun) ---------- */
+function renderTelegramWidget(){
+  const box = document.getElementById('telegramLoginBox');
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = 'https://telegram.org/js/telegram-widget.js?22';
+  script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME);
+  script.setAttribute('data-size', 'large');
+  script.setAttribute('data-radius', '8');
+  script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  script.setAttribute('data-request-access', 'write');
+  box.appendChild(script);
+}
+
+/* ---------- INIT: avval Mini App, bo'lmasa oddiy vidjet ---------- */
+(async function init(){
+  const handledByMiniApp = await tryMiniAppAuth();
+  if(!handledByMiniApp){
+    renderTelegramWidget();
+  }
+})();
+</script>
+</body>
+</html>

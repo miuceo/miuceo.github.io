@@ -1,0 +1,52 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { LANGS, t, type Lang } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const strings = t(lang);
+const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/projects/`])) as Record<Lang, string>;
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const rendered = await Promise.all(projects.map((p) => render(p)));
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${strings.projects.title} — miuceo`}
+  description={strings.projects.desc}
+  canonicalPath={`/${lang}/projects/`}
+  hreflangPaths={langPaths}
+>
+  <Nav lang={lang} active="projects" langPaths={langPaths} />
+
+  <section class="page-header">
+    <h1>{strings.projects.title}</h1>
+    <p>{strings.projects.desc}</p>
+  </section>
+
+  <div class="projects-grid">
+    {projects.map((p, i) => {
+      const { Content } = rendered[i];
+      return (
+        <ProjectCard lang={lang} title={p.data.title} tags={p.data.tags} url={p.data.url} external={p.data.external}>
+          <Content />
+        </ProjectCard>
+      );
+    })}
+  </div>
+
+  <Footer lang={lang} />
+</BaseLayout>
+
+<style>
+  .projects-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:20px; padding:60px 0 100px; }
+  @media (max-width:860px){ .projects-grid{ grid-template-columns:1fr; } }
+</style>

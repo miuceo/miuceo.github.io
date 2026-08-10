@@ -1,0 +1,36 @@
+---
+// Root redirect per ARCHITECTURE.md §6: pick a language by Accept-Language,
+// with a manual override (stored in localStorage) that sticks. Fully static
+// (GitHub Pages has no server-side redirect capability), so this happens
+// client-side before paint to avoid a visible flash of the wrong language.
+---
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>miuceo — Muhammadjon Ibrohimov</title>
+  <script is:inline>
+    (function(){
+      var SUPPORTED = ['uz', 'en', 'ru'];
+      var override = localStorage.getItem('miuceo_lang');
+      var target = override;
+      if(!target || SUPPORTED.indexOf(target) === -1){
+        var browserLangs = navigator.languages || [navigator.language || 'uz'];
+        target = 'uz';
+        for(var i = 0; i < browserLangs.length; i++){
+          var code = browserLangs[i].slice(0, 2).toLowerCase();
+          if(SUPPORTED.indexOf(code) !== -1){ target = code; break; }
+        }
+      }
+      window.location.replace('/' + target + '/');
+    })();
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0; url=/uz/">
+  </noscript>
+</head>
+<body>
+  <p><a href="/uz/">uz</a> · <a href="/en/">en</a> · <a href="/ru/">ru</a></p>
+</body>
+</html>

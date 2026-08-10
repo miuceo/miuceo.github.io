@@ -1,0 +1,40 @@
+---
+import type { Lang } from '../lib/i18n';
+import { t } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  tags: string[];
+  url: string;
+  external: boolean;
+}
+
+const { lang, title, tags, url, external } = Astro.props;
+const strings = t(lang);
+const linkLabel = external ? strings.projects.viewGithub : strings.projects.openTool;
+---
+
+<div class="project-card">
+  <h2>{title}</h2>
+  <div class="desc"><slot /></div>
+  <div class="tags">
+    {tags.map((tag) => <span class="tag">{tag}</span>)}
+  </div>
+  {external
+    ? <a href={url} target="_blank" rel="noopener" class="project-link">{linkLabel}</a>
+    : <a href={url} class="project-link">{linkLabel}</a>}
+</div>
+
+<style>
+  .project-card{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:32px; display:flex; flex-direction:column; transition:box-shadow .2s, border-color .2s; }
+  .project-card:hover{ border-color:var(--neon-green); box-shadow:var(--glow-md) rgba(61,255,162,0.2); }
+  .project-card h2{ font-weight:700; font-size:21px; margin:0 0 12px; }
+  .desc{ font-size:14px; color:var(--ink-soft); line-height:1.7; flex:1; }
+  .desc :global(p){ margin:0 0 20px; }
+  .desc :global(p:last-child){ margin-bottom:0; }
+  .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .tag{ font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--neon-cyan); background:var(--bg-3); border:1px solid var(--line); padding:5px 10px; border-radius:4px; }
+  .project-link{ display:inline-flex; align-items:center; gap:8px; color:var(--neon-green); font-size:13px; font-weight:600; width:fit-content; }
+  .project-link:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
+</style>

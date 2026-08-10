@@ -213,26 +213,46 @@ Routes: `/uz/...`, `/en/...`, `/ru/...`. Uzbek is the default; `/` redirects by 
 
 ## 7. Design system & the dynamic UI
 
-All four directions were requested (D9). Taken literally they conflict: liquid glass wants cool translucency, brutalism wants raw hard edges, and the existing palette is warm paper. **Resolution: each gets an exclusive zone.** One visual language per surface, never two competing on the same element.
+**This section describes what actually shipped, not the original D9 plan.** The original design (below, for the record) called for four zoned directions — warm paper base, scroll-driven motion, liquid glass sparingly, tactile brutalism on the projects grid. Mid-Phase-3 the author pivoted the whole site to a single unified terminal aesthetic instead, applied directly to v1 HTML pages. That is what is live today, so it is now the source of truth. Astro work should build *this* system, not the zoned one.
+
+### 7.1 What's live
+
+One visual language, everywhere — no zoning:
+
+| Element | Treatment |
+|---|---|
+| Typography | JetBrains Mono (`--mono`) for everything, including headings — no serif/sans split |
+| Palette (dark, default) | Near-black terminal (`--bg:#0B0E0D`), neon green/cyan/pink accents (`--neon-green:#3DFFA2`, `--neon-cyan:#38E8FF`, `--neon-pink:#FF3EC9`) |
+| Palette (light) | Same tokens, inverted to paper-and-ink with the neons darkened for contrast (`[data-theme="light"]` in `assets/theme.css`) |
+| Background texture | Faint 28px grid of hairlines (`--line-soft`) behind every page |
+| Emphasis | Text-shadow glow (`.glow`, `.glow-cyan`) and glowing borders on hover, not depth/blur — no liquid-glass translucency anywhere |
+| Homepage hero | A `.code-window` with a tabbed, typewriter-animated code snippet cycling through JS/Python/Go/Java/Rust, framed as a `whoami` terminal prompt |
+| Cards & grids (e.g. `projects.html`) | Rounded 4–8px corners, 1px `--line` borders, neon-glow on hover — same language as buttons and nav, not a separate brutalist zone |
+| Buttons | `.btn` outline-fills to neon-green with glow on hover; `.btn.ghost` and `.btn.danger` variants |
+
+**Design tokens live in exactly one place** — `assets/theme.css` — replacing v1's seven-file duplication. Theme toggle logic is centralized in `assets/theme.js`, driven by a `data-theme` attribute and persisted to `localStorage`. This consolidation happened directly on v1 HTML, ahead of the Astro migration, and should carry forward unchanged into `src/styles/tokens.css`.
+
+**Not carried over from the original plan:** adaptive homepage ordering by referrer, scroll-driven `animation-timeline` reveals, kinetic variable-font type, and zoned liquid-glass/brutalism. None of these are built. If the author wants them, they should be scoped as new work against the terminal system above, not resurrected from the D9 zoning.
+
+**Motion rules — still non-negotiable if/when motion is added:**
+
+- CSS scroll-driven animations (`animation-timeline`), not JavaScript scroll listeners.
+- `prefers-reduced-motion: reduce` disables all non-essential motion — already respected in `assets/theme.css`.
+- Motion never gates content. Everything readable with JS off.
+
+### 7.2 Original plan (superseded, kept for history)
+
+D9 asked for all four 2026 directions at once. Taken literally they conflict: liquid glass wants cool translucency, brutalism wants raw hard edges, and the original palette was warm paper. The resolution on paper was to zone them — one direction per surface:
 
 | Zone | Direction | Applied to |
 |---|---|---|
 | Base | Warm paper — cream/clay carried over from v1 | Body, typography, reading surfaces |
 | Motion | Scroll-driven reveals + kinetic variable type | Hero, section transitions, post entry |
-| Depth | Liquid glass, **sparingly** | Sticky nav, modals, language switcher only |
+| Depth | Liquid glass, sparingly | Sticky nav, modals, language switcher only |
 | Structure | Tactile brutalism | Projects grid — hard borders, visible grid, high contrast |
 | Behaviour | Adaptive ordering | Homepage section order by referrer |
 
-**Adaptive ordering.** Arriving from LinkedIn surfaces projects first; from the Telegram channel, writing first; unknown referrer gets the balanced default. Implemented as a CSS class applied before first paint — no layout shift, no flash, works with JS disabled.
-
-**Motion rules — non-negotiable:**
-
-- CSS scroll-driven animations (`animation-timeline`), not JavaScript scroll listeners.
-- `prefers-reduced-motion: reduce` disables all non-essential motion. 2026 accessibility baseline, and the right call regardless.
-- Motion never gates content. Everything readable with JS off.
-- Variable font axes drive kinetic type — one font file, no extra weight.
-
-**Design tokens live in exactly one place.** v1 duplicated the same CSS variables across seven files and the theme toggle across six, which is why it became painful to change. One token file. One theme script, inline in `<head>` to kill the dark-mode flash v1 has on every page.
+This was never built — the terminal pivot in §7.1 replaced it before implementation started.
 
 ---
 
@@ -275,14 +295,28 @@ Ordered so the site keeps working throughout. Nothing here breaks publishing bef
 - Bot switched mid-project to `@muhammadjon_me_bot`; the old `@miuceo_pws_bot` message IDs on existing posts can't be edited by the new bot (Telegram restriction) — `post-builder.html` now falls back to sending a fresh message when an edit fails, so this self-heals per post on its next save.
 - The pre-Worker GitHub PAT that lived in `localStorage` has been **revoked** (2026-08-10). Phase 2 is fully closed.
 
-**Phase 3 — Astro rebuild — ⚠️ PARTIAL, AND DIVERGED FROM THE ORIGINAL PLAN**
-- Done: single-source design tokens (`assets/theme.css`, `assets/theme.js`) replacing the old 7-file duplication — this was a Phase 3 goal, delivered early, directly on v1 HTML.
-- **Not done:** the actual Astro migration, component system, trilingual routing, per-language feeds.
-- **Design direction changed.** §7 above still describes the original plan (warm paper base + zoned liquid-glass/brutalism/scroll-motion). What actually shipped is a full pivot: JetBrains Mono everywhere, near-black terminal palette, neon green/cyan glow, applied directly to v1 pages — not the zoned system, not built in Astro. A code-window with a 5-language (JS/Python/Go/Java/Rust) typewriter effect sits in the homepage hero. §7 needs a rewrite to match reality before starting Astro work, or the two will keep contradicting each other.
-- Still open: trilingual (uz/en/ru) routing hasn't started — the site is Uzbek-only today, same as v1.
+**Phase 3 — Astro rebuild — ⚠️ MOSTLY DONE, NOT YET LIVE**
+- Done (2026-08-10): the Astro site is fully built — new `package.json`/`astro.config.mjs` at repo root, `src/` with content collections (`posts`, `projects`), `src/i18n/{uz,en,ru}.json` (hand-translated UI strings), trilingual routing (`/uz/`, `/en/`, `/ru/` for home/posts/projects/contact), per-language `rss.xml`, `@astrojs/sitemap`-generated `sitemap.xml` with `hreflang` alternates, `public/robots.txt`, and a first-ever `.github/workflows/deploy.yml` (build-and-artifact on every push; the `deploy` job only runs on manual `workflow_dispatch`, and even then only takes effect once Pages' source is switched — see below).
+- Design tokens ported to `src/styles/tokens.css`, matching `assets/theme.css` (§7's shipped terminal aesthetic — JetBrains Mono, near-black + neon green/cyan/pink). Theme-toggle flash-prevention script is now inline in `<head>`, per §7's rule, an improvement over v1's external `<script src>`.
+- `login.html`, `admin.html`, `post-builder.html` were copied byte-identical into `public/` (verified via `diff`) so they keep working against the Worker exactly as today once deployed — their publish pipeline was **not** touched.
+- Existing content migrated once: the one live post and all seven `projects.html` cards now exist as Astro content collection entries (`src/content/posts/introducing-claude-sonnet-5/uz.md`, `src/content/projects/*.md`). English/Russian post translations don't exist yet (that's Phase 5's AI agent) — only the `uz` post page builds today, which is correct per §6 ("a language missing a translation is hidden rather than shown broken").
+- Verified: `npm run build` succeeds, all 12 pages generate, sitemap/RSS validated, admin pages confirmed unchanged.
+- **Dual-write shipped (2026-08-10).** `post-builder.html` now writes a mirrored `src/content/posts/<slug>/uz.md` (frontmatter + markdown body) alongside the old `posts/`, `posts-data/`, `posts.json` files on every publish, and `admin.html`'s delete flow removes it too. The Worker's `isAllowedPath()` allowlist (`worker/src/github.ts`) was extended to permit that path. Verified: JS syntax-checked, a synthetic post round-tripped through Astro's real zod content schema and rendered correctly, `public/` bridge copies re-synced and confirmed byte-identical to the live root files.
+  - **Deliberately non-fatal.** Every v2 write/delete is wrapped so a failure there (403 from the Worker, network error, anything) logs a warning and lets the v1 publish/delete finish normally — the v1 path this tool has always used is never allowed to break because of the new v2 mirror.
+  - **⚠️ Requires a Worker redeploy before it actually works.** `worker/src/github.ts` was edited but **not deployed** — that needs `wrangler deploy` (or the project's deploy process) run by the author from `worker/`, with their Cloudflare credentials. Until that happens, every publish will log "v2 content faylini yozib bo'lmadi" (403) and silently skip the mirror — annoying but harmless, thanks to the non-fatal wrapping above.
+- **Not done / explicit follow-ups, not silently rolled into this pass:**
+  1. Deploying the Worker change above (needs the author's `wrangler` access).
+  2. GitHub Pages' "Build and deployment" source has **not** been switched from branch/root to "GitHub Actions" — the live site is still v1, unchanged. This is the actual cutover moment and needs a deliberate decision, not an automatic one.
+  3. The Cloudflare Web Analytics beacon token in `BaseLayout` is a placeholder (`REPLACE_WITH_CF_BEACON_TOKEN`) — needs the real token from the author's Cloudflare dashboard.
+  4. Phases 4 (Mini App island) and 5 (AI agent/voice/distribution) are untouched.
 
-**Phase 4 — Mini App — ❌ NOT STARTED**
-- Rebuild the block editor as an island against the Worker API.
+**Phase 4 — Mini App — ⚠️ BUILT, NOT YET POINTED AT FROM TELEGRAM**
+- Done (2026-08-10): the block editor now also exists as an Astro page at `/post-builder/` (`src/pages/post-builder.astro` + `src/islands/PostBuilder/{editor.ts,styles.css}`), reusing the exact same Worker API, the same lossless blocks data model (read/written via `posts-data/<slug>.json`), and the same v1+v2 dual-write publish logic already shipped in `post-builder.html`. No Worker changes were needed — `/auth/telegram-miniapp`, `/auth/telegram-widget`, `/api/session` were already there and already used by `login.html`.
+- **Key finding:** Telegram Mini App auth already worked in v1 before this phase — `login.html` already detected `Telegram.WebApp.initData` and verified it server-side. Phase 4 was narrower than its name suggests: migrating the already-working, already-tested editor into the v2 codebase, not inventing new auth or publishing behavior.
+- The new page tries Mini App `initData` first, falls back to checking the existing session cookie (so it's testable in a plain browser too), and redirects to `login.html` if neither succeeds. Excluded from the sitemap and marked `noindex`; `robots.txt` updated.
+- `login.html`/`admin.html`/`post-builder.html` are untouched and still the working fallback, per `CLAUDE.md`'s explicit rule.
+- Verified: `npm run build` succeeds, `/post-builder/index.html` generated and confirmed absent from `sitemap-0.xml`, `noindex` meta present, the dynamic `import()` of the editor module resolves to a real built chunk.
+- **Not done / explicit follow-up:** pointing the bot's Mini App URL at `/post-builder/` in BotFather — the author's own action, and the actual "go live" moment for this phase, same category as the Phase 3 Pages cutover.
 
 **Phase 5 — agent, voice & distribution — ❌ NOT STARTED**
 - No AI agent exists yet. Posts publish exactly as typed, no translation, no improvement pass.
@@ -349,12 +383,10 @@ Gemini and Claude are excluded by D13 — Gemini by preference, Claude because i
 
 ---
 
-## 11. Open decisions
+## 11. Open decisions — resolved 2026-08-10
 
-Not blocking Phases 0–2. Decide before Phase 3.
-
-1. **Comments** — none, or Giscus on GitHub Discussions (free)?
-2. **Analytics** — Cloudflare Web Analytics (free, privacy-preserving) or nothing?
-3. **Projects data** — hand-written, or pulled live from the GitHub API?
-4. **Newsletter** — email capture, or is the Telegram channel enough?
-5. **Worker domain** — `*.workers.dev` (free, needs CORS) or `api.muhammadjon.me` (free, but requires DNS on Cloudflare)?
+1. **Comments** — **None.** No comments feature in v2. Static, fast, nothing to moderate. Revisit later if wanted.
+2. **Analytics** — **Cloudflare Web Analytics.** Free, cookie-less, one script tag added to the Astro base layout.
+3. **Projects data** — **Hand-written.** Projects live in a content file (same pattern as posts), not pulled from the GitHub API. Full control over presentation, no API calls or rate limits.
+4. **Newsletter** — **None — Telegram channel is the distribution channel.** No email capture, no email service to keep inside D10's free-tier constraint.
+5. **Worker domain** — **Keep `*.workers.dev`.** Already working since Phase 2, CORS already configured. No DNS migration needed.

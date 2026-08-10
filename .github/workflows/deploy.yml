@@ -1,0 +1,52 @@
+name: Build & deploy Astro site
+
+# On every push to main: builds the Astro site and uploads it as a Pages
+# artifact — a pure build check, inspectable under the Actions tab. It does
+# NOT publish anything by itself.
+#
+# The "deploy" job only runs when this workflow is triggered manually
+# (workflow_dispatch) — a deliberate choice, not an accident. Even then it
+# only takes effect once GitHub Pages' "Build and deployment" source is
+# switched from the current branch/root setting to "GitHub Actions" (see
+# ARCHITECTURE.md §9 Phase 3); until that switch happens, the live site
+# keeps being served from the branch regardless of this workflow.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,130 @@
+---
+// Phase 4 (ARCHITECTURE.md §9): the block editor as an Astro page/island,
+// reusing the same Worker API and dual-write publish logic as v1's
+// post-builder.html (which stays untouched as the fallback until this is
+// proven — see CLAUDE.md's phase-discipline rule).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../islands/PostBuilder/styles.css';
+---
+
+<BaseLayout
+  lang="uz"
+  title="Post Builder — miuceo"
+  description="Post Builder — miuceo admin tool"
+  canonicalPath="/post-builder/"
+  hreflangPaths={{}}
+  noindex={true}
+>
+  <script src="https://telegram.org/js/telegram-web-app.js" is:inline></script>
+
+  <div id="pbRoot" style="visibility:hidden;">
+    <div class="app">
+      <div class="top">
+        <a href="/uz/" class="back-link">← Orqaga</a>
+        <div class="top-actions">
+          <button class="theme-toggle" id="themeToggle">☀️</button>
+          <button class="btn ghost" id="logoutBtn">Chiqish</button>
+          <button class="btn ghost" id="clearBtn">Tozalash</button>
+          <button class="btn primary" id="generateBtn">Generate &amp; Publish</button>
+        </div>
+      </div>
+
+      <div class="edit-bar">
+        <button class="btn ghost" id="loadPostsBtn">Mavjud postlarni yuklash</button>
+        <select id="postSelect"><option value="">— Yangi post yaratish —</option></select>
+      </div>
+
+      <div class="layout">
+        <div>
+          <div class="panel-label">Editor</div>
+          <input type="text" id="titleInput" class="title-field" placeholder="Post sarlavhasi...">
+          <div class="blocks" id="blocksContainer"></div>
+          <div class="add-row">
+            <button class="btn" id="addTextBtn">+ Matn</button>
+            <button class="btn" id="addMediaBtn">+ Rasm / Video</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel-label">Jonli ko'rinish</div>
+          <div class="preview-frame">
+            <div class="preview-nav">← Orqaga</div>
+            <div class="preview-body" id="previewBody">
+              <div class="preview-placeholder">Postni yozishni boshlaganingda shu yerda ko'rasan</div>
+            </div>
+            <div class="preview-share">X · Telegram · LinkedIn — ulashish linklari</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="actions">
+      <div class="status" id="statusText">0 blok</div>
+      <div class="status" id="modeText">Yangi post</div>
+    </footer>
+
+    <div id="copyModal">
+      <div class="box">
+        <div class="panel-label" style="margin:0;">Jarayon</div>
+        <div class="log" id="processLog"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn ghost" id="closeModalBtn">Yopish</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="authGate" style="display:none; min-height:60vh; align-items:center; justify-content:center; text-align:center; padding:40px;">
+    <p style="color:var(--ink-soft); font-size:14px;">Tekshirilmoqda...</p>
+  </div>
+
+  <script>
+    const WORKER_URL = 'https://miuceo-worker.ibrokhimovmiu.workers.dev';
+
+    function reveal() {
+      const root = document.getElementById('pbRoot')!;
+      root.style.visibility = 'visible';
+      import('../islands/PostBuilder/editor').then(({ initPostBuilder }) => initPostBuilder());
+    }
+
+    function denyAndRedirect() {
+      window.location.replace('/login.html');
+    }
+
+    async function tryMiniAppAuth(): Promise<boolean> {
+      const tg = (window as any).Telegram?.WebApp;
+      if (!tg?.initData) return false;
+      tg.ready();
+      tg.expand?.();
+      try {
+        const res = await fetch(`${WORKER_URL}/auth/telegram-miniapp`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tg.initData }),
+        });
+        const data = await res.json();
+        if (data.ok) reveal();
+        else denyAndRedirect();
+      } catch {
+        denyAndRedirect();
+      }
+      return true;
+    }
+
+    async function trySessionAuth() {
+      try {
+        const res = await fetch(`${WORKER_URL}/api/session`, { credentials: 'include' });
+        if (res.ok) reveal();
+        else denyAndRedirect();
+      } catch {
+        denyAndRedirect();
+      }
+    }
+
+    (async () => {
+      const handledByMiniApp = await tryMiniAppAuth();
+      if (!handledByMiniApp) await trySessionAuth();
+    })();
+  </script>
+</BaseLayout>

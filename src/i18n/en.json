@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "siteTitle": "miuceo — Muhammadjon Ibrohimov",
+    "siteDescription": "Muhammadjon Ibrohimov's personal site — posts, projects, and thoughts."
+  },
+  "nav": {
+    "brand": "MIUCEO\\",
+    "posts": "Posts",
+    "projects": "Projects",
+    "contact": "Contact",
+    "admin": "Admin panel"
+  },
+  "hero": {
+    "prompt": "whoami",
+    "titlePre": "Building at the",
+    "titleAccent1": "intersection",
+    "titleMid": "of AI and",
+    "titleAccent2": "engineering",
+    "desc": "I'm Muhammadjon Ibrohimov — learning machine learning, AI engineering, backend development, and DevOps, while watching how technology and economics intersect. This is where I write about what I've learned, what I've built, and what I'm thinking about."
+  },
+  "home": {
+    "latestPost": "Latest post",
+    "latestPosts": "Latest posts",
+    "continueReading": "Continue reading →",
+    "readPost": "Read post →",
+    "noPosts": "No posts yet. Create your first one through the admin panel.",
+    "noPostsShort": "No posts yet",
+    "noOtherPosts": "No other posts yet"
+  },
+  "projects": {
+    "title": "Projects",
+    "desc": "Things I've built and learned — from machine learning to backend systems.",
+    "viewGithub": "View on GitHub →",
+    "openTool": "Open tool →"
+  },
+  "contact": {
+    "title": "Contact",
+    "desc": "For questions, proposals, or collaboration, reach out through any of the channels below.",
+    "telegramDesc": "My writing, thoughts, and updates go out on this channel. Feel free to send questions here too.",
+    "telegramLink": "Go to channel →",
+    "githubDesc": "My projects, code, and this site's source files are hosted here, in the open.",
+    "githubLink": "View profile →",
+    "emailDesc": "For formal or more detailed inquiries, email is best.",
+    "emailLink": "Send an email →"
+  },
+  "footer": {
+    "copyright": "© 2026 Muhammadjon Ibrohimov"
+  },
+  "notFound": {
+    "title": "This page can't be found",
+    "desc": "The page you're looking for was moved, or never existed.",
+    "backHome": "Back to home →"
+  }
+}

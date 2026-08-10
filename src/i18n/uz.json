@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "siteTitle": "miuceo — Muhammadjon Ibrohimov",
+    "siteDescription": "Muhammadjon Ibrohimovning shaxsiy sayti — postlar, loyihalar va o'ylar."
+  },
+  "nav": {
+    "brand": "MIUCEO\\",
+    "posts": "Postlar",
+    "projects": "Loyihalar",
+    "contact": "Bog'lanish",
+    "admin": "Admin panel"
+  },
+  "hero": {
+    "prompt": "whoami",
+    "titlePre": "Building at the",
+    "titleAccent1": "intersection",
+    "titleMid": "of AI and",
+    "titleAccent2": "engineering",
+    "desc": "Men Muhammadjon Ibrohimov — machine learning, AI engineering, backend development va DevOps'ni o'rganyapman, shu bilan birga texnologiya va iqtisodiyot qanday kesishishini kuzataman. Bu yerda o'rganganlarim, qurgan narsalarim va o'ylarim haqida yozaman."
+  },
+  "home": {
+    "latestPost": "Eng so'nggi post",
+    "latestPosts": "Latest posts",
+    "continueReading": "Continue reading →",
+    "readPost": "Read post →",
+    "noPosts": "Hali post yo'q. Admin panel orqali birinchi postingizni yarating.",
+    "noPostsShort": "Hali post yo'q",
+    "noOtherPosts": "Boshqa postlar hali yo'q"
+  },
+  "projects": {
+    "title": "Loyihalar",
+    "desc": "Men qurgan va o'rgangan narsalarim — Machine Learning'dan tortib backend tizimlarigacha.",
+    "viewGithub": "GitHub'da ko'rish →",
+    "openTool": "Vositani ochish →"
+  },
+  "contact": {
+    "title": "Bog'lanish",
+    "desc": "Savol, taklif yoki hamkorlik bo'yicha murojaat qilmoqchi bo'lsang, quyidagi kanallardan birortasi orqali yoz.",
+    "telegramDesc": "Yozganlarim, o'ylarim va yangiliklarim shu kanalda chiqadi. Savollaringizni ham shu yerga yozishingiz mumkin.",
+    "telegramLink": "Kanalga o'tish →",
+    "githubDesc": "Loyihalarim, kod va sahifaning manba fayllari shu yerda ochiq saqlanadi.",
+    "githubLink": "Profilni ko'rish →",
+    "emailDesc": "Rasmiy yoki batafsilroq murojaatlar uchun email orqali yozishingiz mumkin.",
+    "emailLink": "Xat yozish →"
+  },
+  "footer": {
+    "copyright": "© 2026 Muhammadjon Ibrohimov"
+  },
+  "notFound": {
+    "title": "Bu sahifa topilmadi",
+    "desc": "Qidirayotgan sahifangiz ko'chirilgan yoki hech qachon mavjud bo'lmagan.",
+    "backHome": "Bosh sahifaga qaytish →"
+  }
+}
