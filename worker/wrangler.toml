@@ -24,18 +24,23 @@ SESSION_TTL_SECONDS = "2592000"  # 30 days — matches the auth duration v1's re
 # (ARCHITECTURE.md §10 routing table: fast text goes to Groq). Config, never
 # code — the free roster rotates and a hardcoded id is a future outage.
 #
-# Proof that this matters: §10 originally recommended Groq's
-# `meta-llama/llama-4-scout-17b-16e-instruct`, which Groq deprecated on
-# 2026-06-17. The values below are its documented replacements. Re-check
-# against console.groq.com/docs/models and openrouter.ai/models before each
-# deploy; a dead id costs one config edit, not a code change.
+# Proof that this matters, twice over: §10 originally recommended Groq's
+# `meta-llama/llama-4-scout-17b-16e-instruct`, deprecated 2026-06-17; and the
+# first OpenRouter pair tried here (`deepseek/deepseek-r1:free`,
+# `meta-llama/llama-3.3-70b-instruct:free`) had already vanished from the free
+# roster by the time it was written. Every id below was verified live against
+# console.groq.com/docs/models and `GET openrouter.ai/api/v1/models` on
+# 2026-08-10. Re-verify before each deploy — a dead id costs one config edit.
 #
-# `openai/gpt-oss-*` is OpenAI's open-weights model served by Groq — the
-# provider is still Groq, so this is consistent with D13 (which constrains
-# providers, not model lineage, exactly as §10 already allows `google/gemma-*`
-# via OpenRouter).
+# `openai/gpt-oss-*` is OpenAI's open-weights model served by Groq/OpenRouter —
+# the provider is still Groq or OpenRouter, so this is consistent with D13,
+# which constrains providers rather than model lineage (exactly as §10 already
+# allows `google/gemma-*` via OpenRouter).
+#
+# Ordering is deliberate: production-grade first, preview/eval-only last, since
+# preview models can vanish without notice (same caveat as Groq TTS in §5.1).
 GROQ_TEXT_MODELS = "openai/gpt-oss-120b,qwen/qwen3.6-27b"
-OPENROUTER_TEXT_MODELS = "deepseek/deepseek-r1:free,meta-llama/llama-3.3-70b-instruct:free"
+OPENROUTER_TEXT_MODELS = "nvidia/nemotron-3-super-120b-a12b:free,openai/gpt-oss-20b:free"
 
 [[d1_databases]]
 binding = "DB"
