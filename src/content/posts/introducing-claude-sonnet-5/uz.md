@@ -1,19 +1,18 @@
 ---
 title: "Introducing Claude Sonnet 5"
-excerpt: "Claude Sonnet 5 is built to be the most agentic Sonnet model yet. It can make plans, use tools like browsers and terminals, and run autonomously at a level that, just a few months ago, required larger and more expensive models."
+excerpt: "Claude Sonnet 5 hozirgacha yaratilgan eng agentik Sonnet modeli bo‘lish uchun ishlab chiqilgan. U reja tuzishi, brauzerlar va terminallar kabi vositalardan foydalanishi hamda bundan atigi bir necha oy oldin kattaroq va qimmatroq modellarni "
 coverImage: "https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F458ea645ef6b729f6847cba16932716e6b547f2f-2880x1620.png&w=3840&q=75"
 createdAt: "2026-07-07T03:18:34.439Z"
-updatedAt: "2026-08-10T04:32:55.017Z"
-telegramMessageId: 62
+updatedAt: "2026-08-10T17:24:20.966Z"
+telegramMessageId: 64
 telegramHasMedia: true
 ---
-
 ![](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F458ea645ef6b729f6847cba16932716e6b547f2f-2880x1620.png&w=3840&q=75)
 
-Claude Sonnet 5 is built to be the most agentic Sonnet model yet. It can make plans, use tools like browsers and terminals, and run autonomously at a level that, just a few months ago, required larger and more expensive models.
+Claude Sonnet 5 hozirgacha yaratilgan eng agentik Sonnet modeli bo‘lish uchun ishlab chiqilgan. U reja tuzishi, brauzerlar va terminallar kabi vositalardan foydalanishi hamda bundan atigi bir necha oy oldin kattaroq va qimmatroq modellarni talab qilgan darajada mustaqil ishlashi mumkin.
 
-For many developers, the agentic AI era began with Sonnet-class models: Claude Sonnet 3.5, 3.6, and 3.7 were the first models that showed impressive skills in coding and tool use. More recently, though, the clearest gains in agentic capabilities have been in our Opus-class models.
+Ko‘plab dasturchilar uchun agentik sun’iy intellekt davri Sonnet sinfidagi modellar bilan boshlandi: Claude Sonnet 3.5, 3.6 va 3.7 kod yozish va vositalardan foydalanish bo‘yicha juda yuqori qobiliyatlarni namoyish etgan ilk modellar edi. Biroq so‘nggi paytlarda agentik imkoniyatlardagi eng yaqqol yutuqlar Opus sinfidagi modellarda kuzatildi.
 
-Sonnet 5 narrows the gap: its performance is close to that of Opus 4.8, but at lower prices. It's a substantial improvement over its predecessor, Sonnet 4.6, on important aspects of agentic performance like reasoning, tool use, coding, and knowledge work:
+Sonnet 5 bu farqni sezilarli darajada qisqartiradi: uning samaradorligi Opus 4.8 darajasiga yaqin, biroq narxi pastroq. U o‘zidan oldingi Sonnet 4.6 modeliga nisbatan agentik faoliyatning muhim jihatlarida, jumladan, fikrlash, vositalardan foydalanish, kod yozish va bilimga asoslangan ishlarni bajarishda sezilarli yaxshilanishni ta’minlaydi.
 
 ![](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F9941d610909f28a504e16dd5af823df172ec6035-2600x1234.png&w=3840&q=75)
