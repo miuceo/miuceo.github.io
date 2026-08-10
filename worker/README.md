@@ -43,7 +43,7 @@ faylidan).
 
 ## 4-qadam. Maxfiy kalitlarni (secrets) sozlash
 
-Ikkita token kerak bo'ladi, ular repo ichidagi hech qanday faylga
+To'rtta kalit kerak bo'ladi, ular repo ichidagi hech qanday faylga
 yozilmaydi:
 
 ```bash
@@ -53,7 +53,18 @@ npx wrangler secret put GH_TOKEN
 
 npx wrangler secret put TG_BOT_TOKEN
 # @BotFather'dan olingan @miuceo_pws_bot tokenini qo'ying
+
+npx wrangler secret put GROQ_API_KEY
+# console.groq.com — bepul, karta talab qilinmaydi.
+# AI tarjima va matn yaxshilash uchun asosiy provayder (ARCHITECTURE.md §10).
+
+npx wrangler secret put OPENROUTER_API_KEY
+# openrouter.ai — bepul tarifda kuniga 50 ta so'rov (karta bilan 1000 ta).
+# Groq ishlamay qolsa, zaxira provayder sifatida ishlatiladi (D12).
 ```
+
+AI kalitlari bo'lmasa sayt va nashr qilish odatdagidek ishlayveradi — faqat
+`/post-builder/` dagi "AI yordamchi" tugmalari xato qaytaradi.
 
 **Bu uchun yangi GitHub token yarating** — v1'da `localStorage`'da turgan
 eski tokenni qayta ishlatmang. Uni buzilgan (compromised) deb hisoblang va

@@ -300,6 +300,7 @@ async function loadPostForEdit(slug: string) {
     titleInput.value = '';
     titleInput.disabled = false;
     modeText.textContent = 'Yangi post';
+    setAgentButtonsEnabled(false);
     render();
     return;
   }
@@ -319,6 +320,7 @@ async function loadPostForEdit(slug: string) {
     titleInput.value = data.title;
     titleInput.disabled = true;
     modeText.textContent = `Tahrirlash: ${data.title}`;
+    setAgentButtonsEnabled(true);
     render();
   } catch (err) {
     alert("Postni yuklab bo'lmadi: " + (err as Error).message);
@@ -518,6 +520,178 @@ function generatePostMarkdown(
   return lines.join('\n') + generatePostMarkdownBody();
 }
 
+/**
+ * Frontmatter for a translated post. Same shape as generatePostMarkdown, but
+ * the body is supplied directly (the agent returns markdown, not blocks) and
+ * telegramMessageId is deliberately omitted — that id belongs to the Uzbek
+ * post's channel message, and reusing it on a translation would make a later
+ * edit clobber the wrong message.
+ */
+function generateTranslationMarkdown(
+  title: string,
+  excerpt: string,
+  coverImage: string | null,
+  createdAtIso: string,
+  updatedAtIso: string,
+  body: string
+): string {
+  const lines = ['---', `title: ${yamlString(title)}`];
+  if (excerpt) lines.push(`excerpt: ${yamlString(excerpt)}`);
+  if (coverImage) lines.push(`coverImage: ${yamlString(coverImage)}`);
+  lines.push(`createdAt: ${yamlString(createdAtIso)}`);
+  lines.push(`updatedAt: ${yamlString(updatedAtIso)}`);
+  lines.push('---', '');
+  return lines.join('\n') + body.trim() + '\n';
+}
+
+/* ---------- AI ASSISTANT (agent proposes, human approves — D6) ---------- */
+
+type AgentMode = { kind: 'translate'; lang: 'en' | 'ru' } | { kind: 'improve' };
+let pendingReview: AgentMode | null = null;
+
+function setAgentButtonsEnabled(enabled: boolean) {
+  ['translateEnBtn', 'translateRuBtn', 'improveBtn'].forEach((id) => {
+    const btn = document.getElementById(id) as HTMLButtonElement | null;
+    if (btn) btn.disabled = !enabled;
+  });
+  const hint = document.getElementById('agentHint');
+  if (hint) {
+    hint.textContent = enabled ? '' : 'Avval postni saqlang yoki mavjud postni tanlang';
+  }
+}
+
+/** Reconstructs the Uzbek source markdown from the current blocks. */
+function currentSourceMarkdown(): string {
+  return generatePostMarkdownBody();
+}
+
+async function runAgentTask(mode: AgentMode) {
+  const titleInput = document.getElementById('titleInput') as HTMLInputElement;
+  const title = titleInput.value.trim();
+  if (!currentSlug) {
+    alert("Avval postni saqlang — tarjima uchun slug kerak.");
+    return;
+  }
+  if (!title || blocks.length === 0) {
+    alert("Sarlavha va kamida bitta blok kerak.");
+    return;
+  }
+
+  const endpoint = mode.kind === 'translate' ? 'translate' : 'improve';
+  const targetLang = mode.kind === 'translate' ? mode.lang : 'uz';
+
+  setAgentButtonsEnabled(false);
+  const hint = document.getElementById('agentHint');
+  if (hint) hint.textContent = 'AI ishlamoqda...';
+
+  try {
+    const res = await fetch(`${WORKER_URL}/api/agent/${endpoint}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({
+        slug: currentSlug,
+        targetLang,
+        title,
+        excerpt: getExcerpt(),
+        markdown: currentSourceMarkdown(),
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'AI xatosi');
+
+    pendingReview = mode;
+    (document.getElementById('reviewTitleInput') as HTMLInputElement).value = data.title || '';
+    (document.getElementById('reviewExcerptInput') as HTMLTextAreaElement).value = data.excerpt || '';
+    (document.getElementById('reviewBodyInput') as HTMLTextAreaElement).value = data.markdown || '';
+    document.getElementById('reviewTitle')!.textContent =
+      mode.kind === 'translate'
+        ? `AI tarjimasi — ${mode.lang.toUpperCase()}`
+        : 'AI yaxshilagan matn';
+    document.getElementById('reviewMeta')!.textContent =
+      `${data.provider} / ${data.model} — tekshiring va tahrirlang, keyin saqlang`;
+    document.getElementById('reviewStatus')!.textContent = '';
+    document.getElementById('reviewStatus')!.className = 'review-status';
+    document.getElementById('reviewModal')!.style.display = 'flex';
+  } catch (err) {
+    alert('AI xatosi: ' + (err as Error).message);
+  } finally {
+    setAgentButtonsEnabled(true);
+  }
+}
+
+/**
+ * The approval action. Only this — a human click, after reading the output —
+ * moves agent text toward GitHub, and it does so through the same
+ * /api/github/put the author already uses. The agent has no such path (D6).
+ */
+async function saveReviewedOutput() {
+  if (!pendingReview || !currentSlug) return;
+  const statusEl = document.getElementById('reviewStatus')!;
+  const saveBtn = document.getElementById('reviewSaveBtn') as HTMLButtonElement;
+
+  const title = (document.getElementById('reviewTitleInput') as HTMLInputElement).value.trim();
+  const excerpt = (document.getElementById('reviewExcerptInput') as HTMLTextAreaElement).value.trim();
+  const body = (document.getElementById('reviewBodyInput') as HTMLTextAreaElement).value;
+
+  if (!title || !body.trim()) {
+    statusEl.textContent = 'Sarlavha va matn bo\'sh bo\'lmasligi kerak.';
+    statusEl.className = 'review-status err';
+    return;
+  }
+
+  if (pendingReview.kind === 'improve') {
+    // Improvement targets the Uzbek source the author is editing. Writing it
+    // back into the block editor keeps the existing publish flow the single
+    // way anything reaches the site — no second publish path.
+    const titleInput = document.getElementById('titleInput') as HTMLInputElement;
+    if (!titleInput.disabled) titleInput.value = title;
+    idCounter = 0;
+    blocks = [{ id: uid(), type: 'text', content: body.trim() }];
+    render();
+    document.getElementById('reviewModal')!.style.display = 'none';
+    pendingReview = null;
+    alert("Matn tahrirlagichga ko'chirildi. Nashr qilish uchun 'Generate & Publish' bosing.");
+    return;
+  }
+
+  const lang = pendingReview.lang;
+  saveBtn.disabled = true;
+  statusEl.textContent = 'Saqlanmoqda...';
+  statusEl.className = 'review-status';
+
+  try {
+    const path = `src/content/posts/${currentSlug}/${lang}.md`;
+    const existing = await ghGetFile(path);
+    const nowIso = new Date().toISOString();
+    const md = generateTranslationMarkdown(
+      title,
+      excerpt,
+      getCoverImage(),
+      currentCreatedAt || nowIso,
+      nowIso,
+      body
+    );
+    await ghPutFileSafe(
+      path,
+      md,
+      `${existing ? 'Update' : 'Add'} ${lang} translation: ${title}`,
+      existing ? existing.sha : null
+    );
+    statusEl.textContent = `✓ ${path} saqlandi`;
+    statusEl.className = 'review-status ok';
+    setTimeout(() => {
+      document.getElementById('reviewModal')!.style.display = 'none';
+      pendingReview = null;
+    }, 1200);
+  } catch (err) {
+    statusEl.textContent = 'Xatolik: ' + (err as Error).message;
+    statusEl.className = 'review-status err';
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+
 /* ---------- LOG HELPERS ---------- */
 function showLog() {
   document.getElementById('copyModal')!.style.display = 'flex';
@@ -664,6 +838,7 @@ async function publish() {
     currentSlug = slug;
     titleInput.disabled = true;
     document.getElementById('modeText')!.textContent = `Tahrirlash: ${title}`;
+    setAgentButtonsEnabled(true);
     appendLog('');
     appendLog(`Tayyor! Post manzili: ${postUrl}`);
   } catch (err) {
@@ -698,6 +873,7 @@ export function initPostBuilder() {
       titleInput.disabled = false;
       (document.getElementById('postSelect') as HTMLSelectElement).value = '';
       document.getElementById('modeText')!.textContent = 'Yangi post';
+      setAgentButtonsEnabled(false);
       render();
     }
   });
@@ -709,6 +885,16 @@ export function initPostBuilder() {
     document.getElementById('copyModal')!.style.display = 'none';
   });
 
+  document.getElementById('translateEnBtn')?.addEventListener('click', () => runAgentTask({ kind: 'translate', lang: 'en' }));
+  document.getElementById('translateRuBtn')?.addEventListener('click', () => runAgentTask({ kind: 'translate', lang: 'ru' }));
+  document.getElementById('improveBtn')?.addEventListener('click', () => runAgentTask({ kind: 'improve' }));
+  document.getElementById('reviewSaveBtn')?.addEventListener('click', saveReviewedOutput);
+  document.getElementById('reviewCancelBtn')?.addEventListener('click', () => {
+    document.getElementById('reviewModal')!.style.display = 'none';
+    pendingReview = null;
+  });
+
+  setAgentButtonsEnabled(false);
   render();
 
   // ?edit=slug auto-load, same as post-builder.html

@@ -34,6 +34,14 @@ import '../islands/PostBuilder/styles.css';
         <select id="postSelect"><option value="">— Yangi post yaratish —</option></select>
       </div>
 
+      <div class="edit-bar agent-bar">
+        <span class="agent-label">AI yordamchi:</span>
+        <button class="btn ghost small" id="translateEnBtn" disabled>Ingliz tiliga tarjima</button>
+        <button class="btn ghost small" id="translateRuBtn" disabled>Rus tiliga tarjima</button>
+        <button class="btn ghost small" id="improveBtn" disabled>Matnni yaxshilash</button>
+        <span class="agent-hint" id="agentHint">Avval postni saqlang yoki mavjud postni tanlang</span>
+      </div>
+
       <div class="layout">
         <div>
           <div class="panel-label">Editor</div>
@@ -62,6 +70,26 @@ import '../islands/PostBuilder/styles.css';
       <div class="status" id="statusText">0 blok</div>
       <div class="status" id="modeText">Yangi post</div>
     </footer>
+
+    <!-- Agent output lands here for review. Nothing is written anywhere until
+         the author reads it and clicks Saqlash — that click is the D6 gate. -->
+    <div id="reviewModal">
+      <div class="box">
+        <div class="panel-label" style="margin:0;" id="reviewTitle">AI taklifi</div>
+        <div class="review-meta" id="reviewMeta"></div>
+        <label class="review-label">Sarlavha</label>
+        <input type="text" id="reviewTitleInput" class="review-input">
+        <label class="review-label">Qisqacha (excerpt)</label>
+        <textarea id="reviewExcerptInput" class="review-input" rows="2"></textarea>
+        <label class="review-label">Matn (Markdown)</label>
+        <textarea id="reviewBodyInput" class="review-input review-body"></textarea>
+        <div class="review-status" id="reviewStatus"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn ghost" id="reviewCancelBtn">Bekor qilish</button>
+          <button class="btn primary" id="reviewSaveBtn">Saqlash</button>
+        </div>
+      </div>
+    </div>
 
     <div id="copyModal">
       <div class="box">

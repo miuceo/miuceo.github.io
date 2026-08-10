@@ -326,11 +326,25 @@ Ordered so the site keeps working throughout. Nothing here breaks publishing bef
 - **Not done / explicit follow-up:** pointing the bot's Mini App URL at `/post-builder/` in BotFather — the author's own action, and the actual "go live" moment for this phase.
 - `.nojekyll` (added during Phase 3/4 follow-up — see above) applies to this page too; without it, `hreflangPaths={{}}` in `post-builder.astro` itself broke the Pages build.
 
-**Phase 5 — agent, voice & distribution — ❌ NOT STARTED**
-- No AI agent exists yet. Posts publish exactly as typed, no translation, no improvement pass.
-- OpenRouter + Groq behind the single agent interface: translation, improvement, media understanding.
-- Voice in (Whisper) before voice out (TTS) — speaking a post is the higher-value half, and does not depend on Preview-status models.
-- Approval flow in Telegram, then platform fan-out one channel at a time — Telegram first (already working, manual only), LinkedIn next (blocked on the Phase 1 app review above).
+**Phase 5 — agent, voice & distribution — 🚧 STAGE 1 BUILT, REST NOT STARTED**
+
+Deliberately staged rather than built in one pass. Stage 1 was chosen first because it makes two thirds of the site real — `/en/` and `/ru/` shipped in Phase 3 but have shown "no posts yet" ever since, since translation was always this phase's job — and because it adds **no new unauthenticated surface**.
+
+*Stage 1 — agent core + translation — ✅ BUILT (2026-08-10), not yet live-tested*
+- `worker/src/agent.ts` — the single provider interface (D13: OpenRouter + Groq only). `worker/src/drafts.ts` + migration `0002_create_drafts.sql`. Authenticated `POST /api/agent/translate` and `/api/agent/improve`. Translate/improve buttons and a review-and-edit modal in `/post-builder/`.
+- **Groq is primary for text, OpenRouter the fallback** — following §10's per-task routing table rather than its generic ladder, because the free tiers differ by an order of magnitude: OpenRouter allows ~50 requests/day without a one-time $10 credit purchase, Groq ~14,400/day with no card at all. Spending the scarce quota on plain-text translation would be backwards. OpenRouter stays primary for multimodal, where D11 actually requires it.
+- **The "never hardcode a model id" rule (§10 caveat 2) immediately paid for itself.** This section's own recommended Groq model, `meta-llama/llama-4-scout-17b-16e-instruct`, was **deprecated by Groq on 2026-06-17**. `wrangler.toml` now carries ordered candidate lists (`GROQ_TEXT_MODELS`, `OPENROUTER_TEXT_MODELS`) seeded with its documented replacements; a dead id costs a config edit, not a code change.
+- **D6 verified structurally, not by prompting.** `agent.ts` and `drafts.ts` import types only — no path to `github.ts` or `telegram.ts` (confirmed by grep, and stated in both files' headers so a future edit has to override an explicit warning). The agent returns proposed text; a translation only reaches GitHub when the author reads it in the review modal and clicks Saqlash, which calls the pre-existing `/api/github/put`. `approved_at` is stamped by that human action alone.
+- Draft rows are written to D1 **before** the model is called, so a provider outage or rate limit leaves a retryable `pending` row rather than losing work.
+- Verified: worker typechecks, site builds, migration applies, 13 ladder tests pass against a stubbed fetch (429 advances model → all-Groq-failure falls to OpenRouter → total exhaustion throws → non-JSON output degrades gracefully). End-to-end proof that a dropped-in `en.md` lights up `/en/posts/<slug>/`, the `/en/` listing, the English feed and reciprocal `hreflang` **with zero code changes** — confirmed by building with a fixture, then removing it.
+- **Blocked on the author:** `GROQ_API_KEY` and `OPENROUTER_API_KEY` must be created (both free; Groq needs no card) and set via `wrangler secret put`. Until then the AI buttons return an error and everything else works normally.
+- Known limit: input capped at 24,000 characters with an explicit refusal rather than a silent truncation. Chunking long posts is the first follow-up.
+
+*Stage 2 — Telegram bot chat — ❌ NOT STARTED.* Quick-post by messaging the bot. This is the Worker's first ever unauthenticated endpoint (Telegram's servers carry no session), so it needs a webhook secret-token check, update parsing, `ctx.waitUntil` plumbing that doesn't exist yet, and inline-keyboard approval — `tgSendPost` can't express `reply_markup` today.
+
+*Stage 3 — voice — ❌ NOT STARTED.* Whisper in before TTS out (§5.1).
+
+*Stage 4 — media understanding + distribution fan-out — ❌ NOT STARTED.* Needs the multimodal OpenRouter route (D11). LinkedIn still blocked on the Phase 1 app review.
 
 ---
 

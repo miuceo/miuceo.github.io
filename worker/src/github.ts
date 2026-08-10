@@ -12,7 +12,9 @@ export function isAllowedPath(path: string): boolean {
   if (/^posts-data\/[a-z0-9-]+\.json$/.test(path)) return true;
   // v2 Astro content collection — post-builder.html dual-writes here so the
   // Astro build (ARCHITECTURE.md §9 Phase 3) stays in sync with v1 publishes.
-  if (/^src\/content\/posts\/[a-z0-9-]+\/uz\.md$/.test(path)) return true;
+  // en/ru are written by the author approving an agent translation (Phase 5
+  // Stage 1); the agent itself cannot reach this function.
+  if (/^src\/content\/posts\/[a-z0-9-]+\/(uz|en|ru)\.md$/.test(path)) return true;
   return false;
 }
 

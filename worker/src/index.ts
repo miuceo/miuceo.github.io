@@ -6,6 +6,9 @@ import {
 } from './auth';
 import { isAllowedPath, ghGetFile, ghPutFile, ghPutFileSafe, ghDeleteFile } from './github';
 import { tgSendPost, tgEditPost, tgDeleteMessage } from './telegram';
+import { runAgent, MAX_INPUT_CHARS, type AgentTask } from './agent';
+import { createDraft, markDraftReady, markDraftFailed } from './drafts';
+import type { DraftKind, Lang } from './types';
 
 function corsHeaders(env: Env): Record<string, string> {
   return {
@@ -33,6 +36,77 @@ async function readJson<T>(req: Request): Promise<T> {
     return await req.json() as T;
   } catch {
     throw new Error('Invalid JSON body');
+  }
+}
+
+const LANGS: Lang[] = ['uz', 'en', 'ru'];
+const SLUG_RE = /^[a-z0-9-]+$/;
+
+interface AgentRequestBody {
+  slug?: string;
+  targetLang?: string;
+  title?: string;
+  excerpt?: string;
+  markdown?: string;
+}
+
+/**
+ * Shared handler for /api/agent/*. Both tasks have the same shape and the same
+ * D6 posture: write the draft row first, call the model, hand the proposal back
+ * to the author for review. Nothing here writes to GitHub — publishing is a
+ * separate call the author's client makes to /api/github/put after reviewing.
+ */
+async function handleAgentTask(env: Env, req: Request, task: AgentTask): Promise<Response> {
+  const body = await readJson<AgentRequestBody>(req);
+
+  const slug = (body.slug || '').trim();
+  const title = (body.title || '').trim();
+  const markdown = body.markdown || '';
+  const excerpt = (body.excerpt || '').trim();
+
+  if (!SLUG_RE.test(slug)) return errorResponse(env, 'Yaroqsiz slug.', 400);
+  if (!title) return errorResponse(env, 'Sarlavha kerak.', 400);
+  if (!markdown.trim()) return errorResponse(env, 'Post matni bo\'sh.', 400);
+
+  // Long posts would blow past free-tier output limits and come back
+  // truncated, which is worse than a clear refusal. Chunking is the first
+  // follow-up; until then the cap is explicit.
+  if (markdown.length > MAX_INPUT_CHARS) {
+    return errorResponse(
+      env,
+      `Post juda uzun (${markdown.length} belgi). Hozircha eng ko'pi ${MAX_INPUT_CHARS} belgi tarjima qilinadi.`,
+      400
+    );
+  }
+
+  const targetLang = (body.targetLang || 'en') as Lang;
+  if (task === 'translate' && !LANGS.includes(targetLang)) {
+    return errorResponse(env, 'Yaroqsiz til.', 400);
+  }
+
+  const kind: DraftKind = task === 'translate' ? 'translation' : 'improvement';
+
+  // Draft row first — a provider failure below must leave a retryable row
+  // behind, never lose the author's work (SKILLS.md `agent-task` step 1).
+  const draftId = await createDraft(env, { slug, targetLang, kind, sourceText: markdown });
+
+  try {
+    const result = await runAgent(env, task, { title, excerpt, markdown, targetLang });
+    await markDraftReady(env, draftId, result);
+    return json(env, {
+      ok: true,
+      draftId,
+      title: result.title,
+      excerpt: result.excerpt,
+      markdown: result.markdown,
+      provider: result.provider,
+      model: result.model,
+    });
+  } catch (err) {
+    // Record the real reason server-side, then rethrow so the catch-all
+    // returns the generic message — provider detail never reaches a client.
+    await markDraftFailed(env, draftId, (err as Error).message);
+    throw err;
   }
 }
 
@@ -141,6 +215,16 @@ export default {
         const { messageId } = await readJson<{ messageId: number }>(req);
         await tgDeleteMessage(env, messageId);
         return json(env, { ok: true });
+      }
+
+      /* ---------- /api/agent/* — proposes text, publishes nothing (D6) ---------- */
+
+      if (path === '/api/agent/translate' && req.method === 'POST') {
+        return handleAgentTask(env, req, 'translate');
+      }
+
+      if (path === '/api/agent/improve' && req.method === 'POST') {
+        return handleAgentTask(env, req, 'improve');
       }
 
       return errorResponse(env, 'Not found', 404);

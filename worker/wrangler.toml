@@ -20,11 +20,30 @@ TG_CHANNEL = "@muhammadibrohimov_ceo"
 SESSION_COOKIE_NAME = "miuceo_session"
 SESSION_TTL_SECONDS = "2592000"  # 30 days — matches the auth duration v1's reader flow used
 
+# Agent model candidates, tried left to right, Groq first then OpenRouter
+# (ARCHITECTURE.md §10 routing table: fast text goes to Groq). Config, never
+# code — the free roster rotates and a hardcoded id is a future outage.
+#
+# Proof that this matters: §10 originally recommended Groq's
+# `meta-llama/llama-4-scout-17b-16e-instruct`, which Groq deprecated on
+# 2026-06-17. The values below are its documented replacements. Re-check
+# against console.groq.com/docs/models and openrouter.ai/models before each
+# deploy; a dead id costs one config edit, not a code change.
+#
+# `openai/gpt-oss-*` is OpenAI's open-weights model served by Groq — the
+# provider is still Groq, so this is consistent with D13 (which constrains
+# providers, not model lineage, exactly as §10 already allows `google/gemma-*`
+# via OpenRouter).
+GROQ_TEXT_MODELS = "openai/gpt-oss-120b,qwen/qwen3.6-27b"
+OPENROUTER_TEXT_MODELS = "deepseek/deepseek-r1:free,meta-llama/llama-3.3-70b-instruct:free"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "miuceo-db"
 database_id = "64b70544-9842-4c75-961e-54974a3dd66a"
 
 # Secrets — set via `wrangler secret put <NAME>`, never written here:
-#   GH_TOKEN        GitHub PAT, repo-write scope on miuceo/miuceo.github.io
-#   TG_BOT_TOKEN     Telegram bot token from @BotFather
+#   GH_TOKEN            GitHub PAT, repo-write scope on miuceo/miuceo.github.io
+#   TG_BOT_TOKEN        Telegram bot token from @BotFather
+#   GROQ_API_KEY        console.groq.com — free, no credit card
+#   OPENROUTER_API_KEY  openrouter.ai — free tier is 50 req/day without credit
