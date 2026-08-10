@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
+<style>html:not(.authed) body{ visibility:hidden; }</style>
 <script>
-(function(){
+const WORKER_URL = 'https://miuceo-worker.ibrokhimovmiu.workers.dev';
+const SITE_URL = 'https://muhammadjon.me';
+(async function(){
   try{
-    const auth = JSON.parse(localStorage.getItem('miuceo_auth') || 'null');
-    if(!auth || !auth.ok || Date.now() > auth.expires){
-      window.location.replace('index.html');
-    }
+    const res = await fetch(`${WORKER_URL}/api/session`, { credentials: 'include' });
+    if(!res.ok){ window.location.replace('login.html'); return; }
+    document.documentElement.classList.add('authed');
   }catch(e){
-    window.location.replace('index.html');
+    window.location.replace('login.html');
   }
 })();
 </script>
@@ -17,96 +19,69 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Post Builder — miuceo</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <style>
-  :root{
-    --cream:#F5F1EA; --cream-2:#EEE9DF; --ink:#1F1B16; --ink-soft:#4A443C;
-    --clay:#D97757; --clay-dark:#B85C3F; --line:#DDD5C7; --white:#FFFFFF;
-    --mono:'IBM Plex Mono', monospace; --serif:'Newsreader', Georgia, serif;
-    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-  [data-theme="dark"]{
-    --cream:#1A1714; --cream-2:#242019; --ink:#FFFFFF; --ink-soft:#D8D8D8;
-    --line:#3A342B; --white:#242019;
-  }
-  body{ transition:background .2s, color .2s; }
-  .theme-toggle{ background:none; border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
-  *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; }
   .app{ max-width:1400px; margin:0 auto; padding:32px 32px 140px; }
 
   .top{ display:flex; justify-content:space-between; align-items:center; padding-bottom:20px; border-bottom:1px solid var(--line); margin-bottom:28px; }
-  .back-link{ font-family:var(--mono); font-size:13px; color:var(--ink-soft); }
-  .back-link:hover{ color:var(--clay); }
+  .back-link{ font-size:13px; color:var(--ink-soft); }
+  .back-link:hover{ color:var(--neon-cyan); }
   .top-actions{ display:flex; gap:10px; }
 
-  .btn{ font-family:var(--sans); font-size:14px; font-weight:500; padding:10px 20px; border-radius:6px; border:1px solid var(--ink); background:transparent; color:var(--ink); cursor:pointer; }
-  .btn:hover{ background:var(--ink); color:var(--cream); }
-  .btn.primary{ background:var(--clay); border-color:var(--clay); color:var(--white); }
-  .btn.primary:hover{ background:var(--clay-dark); border-color:var(--clay-dark); }
-  .btn.ghost{ border-color:var(--line); color:var(--ink-soft); font-size:13px; padding:8px 14px; }
-  .btn.ghost:hover{ background:var(--cream-2); color:var(--ink); }
-  .btn.small{ padding:6px 10px; font-size:12px; }
-  .btn.icon{ padding:6px 9px; line-height:1; }
-  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
-  .btn:disabled:hover{ background:transparent; color:var(--ink); }
-  .btn.primary:disabled:hover{ background:var(--clay); color:var(--white); }
-
-  details.settings{ background:var(--white); border:1px solid var(--line); border-radius:8px; padding:16px 20px; margin-bottom:28px; }
-  details.settings summary{ font-family:var(--mono); font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); cursor:pointer; }
-  .settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
-  .field{ display:flex; flex-direction:column; gap:6px; }
-  .field label{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); }
-  .field input{ font-family:var(--mono); font-size:13px; padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:var(--cream-2); }
-  .field input:focus{ outline:none; border-color:var(--clay); }
-  .settings-note{ font-size:12px; color:var(--ink-soft); margin-top:12px; grid-column:1/-1; }
+  .btn.primary{ background:var(--neon-green); border-color:var(--neon-green); color:var(--bg); font-weight:700; }
+  .btn.primary:hover{ box-shadow:var(--glow-md) var(--neon-green); }
+  .btn.primary:disabled:hover{ box-shadow:none; }
 
   .edit-bar{ display:flex; gap:10px; align-items:center; margin-bottom:24px; }
-  .edit-bar select{ font-family:var(--sans); font-size:14px; padding:9px 14px; border:1px solid var(--line); border-radius:6px; background:var(--white); }
+  .edit-bar select{ font-family:var(--mono); font-size:14px; padding:9px 14px; border:1px solid var(--line); border-radius:6px; background:var(--bg-2); color:var(--ink); }
 
   .layout{ display:grid; grid-template-columns:1fr 1fr; gap:48px; }
   @media (max-width:980px){ .layout{ grid-template-columns:1fr; } }
-  .panel-label{ font-family:var(--mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px; }
+  .panel-label{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--neon-cyan); margin-bottom:16px; }
+  .panel-label::before{ content:'// '; opacity:0.6; }
 
-  .title-field{ width:100%; font-family:var(--serif); font-size:32px; font-weight:500; color:var(--ink); background:var(--white); border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:24px; outline:none; }
-  .title-field::placeholder{ color:#B5AC9C; font-style:italic; }
-  .title-field:focus{ border-color:var(--clay); }
-  .title-field:disabled{ background:var(--cream-2); color:var(--ink-soft); }
+  .title-field{ width:100%; font-family:var(--mono); font-size:26px; font-weight:700; color:var(--ink); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:24px; outline:none; }
+  .title-field::placeholder{ color:var(--ink-soft); font-style:italic; }
+  .title-field:focus{ border-color:var(--neon-green); }
+  .title-field:disabled{ background:var(--bg-3); color:var(--ink-soft); }
 
   .blocks{ display:flex; flex-direction:column; gap:14px; }
-  .block{ background:var(--white); border:1px solid var(--line); border-radius:8px; padding:16px; }
+  .block{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:16px; }
   .block-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .block-type{ font-family:var(--mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--clay); }
+  .block-type{ font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--neon-green); }
   .block-actions{ display:flex; gap:6px; }
 
-  textarea.text-input{ width:100%; min-height:110px; font-family:var(--sans); font-size:15px; color:var(--ink); background:transparent; border:none; outline:none; resize:vertical; line-height:1.6; }
-  textarea.text-input::placeholder{ color:#B5AC9C; }
+  textarea.text-input{ width:100%; min-height:110px; font-family:var(--mono); font-size:14px; color:var(--ink); background:transparent; border:none; outline:none; resize:vertical; line-height:1.6; }
+  textarea.text-input::placeholder{ color:var(--ink-soft); }
 
-  input.media-url{ width:100%; font-family:var(--mono); font-size:13px; color:var(--ink); background:var(--cream-2); border:1px solid var(--line); border-radius:6px; padding:10px 12px; outline:none; margin-bottom:10px; }
-  input.media-url:focus{ border-color:var(--clay); }
+  input.media-url{ width:100%; font-size:13px; color:var(--ink); background:var(--bg-3); border:1px solid var(--line); border-radius:6px; padding:10px 12px; outline:none; margin-bottom:10px; }
+  input.media-url:focus{ border-color:var(--neon-green); }
   .media-hint{ font-size:12px; color:var(--ink-soft); margin-bottom:8px; }
   .media-preview{ margin-top:8px; }
   .media-preview img{ max-width:100%; border-radius:6px; display:block; }
   .media-preview iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:6px; }
-  .media-empty{ font-size:13px; color:#B5AC9C; font-style:italic; padding:20px; text-align:center; border:1px dashed var(--line); border-radius:6px; }
+  .media-empty{ font-size:13px; color:var(--ink-soft); font-style:italic; padding:20px; text-align:center; border:1px dashed var(--line); border-radius:6px; }
 
   .add-row{ display:flex; gap:10px; margin-top:8px; }
 
-  .preview-frame{ background:var(--cream); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
-  .preview-nav{ padding:14px 28px; border-bottom:1px solid var(--line); font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
+  .preview-frame{ background:var(--bg); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .preview-nav{ padding:14px 28px; border-bottom:1px solid var(--line); font-size:12px; color:var(--ink-soft); }
   .preview-body{ padding:40px 28px 32px; }
-  .preview-title{ font-family:var(--serif); font-size:38px; font-weight:500; line-height:1.15; margin:0 0 28px; color:var(--ink); }
+  .preview-title{ font-size:30px; font-weight:800; line-height:1.2; margin:0 0 28px; color:var(--ink); }
   .preview-block{ margin-bottom:22px; }
-  .preview-block p{ margin:0 0 14px; font-size:16px; color:var(--ink); line-height:1.7; }
-  .preview-block h2{ font-family:var(--serif); font-size:24px; margin:24px 0 12px; }
-  .preview-block h3{ font-family:var(--serif); font-size:20px; margin:20px 0 10px; }
+  .preview-block p{ margin:0 0 14px; font-size:15px; color:var(--ink); line-height:1.75; }
+  .preview-block h2{ font-size:21px; font-weight:700; margin:24px 0 12px; }
+  .preview-block h3{ font-size:18px; font-weight:700; margin:20px 0 10px; }
   .preview-block ul, .preview-block ol{ margin:0 0 14px; padding-left:24px; }
-  .preview-block li{ font-size:16px; line-height:1.7; margin-bottom:4px; }
-  .preview-block blockquote{ margin:16px 0; padding:4px 18px; border-left:3px solid var(--clay); color:var(--ink-soft); font-style:italic; }
-  .preview-block code{ font-family:var(--mono); font-size:0.9em; background:var(--cream-2); padding:2px 6px; border-radius:4px; }
-  .preview-block pre{ background:var(--cream-2); border-radius:8px; padding:14px 16px; overflow-x:auto; margin:16px 0; }
+  .preview-block li{ font-size:15px; line-height:1.75; margin-bottom:4px; }
+  .preview-block blockquote{ margin:16px 0; padding:4px 18px; border-left:3px solid var(--neon-green); color:var(--ink-soft); font-style:italic; }
+  .preview-block code{ font-size:0.9em; background:var(--bg-3); padding:2px 6px; border-radius:4px; color:var(--neon-cyan); }
+  .preview-block pre{ background:var(--bg-3); border:1px solid var(--line); border-radius:8px; padding:14px 16px; overflow-x:auto; margin:16px 0; }
   .preview-block pre code{ background:none; padding:0; }
   .preview-block hr{ border:none; border-top:1px solid var(--line); margin:24px 0; }
   .preview-block table{ border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
@@ -114,27 +89,26 @@
   .preview-block strong{ font-weight:700; }
   .preview-block img{ max-width:100%; border-radius:8px; display:block; }
   .preview-block iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:8px; }
-  .preview-share{ padding:16px 28px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; color:var(--ink-soft); text-align:center; }
-  .preview-placeholder{ font-size:14px; color:#B5AC9C; font-style:italic; padding:60px 0; text-align:center; }
+  .preview-share{ padding:16px 28px; border-top:1px solid var(--line); font-size:11px; color:var(--ink-soft); text-align:center; }
+  .preview-placeholder{ font-size:14px; color:var(--ink-soft); font-style:italic; padding:60px 0; text-align:center; }
 
-  footer.actions{ position:fixed; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--line); padding:16px 32px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
-  .actions .status{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); flex:1; }
-  .actions .status.err{ color:#B23A2E; }
-  .actions .status.ok{ color:#2E7D46; }
+  footer.actions{ position:fixed; bottom:0; left:0; right:0; background:var(--bg-2); border-top:1px solid var(--line); padding:16px 32px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .actions .status{ font-size:12px; color:var(--ink-soft); flex:1; }
+  .actions .status.err{ color:var(--danger); }
+  .actions .status.ok{ color:var(--neon-green); }
 
-  #copyModal{ display:none; position:fixed; inset:0; background:rgba(31,27,22,0.5); align-items:center; justify-content:center; z-index:100; }
-  #copyModal .box{ background:var(--white); border-radius:10px; padding:24px; width:min(720px, 90vw); max-height:80vh; display:flex; flex-direction:column; gap:12px; }
-  #copyModal textarea{ width:100%; height:280px; font-family:var(--mono); font-size:12px; border:1px solid var(--line); border-radius:6px; padding:12px; resize:none; }
-  #copyModal .log{ font-family:var(--mono); font-size:12px; background:var(--cream-2); border-radius:6px; padding:12px; max-height:160px; overflow-y:auto; white-space:pre-wrap; }
+  #copyModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; }
+  #copyModal .box{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:24px; width:min(720px, 90vw); max-height:80vh; display:flex; flex-direction:column; gap:12px; }
+  #copyModal textarea{ width:100%; height:280px; font-size:12px; border:1px solid var(--line); border-radius:6px; padding:12px; resize:none; background:var(--bg-3); color:var(--ink); }
+  #copyModal .log{ font-size:12px; background:var(--bg-3); border-radius:6px; padding:12px; max-height:160px; overflow-y:auto; white-space:pre-wrap; }
 
   @media (max-width:900px){
     .app{ padding:20px 18px 160px; }
     .top{ flex-wrap:wrap; gap:12px; }
     .top-actions{ flex-wrap:wrap; }
-    .settings-grid{ grid-template-columns:1fr; }
     .edit-bar{ flex-wrap:wrap; }
     .edit-bar select{ width:100%; }
-    .title-field{ font-size:24px; padding:14px 16px; }
+    .title-field{ font-size:22px; padding:14px 16px; }
     footer.actions{ flex-wrap:wrap; padding:12px 18px; }
   }
 </style>
@@ -145,30 +119,13 @@
   <div class="top">
     <a href="index.html" class="back-link">← Orqaga</a>
     <div class="top-actions">
-      <button class="theme-toggle" id="themeToggle">🌙</button>
+      <button class="theme-toggle" id="themeToggle">☀️</button>
       <button class="btn ghost" id="logoutBtn">Chiqish</button>
       <button class="btn ghost" id="clearBtn">Tozalash</button>
       <button class="btn primary" id="generateBtn">Generate &amp; Publish</button>
     </div>
   </div>
 
-
-  <details class="settings">
-    <summary>Sozlamalar (GitHub &amp; Telegram)</summary>
-    <div class="settings-grid">
-      <div class="field"><label>GitHub Personal Access Token</label><input type="password" id="ghToken" placeholder="ghp_..."></div>
-      <div class="field"><label>GitHub Owner</label><input type="text" id="ghOwner" placeholder="miuceo"></div>
-      <div class="field"><label>GitHub Repo</label><input type="text" id="ghRepo" placeholder="miuceo.github.io"></div>
-      <div class="field"><label>Branch</label><input type="text" id="ghBranch" placeholder="main"></div>
-      <div class="field"><label>Sayt bazaviy URL</label><input type="text" id="siteUrl" placeholder="https://muhammadjon.me"></div>
-      <div class="field"><label>Telegram Bot Token</label><input type="password" id="tgToken" placeholder="123456:ABC-..."></div>
-      <div class="field"><label>Telegram Kanal (@username)</label><input type="text" id="tgChannel" placeholder="@muhammadibrohimov_ceo"></div>
-      <div class="settings-note">Bu ma'lumotlar faqat sening brauzeringda (localStorage) saqlanadi va hech qayerga yuborilmaydi — faqat GitHub va Telegram API'ga to'g'ridan-to'g'ri murojaat qilish uchun ishlatiladi. Token'larni hech kimga, hatto chatda ham ulashma.</div>
-    </div>
-    <div class="add-row" style="margin-top:14px;">
-      <button class="btn small" id="saveSettingsBtn">Saqlash</button>
-    </div>
-  </details>
 
   <div class="edit-bar">
     <button class="btn ghost" id="loadPostsBtn">Mavjud postlarni yuklash</button>
@@ -214,6 +171,7 @@
   </div>
 </div>
 
+<script src="assets/theme.js"></script>
 <script>
 let blocks = [];
 let idCounter = 0;
@@ -223,51 +181,8 @@ let currentTelegramMsgId = null;
 let currentTelegramHasMedia = false;
 let allPosts = [];
 
-function initTheme(){
-  const saved = localStorage.getItem('miuceo_theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
-}
-document.getElementById('themeToggle').addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('miuceo_theme', next);
-  initTheme();
-});
-initTheme();
-
 function uid(){ return 'b' + (idCounter++); }
-function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-/* ---------- SETTINGS ---------- */
-function loadSettings(){
-  try{
-    const s = JSON.parse(localStorage.getItem('pb_settings') || '{}');
-    document.getElementById('ghToken').value = s.ghToken || '';
-    document.getElementById('ghOwner').value = s.ghOwner || '';
-    document.getElementById('ghRepo').value = s.ghRepo || '';
-    document.getElementById('ghBranch').value = s.ghBranch || 'main';
-    document.getElementById('siteUrl').value = s.siteUrl || '';
-    document.getElementById('tgToken').value = s.tgToken || '';
-    document.getElementById('tgChannel').value = s.tgChannel || '';
-  }catch(e){}
-}
-function getSettings(){
-  return {
-    ghToken: document.getElementById('ghToken').value.trim(),
-    ghOwner: document.getElementById('ghOwner').value.trim(),
-    ghRepo: document.getElementById('ghRepo').value.trim(),
-    ghBranch: document.getElementById('ghBranch').value.trim() || 'main',
-    siteUrl: document.getElementById('siteUrl').value.trim().replace(/\/$/,''),
-    tgToken: document.getElementById('tgToken').value.trim(),
-    tgChannel: document.getElementById('tgChannel').value.trim(),
-  };
-}
-document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-  localStorage.setItem('pb_settings', JSON.stringify(getSettings()));
-  alert('Sozlamalar saqlandi.');
-});
-loadSettings();
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 /* ---------- BLOCK EDITOR ---------- */
 function addTextBlock(){ blocks.push({ id: uid(), type: 'text', content: '' }); render(); }
@@ -415,8 +330,8 @@ function renderPreview(){
 }
 
 document.getElementById('addTextBtn').addEventListener('click', addTextBlock);
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.removeItem('miuceo_auth');
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try{ await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include' }); }catch(e){}
   window.location.href = 'index.html';
 });
 document.getElementById('addMediaBtn').addEventListener('click', addMediaBlock);
@@ -432,71 +347,45 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   }
 });
 
-/* ---------- GITHUB API ---------- */
+/* ---------- WORKER API (holds every secret server-side) ---------- */
 async function ghGetFile(path){
-  const s = getSettings();
-  const res = await fetch(`https://api.github.com/repos/${s.ghOwner}/${s.ghRepo}/contents/${path}?ref=${s.ghBranch}`, {
-    headers: { Authorization: `token ${s.ghToken}`, Accept: 'application/vnd.github+json' }
+  const res = await fetch(`${WORKER_URL}/api/github/get`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
   });
-  if(res.status === 404) return null;
-  if(!res.ok) throw new Error(`GitHub GET ${path} xato: ${res.status}`);
   const data = await res.json();
-  return { sha: data.sha, content: decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))) };
-}
-async function ghPutFile(path, contentStr, message, sha){
-  const s = getSettings();
-  const body = { message, content: btoa(unescape(encodeURIComponent(contentStr))), branch: s.ghBranch };
-  if(sha) body.sha = sha;
-  const res = await fetch(`https://api.github.com/repos/${s.ghOwner}/${s.ghRepo}/contents/${path}`, {
-    method:'PUT',
-    headers: { Authorization:`token ${s.ghToken}`, Accept:'application/vnd.github+json', 'Content-Type':'application/json' },
-    body: JSON.stringify(body)
-  });
-  if(!res.ok){ const t = await res.text(); throw new Error(`GitHub PUT ${path} xato: ${res.status} ${t}`); }
-  return res.json();
+  if(!data.ok) throw new Error(data.error || `GET ${path} xato`);
+  return data.file;
 }
 async function ghPutFileSafe(path, contentStr, message, sha){
-  try{
-    return await ghPutFile(path, contentStr, message, sha);
-  }catch(err){
-    if(/40[9]|422/.test(err.message)){
-      const fresh = await ghGetFile(path);
-      return await ghPutFile(path, contentStr, message, fresh ? fresh.sha : null);
-    }
-    throw err;
-  }
-}
-
-/* ---------- TELEGRAM API ---------- */
-async function tgSendPost(title, excerpt, coverImage, postUrl){
-  const s = getSettings();
-  const caption = `${title}\n\n${excerpt}\n\n${postUrl}`;
-  let url, params;
-  if(coverImage){
-    url = `https://api.telegram.org/bot${s.tgToken}/sendPhoto`;
-    params = { chat_id: s.tgChannel, photo: coverImage, caption };
-  } else {
-    url = `https://api.telegram.org/bot${s.tgToken}/sendMessage`;
-    params = { chat_id: s.tgChannel, text: caption };
-  }
-  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(params) });
+  const res = await fetch(`${WORKER_URL}/api/github/put`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path, content: contentStr, message, sha: sha || null }),
+  });
   const data = await res.json();
-  if(!data.ok) throw new Error('Telegram yuborish xatosi: ' + (data.description || JSON.stringify(data)));
-  return data.result.message_id;
+  if(!data.ok) throw new Error(data.error || `PUT ${path} xato`);
+  return { content: { sha: data.sha } };
+}
+async function tgSendPost(title, excerpt, coverImage, postUrl){
+  const res = await fetch(`${WORKER_URL}/api/telegram/send`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, excerpt, coverImage, postUrl }),
+  });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'Telegram yuborish xatosi');
+  return data.message_id;
 }
 async function tgEditPost(messageId, title, excerpt, coverImage, postUrl, hadMediaOriginally){
-  const s = getSettings();
-  const caption = `${title}\n\n${excerpt}\n\n${postUrl}`;
-  const method = hadMediaOriginally ? 'editMessageCaption' : 'editMessageText';
-  const params = hadMediaOriginally
-    ? { chat_id: s.tgChannel, message_id: messageId, caption }
-    : { chat_id: s.tgChannel, message_id: messageId, text: caption };
-  const res = await fetch(`https://api.telegram.org/bot${s.tgToken}/${method}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(params) });
+  const res = await fetch(`${WORKER_URL}/api/telegram/edit`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messageId, title, excerpt, postUrl, hadMedia: hadMediaOriginally }),
+  });
   const data = await res.json();
-  if(!data.ok){
-    if(/message is not modified/i.test(data.description || '')) return;
-    throw new Error('Telegram tahrirlash xatosi: ' + (data.description || JSON.stringify(data)));
-  }
+  if(!data.ok) throw new Error(data.error || 'Telegram tahrirlash xatosi');
 }
 
 /* ---------- LOAD EXISTING POSTS ---------- */
@@ -545,8 +434,40 @@ document.getElementById('postSelect').addEventListener('change', async (e) => {
   }
 });
 
+/* ---------- RSS ---------- */
+function escapeXml(s){
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+function generateRssXml(index, siteUrl){
+  const sorted = [...index].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  const items = sorted.map(p => `  <item>
+    <title>${escapeXml(p.title)}</title>
+    <link>${escapeXml(siteUrl)}/posts/${escapeXml(p.slug)}.html</link>
+    <guid isPermaLink="true">${escapeXml(siteUrl)}/posts/${escapeXml(p.slug)}.html</guid>
+    <pubDate>${new Date(p.created_at).toUTCString()}</pubDate>
+    <description>${escapeXml(p.excerpt || '')}</description>
+  </item>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>miuceo — Muhammadjon Ibrohimov</title>
+  <link>${escapeXml(siteUrl)}/</link>
+  <description>Machine learning, AI engineering, backend va DevOps haqida.</description>
+  <language>uz</language>
+  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${items}
+</channel>
+</rss>
+`;
+}
+async function publishRss(index, siteUrl){
+  const existing = await ghGetFile('rss.xml');
+  const xml = generateRssXml(index, siteUrl);
+  await ghPutFileSafe('rss.xml', xml, 'Update rss.xml', existing ? existing.sha : null);
+}
+
 /* ---------- GENERATE HTML ---------- */
-function generatePostHtml(title, postUrl){
+function generatePostHtml(title, postUrl, excerpt, coverImage){
   let contentHtml = '';
   blocks.forEach(b => {
     if(b.type === 'text' && b.content.trim()){
@@ -557,7 +478,7 @@ function generatePostHtml(title, postUrl){
         const yid = getYoutubeId(b.url);
         if(yid) contentHtml += `<div class="media-embed"><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen loading="lazy"></iframe><p class="embed-fallback">Video ko'rinmasa, <a href="https://www.youtube.com/watch?v=${yid}" target="_blank" rel="noopener">YouTube'da tomosha qiling</a>.</p></div>\n`;
       } else {
-        contentHtml += `<img class="post-image" src="${b.url}" alt="" loading="lazy">\n`;
+        contentHtml += `<img class="post-image" src="${escapeHtml(b.url)}" alt="" loading="lazy">\n`;
       }
     }
   });
@@ -567,66 +488,84 @@ function generatePostHtml(title, postUrl){
   const updatedAtDisplay = new Date(updatedAt).toLocaleDateString('uz-UZ', { year:'numeric', month:'long', day:'numeric' });
   const encodedUrl = encodeURIComponent(postUrl);
   const encodedTitle = encodeURIComponent(title);
+  const metaDescription = escapeHtml((excerpt || '').slice(0, 200));
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: title,
+    description: excerpt || '',
+    url: postUrl,
+    datePublished: currentCreatedAt,
+    dateModified: updatedAt,
+    inLanguage: 'uz',
+    author: { '@type': 'Person', name: 'Muhammadjon Ibrohimov' },
+    ...(coverImage ? { image: coverImage } : {})
+  };
 
   return `<!DOCTYPE html>
 <html lang="uz">
 <head>
-<script>
-(function(){
-  try{
-    var auth = JSON.parse(localStorage.getItem('miuceo_reader_auth') || 'null');
-    if(!auth || !auth.ok || Date.now() > auth.expires){
-      window.location.replace('../reader-login.html?return=' + encodeURIComponent(window.location.href));
-    }
-  }catch(e){
-    window.location.replace('../reader-login.html?return=' + encodeURIComponent(window.location.href));
-  }
-})();
-<\/script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(title)} — miuceo</title>
+<meta name="description" content="${metaDescription}">
+<link rel="canonical" href="${postUrl}">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="alternate" type="application/rss+xml" title="miuceo — RSS" href="../rss.xml">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${metaDescription}">
+<meta property="og:url" content="${postUrl}">
+<meta property="og:site_name" content="miuceo">
+<meta property="og:locale" content="uz_UZ">
+<meta property="article:published_time" content="${currentCreatedAt}">
+<meta property="article:modified_time" content="${updatedAt}">
+${coverImage ? `<meta property="og:image" content="${escapeHtml(coverImage)}">\n<meta name="twitter:card" content="summary_large_image">` : `<meta name="twitter:card" content="summary">`}
+<meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${metaDescription}">
+
+<script type="application/ld+json">
+${JSON.stringify(jsonLd, null, 2).replace(/</g, '\\u003c')}
+<\/script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/theme.css">
 <style>
-  :root{ --cream:#F5F1EA; --ink:#1F1B16; --ink-soft:#4A443C; --clay:#D97757; --line:#DDD5C7;
-    --serif:'Newsreader', Georgia, serif; --sans:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; --mono:'IBM Plex Mono', monospace; }
-  [data-theme="dark"]{ --cream:#1A1714; --ink:#F0EAE0; --ink-soft:#B8AF9E; --line:#3A342B; }
-  body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; transition:background .2s, color .2s; }
   .top-nav{ padding:20px 24px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
-  .top-nav a{ font-family:var(--mono); font-size:13px; color:var(--ink-soft); text-decoration:none; }
-  .top-nav a:hover{ color:var(--clay); }
-  .theme-toggle{ background:none; border:1px solid var(--line); border-radius:20px; padding:6px 12px; font-size:12px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
+  .top-nav a{ font-size:13px; color:var(--ink-soft); }
+  .top-nav a:hover{ color:var(--neon-cyan); }
   .post-wrap{ max-width:760px; margin:0 auto; padding:60px 24px 40px; }
-  .post-title{ font-family:var(--serif); font-size:42px; font-weight:500; line-height:1.15; margin:0 0 36px; }
-  .post-content p{ font-size:17px; line-height:1.75; margin:0 0 18px; }
-  .post-content h2{ font-family:var(--serif); font-size:28px; margin:32px 0 14px; }
-  .post-content h3{ font-family:var(--serif); font-size:22px; margin:26px 0 12px; }
+  .post-title{ font-size:36px; font-weight:800; line-height:1.2; margin:0 0 36px; }
+  .post-content p{ font-size:16px; line-height:1.8; margin:0 0 18px; }
+  .post-content h2{ font-size:24px; font-weight:700; margin:32px 0 14px; }
+  .post-content h3{ font-size:19px; font-weight:700; margin:26px 0 12px; }
   .post-content ul, .post-content ol{ margin:0 0 18px; padding-left:26px; }
-  .post-content li{ font-size:17px; line-height:1.75; margin-bottom:6px; }
-  .post-content blockquote{ margin:22px 0; padding:6px 20px; border-left:3px solid var(--clay); color:var(--ink-soft); font-style:italic; }
-  .post-content code{ font-family:'IBM Plex Mono', monospace; font-size:0.9em; background:rgba(127,127,127,0.15); padding:2px 6px; border-radius:4px; }
-  .post-content pre{ background:rgba(127,127,127,0.15); border-radius:8px; padding:16px 18px; overflow-x:auto; margin:22px 0; }
+  .post-content li{ font-size:16px; line-height:1.8; margin-bottom:6px; }
+  .post-content blockquote{ margin:22px 0; padding:6px 20px; border-left:3px solid var(--neon-green); color:var(--ink-soft); font-style:italic; }
+  .post-content code{ font-size:0.9em; background:var(--bg-3); padding:2px 6px; border-radius:4px; color:var(--neon-cyan); }
+  .post-content pre{ background:var(--bg-3); border:1px solid var(--line); border-radius:8px; padding:16px 18px; overflow-x:auto; margin:22px 0; }
   .post-content pre code{ background:none; padding:0; }
   .post-content hr{ border:none; border-top:1px solid var(--line); margin:32px 0; }
-  .post-content table{ border-collapse:collapse; width:100%; margin:22px 0; font-size:15px; }
+  .post-content table{ border-collapse:collapse; width:100%; margin:22px 0; font-size:14px; }
   .post-content th, .post-content td{ border:1px solid var(--line); padding:10px 12px; text-align:left; }
-  .post-content a{ color:var(--clay); }
-  .post-image{ width:100%; border-radius:8px; margin:22px 0; display:block; }
+  .post-content a{ color:var(--neon-green); }
+  .post-content a:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
+  .post-image{ width:100%; border-radius:8px; margin:22px 0; display:block; border:1px solid var(--line); }
   .media-embed{ margin:22px 0; }
   .media-embed iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:8px; }
   .embed-fallback{ font-size:13px !important; color:var(--ink-soft) !important; margin:8px 0 0 !important; }
   .share-bar{ max-width:760px; margin:0 auto; padding:24px; border-top:1px solid var(--line); display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
-  .share-bar span{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
-  .share-bar a{ font-family:var(--mono); font-size:13px; color:var(--ink); text-decoration:none; padding:6px 12px; border:1px solid var(--line); border-radius:6px; }
-  .share-bar a:hover{ background:var(--ink); color:var(--cream); }
-  .post-dates{ max-width:760px; margin:0 auto; padding:16px 24px 60px; font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
+  .share-bar span{ font-size:12px; color:var(--ink-soft); }
+  .share-bar a{ font-size:13px; color:var(--ink); padding:6px 12px; border:1px solid var(--line); border-radius:4px; }
+  .share-bar a:hover{ border-color:var(--neon-green); color:var(--neon-green); }
+  .post-dates{ max-width:760px; margin:0 auto; padding:16px 24px 60px; font-size:12px; color:var(--ink-soft); }
 
   @media (max-width:640px){
     .top-nav{ padding:16px 18px; }
     .post-wrap{ padding:32px 18px 28px; }
-    .post-title{ font-size:28px; margin-bottom:24px; }
-    .post-content p, .post-content li{ font-size:16px; }
+    .post-title{ font-size:26px; margin-bottom:24px; }
+    .post-content p, .post-content li{ font-size:15px; }
     .share-bar{ padding:18px; }
     .post-dates{ padding:14px 18px 40px; }
   }
@@ -635,7 +574,7 @@ function generatePostHtml(title, postUrl){
 <body>
 <div class="top-nav">
   <a href="../index.html">← Orqaga</a>
-  <button class="theme-toggle" id="themeToggle">🌙</button>
+  <button class="theme-toggle" id="themeToggle">☀️</button>
 </div>
 <main class="post-wrap">
   <h1 class="post-title">${escapeHtml(title)}</h1>
@@ -645,26 +584,11 @@ ${contentHtml}
 </main>
 <div class="share-bar">
   <span>Ulashish:</span>
-  <a href="https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}" target="_blank" rel="noopener">X</a>
   <a href="https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}" target="_blank" rel="noopener">Telegram</a>
   <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}" target="_blank" rel="noopener">LinkedIn</a>
 </div>
 <div class="post-dates">Yaratildi: ${createdAtDisplay} · Yangilandi: ${updatedAtDisplay}</div>
-<script>
-(function(){
-  var saved = localStorage.getItem('miuceo_theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-  var btn = document.getElementById('themeToggle');
-  btn.textContent = saved === 'dark' ? '☀️' : '🌙';
-  btn.addEventListener('click', function(){
-    var current = document.documentElement.getAttribute('data-theme');
-    var next = current === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('miuceo_theme', next);
-    document.documentElement.setAttribute('data-theme', next);
-    btn.textContent = next === 'dark' ? '☀️' : '🌙';
-  });
-})();
-<\/script>
+<script src="../assets/theme.js"><\/script>
 <\/body>
 <\/html>`;
 }
@@ -683,9 +607,7 @@ document.getElementById('closeModalBtn').addEventListener('click', () => {
 /* ---------- GENERATE & PUBLISH ---------- */
 document.getElementById('generateBtn').addEventListener('click', async () => {
   const title = document.getElementById('titleInput').value.trim();
-  const s = getSettings();
   if(!title){ alert('Iltimos, sarlavha kiriting.'); return; }
-  if(!s.ghToken || !s.ghOwner || !s.ghRepo || !s.siteUrl){ alert('Iltimos, avval Sozlamalar bo\'limini to\'ldiring.'); return; }
   if(blocks.length === 0){ alert('Iltimos, kamida bitta blok qo\'shing.'); return; }
 
   const isEdit = !!currentSlug;
@@ -693,7 +615,7 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
   const nowIso = new Date().toISOString();
   if(!isEdit) currentCreatedAt = nowIso;
 
-  const postUrl = `${s.siteUrl}/posts/${slug}.html`;
+  const postUrl = `${SITE_URL}/posts/${slug}.html`;
   const excerpt = getExcerpt();
   const coverImage = getCoverImage();
 
@@ -706,7 +628,7 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     appendLog(`Slug: ${slug}`);
 
     appendLog('HTML post fayli tayyorlanmoqda...');
-    const postHtml = generatePostHtml(title, postUrl);
+    const postHtml = generatePostHtml(title, postUrl, excerpt, coverImage);
     const existingPostFile = isEdit ? await ghGetFile(`posts/${slug}.html`) : null;
     await ghPutFileSafe(`posts/${slug}.html`, postHtml, `${isEdit ? 'Update' : 'Create'} post: ${title}`, existingPostFile ? existingPostFile.sha : null);
     appendLog('✓ posts/' + slug + '.html GitHub\'ga yuklandi');
@@ -728,32 +650,32 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     let indexSha = indexPutResult.content.sha;
     appendLog('✓ posts.json yangilandi');
 
-    if(s.tgToken && s.tgChannel){
-      if(isEdit && currentTelegramMsgId){
-        appendLog('Telegram xabari tahrirlanmoqda...');
-        await tgEditPost(currentTelegramMsgId, title, excerpt, coverImage, postUrl, currentTelegramHasMedia);
-        appendLog('✓ Telegram xabari yangilandi');
-      } else if(!isEdit){
-        appendLog('Telegram kanaliga yuborilmoqda...');
-        const msgId = await tgSendPost(title, excerpt, coverImage, postUrl);
-        currentTelegramMsgId = msgId;
-        currentTelegramHasMedia = !!coverImage;
-        appendLog('✓ Telegram\'ga yuborildi (message_id: ' + msgId + ')');
-        appendLog('posts.json va posts-data qayta yangilanmoqda (telegram_message_id bilan)...');
-        entry.telegram_message_id = msgId;
-        entry.telegram_has_media = currentTelegramHasMedia;
-        index[index.findIndex(p => p.slug === slug)] = entry;
-        const indexPutResult2 = await ghPutFileSafe('posts.json', JSON.stringify(index, null, 2), `Set telegram id: ${title}`, indexSha);
-        indexSha = indexPutResult2.content.sha;
-        postData.telegram_message_id = msgId;
-        postData.telegram_has_media = currentTelegramHasMedia;
-        const dataPutResult2 = await ghPutFileSafe(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `Set telegram id: ${title}`, postDataSha);
-        postDataSha = dataPutResult2.content.sha;
-        appendLog('✓ Tayyor');
-      }
-    } else {
-      appendLog('⚠ Telegram sozlamalari to\'liq emas, Telegram\'ga yuborilmadi.');
+    if(isEdit && currentTelegramMsgId){
+      appendLog('Telegram xabari tahrirlanmoqda...');
+      await tgEditPost(currentTelegramMsgId, title, excerpt, coverImage, postUrl, currentTelegramHasMedia);
+      appendLog('✓ Telegram xabari yangilandi');
+    } else if(!isEdit){
+      appendLog('Telegram kanaliga yuborilmoqda...');
+      const msgId = await tgSendPost(title, excerpt, coverImage, postUrl);
+      currentTelegramMsgId = msgId;
+      currentTelegramHasMedia = !!coverImage;
+      appendLog('✓ Telegram\'ga yuborildi (message_id: ' + msgId + ')');
+      appendLog('posts.json va posts-data qayta yangilanmoqda (telegram_message_id bilan)...');
+      entry.telegram_message_id = msgId;
+      entry.telegram_has_media = currentTelegramHasMedia;
+      index[index.findIndex(p => p.slug === slug)] = entry;
+      const indexPutResult2 = await ghPutFileSafe('posts.json', JSON.stringify(index, null, 2), `Set telegram id: ${title}`, indexSha);
+      indexSha = indexPutResult2.content.sha;
+      postData.telegram_message_id = msgId;
+      postData.telegram_has_media = currentTelegramHasMedia;
+      const dataPutResult2 = await ghPutFileSafe(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `Set telegram id: ${title}`, postDataSha);
+      postDataSha = dataPutResult2.content.sha;
+      appendLog('✓ Tayyor');
     }
+
+    appendLog('rss.xml yangilanmoqda...');
+    await publishRss(index, SITE_URL);
+    appendLog('✓ rss.xml yangilandi');
 
     currentSlug = slug;
     document.getElementById('titleInput').disabled = true;
@@ -774,11 +696,6 @@ render();
   const params = new URLSearchParams(window.location.search);
   const editSlug = params.get('edit');
   if(!editSlug) return;
-  const s = getSettings();
-  if(!s.ghToken || !s.ghOwner || !s.ghRepo){
-    alert('Iltimos, avval Sozlamalar bo\'limini to\'ldiring, keyin postni qayta oching.');
-    return;
-  }
   try{
     const file = await ghGetFile('posts.json');
     allPosts = file ? JSON.parse(file.content) : [];

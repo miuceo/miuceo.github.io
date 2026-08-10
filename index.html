@@ -5,110 +5,156 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>miuceo — Muhammadjon Ibrohimov</title>
 <meta name="description" content="Muhammadjon Ibrohimovning shaxsiy sayti — postlar, loyihalar va o'ylar.">
+<link rel="canonical" href="https://muhammadjon.me/">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="alternate" type="application/rss+xml" title="miuceo — RSS" href="https://muhammadjon.me/rss.xml">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="miuceo — Muhammadjon Ibrohimov">
+<meta property="og:description" content="Machine learning, AI engineering, backend va DevOps haqida o'rganganlarim va qurgan narsalarim.">
+<meta property="og:url" content="https://muhammadjon.me/">
+<meta property="og:site_name" content="miuceo">
+<meta property="og:locale" content="uz_UZ">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="miuceo — Muhammadjon Ibrohimov">
+<meta name="twitter:description" content="Machine learning, AI engineering, backend va DevOps haqida o'rganganlarim va qurgan narsalarim.">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Muhammadjon Ibrohimov",
+  "alternateName": "miuceo",
+  "url": "https://muhammadjon.me/",
+  "sameAs": [
+    "https://t.me/muhammadibrohimov_ceo",
+    "https://github.com/miuceo"
+  ],
+  "jobTitle": "AI/ML Engineer"
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
 <style>
-  :root{
-    --cream:#F5F1EA;
-    --cream-2:#EEE9DF;
-    --cream-3:#E7E1D3;
-    --ink:#1F1B16;
-    --ink-soft:#4A443C;
-    --clay:#D97757;
-    --clay-dark:#B85C3F;
-    --line:#DDD5C7;
-    --white:#FFFFFF;
-    --serif:'Newsreader', Georgia, serif;
-    --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --mono:'IBM Plex Mono', monospace;
-  }
-  [data-theme="dark"]{
-    --cream:#1A1714; --cream-2:#242019; --cream-3:#2C2620;
-    --ink:#F0EAE0; --ink-soft:#B8AF9E; --line:#3A342B; --white:#242019;
-  }
-  body{ transition:background .2s, color .2s; }
-  .theme-toggle{ background:none; border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:13px; cursor:pointer; color:var(--ink); font-family:var(--sans); }
-  *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--cream); color:var(--ink); font-family:var(--sans); line-height:1.5; }
-  a{ text-decoration:none; color:inherit; }
-  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; }
+  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; position:relative; }
 
   /* NAVBAR */
   .navbar{
     display:flex; justify-content:space-between; align-items:center;
-    padding:22px 0; border-bottom:1px solid var(--line);
+    padding:22px 0; border-bottom:1px solid var(--line); position:relative; z-index:2;
   }
-  .brand{ font-family:var(--sans); font-weight:800; font-size:20px; letter-spacing:-0.01em; }
-  .nav-links{ display:flex; align-items:center; gap:36px; }
-  .nav-links a{ font-size:15px; font-weight:500; color:var(--ink); }
-  .nav-links a:hover{ color:var(--clay); }
+  .brand{ font-weight:800; font-size:20px; letter-spacing:-0.01em; color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); }
+  .nav-links{ display:flex; align-items:center; gap:32px; }
+  .nav-links a{ font-size:14px; font-weight:500; color:var(--ink-soft); transition:color .15s; }
+  .nav-links a:hover{ color:var(--neon-cyan); }
   .btn-admin{
-    background:var(--ink); color:var(--cream) !important;
-    padding:10px 20px; border-radius:6px; font-size:14px; font-weight:600;
+    border:1px solid var(--neon-green); color:var(--neon-green) !important;
+    padding:9px 18px; border-radius:4px; font-size:13px; font-weight:600;
+    transition:box-shadow .2s, background .2s, color .2s;
   }
-  .btn-admin:hover{ background:var(--clay-dark); }
+  .btn-admin:hover{ background:var(--neon-green); color:var(--bg) !important; box-shadow:var(--glow-md) var(--neon-green); }
 
   /* HERO */
   .hero{
-    display:grid; grid-template-columns:1.3fr 1fr; gap:60px;
-    padding:100px 0 90px; border-bottom:1px solid var(--line);
+    position:relative; overflow:hidden;
+    padding:110px 0 90px; border-bottom:1px solid var(--line);
+    display:grid; grid-template-columns:1.1fr 1fr; gap:48px; align-items:center;
   }
+  .hero-inner{ position:relative; z-index:1; }
+  .prompt-line{ font-size:14px; color:var(--neon-green); margin-bottom:18px; }
+  .prompt-line::before{ content:'$ '; opacity:0.7; }
+  .cursor{ display:inline-block; width:9px; height:1.1em; background:var(--neon-green); margin-left:4px; vertical-align:text-bottom; animation:blink 1.1s step-end infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
   .hero h1{
-    font-family:var(--sans); font-weight:800; font-size:52px; line-height:1.1;
-    letter-spacing:-0.02em; margin:0;
+    font-weight:800; font-size:44px; line-height:1.15;
+    letter-spacing:-0.01em; margin:0 0 22px;
   }
-  .hero h1 u{ text-decoration-color:var(--clay); text-decoration-thickness:4px; text-underline-offset:6px; }
-  .hero-desc{ font-family:var(--serif); font-size:19px; line-height:1.6; color:var(--ink-soft); align-self:center; }
-  @media (max-width:860px){ .hero{ grid-template-columns:1fr; padding:60px 0; } .hero h1{ font-size:36px; } }
+  .hero h1 .accent{ color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); }
+  .hero-desc{ font-size:16px; line-height:1.7; color:var(--ink-soft); }
+
+  /* CODE WINDOW */
+  .code-window{
+    position:relative; z-index:1; background:var(--bg-2); border:1px solid var(--line);
+    border-radius:8px; overflow:hidden; box-shadow:var(--glow-md) rgba(61,255,162,0.06);
+  }
+  .code-titlebar{
+    display:flex; align-items:center; gap:7px; padding:10px 14px;
+    border-bottom:1px solid var(--line); background:var(--bg-3);
+  }
+  .code-dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .code-dot.red{ background:#FF5C5C; }
+  .code-dot.yellow{ background:#FFD166; }
+  .code-dot.green{ background:var(--neon-green); }
+  .code-tabs{ display:flex; gap:2px; overflow-x:auto; margin-left:6px; scrollbar-width:none; }
+  .code-tabs::-webkit-scrollbar{ display:none; }
+  .code-tab{
+    background:none; border:none; border-bottom:2px solid transparent; padding:6px 10px;
+    font-family:var(--mono); font-size:11px; color:var(--ink-soft); cursor:pointer; white-space:nowrap;
+  }
+  .code-tab:hover{ color:var(--ink); }
+  .code-tab.active{ color:var(--neon-green); border-bottom-color:var(--neon-green); }
+  .code-body{ margin:0; padding:22px 24px; font-size:13px; line-height:1.85; overflow-x:auto; min-height:280px; }
+  .code-body .kw{ color:var(--neon-cyan); }
+  .code-body .str{ color:var(--neon-green); }
+  .code-body .cmt{ color:var(--ink-soft); font-style:italic; }
+  .type-cursor{ display:inline-block; width:7px; height:1em; background:var(--neon-green); vertical-align:text-bottom; animation:blink 1s step-end infinite; }
+
+  @media (max-width:960px){
+    .hero{ grid-template-columns:1fr; }
+    .code-window{ order:-1; }
+  }
+  @media (max-width:860px){ .hero{ padding:60px 0; } .hero h1{ font-size:30px; } }
+  @media (max-width:640px){ .code-body{ font-size:12px; padding:18px; } }
 
   /* FEATURED POST */
   .section-label{
-    font-family:var(--mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
-    color:var(--ink-soft); margin:64px 0 20px;
+    font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--neon-cyan); margin:64px 0 20px;
   }
+  .section-label::before{ content:'// '; opacity:0.6; }
   .featured{
-    background:var(--cream-3); border-radius:16px; overflow:hidden;
+    background:var(--bg-2); border:1px solid var(--line); border-radius:8px; overflow:hidden;
     display:grid; grid-template-columns:1fr 1fr; min-height:340px;
+    transition:box-shadow .2s, border-color .2s;
   }
+  .featured:hover{ border-color:var(--neon-green); box-shadow:var(--glow-md) rgba(61,255,162,0.25); }
   .featured-text{ padding:56px; display:flex; flex-direction:column; justify-content:center; }
-  .featured-text h2{ font-family:var(--serif); font-size:40px; font-weight:500; margin:0 0 16px; line-height:1.2; }
-  .featured-text p{ font-size:16px; color:var(--ink-soft); margin:0 0 28px; line-height:1.6; }
-  .featured-img{ background:var(--cream-2); }
+  .featured-text h2{ font-size:32px; font-weight:700; margin:0 0 16px; line-height:1.25; }
+  .featured-text p{ font-size:15px; color:var(--ink-soft); margin:0 0 28px; line-height:1.7; }
+  .featured-img{ background:var(--bg-3); }
   .featured-img img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .btn-dark{
-    display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:var(--cream);
-    padding:14px 24px; border-radius:6px; font-size:15px; font-weight:600; width:fit-content;
-  }
-  .btn-dark:hover{ background:var(--clay-dark); }
   @media (max-width:860px){ .featured{ grid-template-columns:1fr; } .featured-img{ min-height:220px; order:-1; } .featured-text{ padding:36px; } }
 
   /* GRID */
   .posts-grid{
-    display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; margin-bottom:80px;
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; margin-bottom:80px;
   }
   @media (max-width:900px){ .posts-grid{ grid-template-columns:1fr; } }
   .post-card{
-    background:var(--cream-3); border-radius:14px; padding:32px;
-    display:flex; flex-direction:column; min-height:280px;
+    background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:28px;
+    display:flex; flex-direction:column; min-height:260px;
+    transition:box-shadow .2s, border-color .2s;
   }
-  .post-card h3{ font-family:var(--sans); font-weight:700; font-size:22px; margin:0 0 12px; }
-  .post-card p{ font-size:15px; color:var(--ink-soft); line-height:1.6; margin:0; flex:1; }
+  .post-card:hover{ border-color:var(--neon-cyan); box-shadow:var(--glow-md) rgba(56,232,255,0.2); }
+  .post-card h3{ font-weight:700; font-size:19px; margin:0 0 12px; }
+  .post-card p{ font-size:14px; color:var(--ink-soft); line-height:1.7; margin:0; flex:1; }
   .post-meta{
-    display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px;
-    color:var(--ink-soft); border-top:1px solid var(--line); padding-top:14px; margin-top:24px;
+    display:flex; justify-content:space-between; font-size:12px;
+    color:var(--ink-soft); border-top:1px solid var(--line-soft); padding-top:14px; margin-top:24px;
   }
   .post-link{
-    display:inline-flex; align-items:center; gap:6px; background:var(--ink); color:var(--cream);
-    padding:12px 18px; border-radius:6px; font-size:14px; font-weight:600; margin-top:18px; width:fit-content;
+    display:inline-flex; align-items:center; gap:6px; color:var(--neon-green);
+    font-size:13px; font-weight:600; margin-top:16px; width:fit-content;
   }
-  .post-link:hover{ background:var(--clay-dark); }
+  .post-link:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
   .empty-state{
     grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--ink-soft);
-    font-family:var(--serif); font-style:italic; font-size:17px;
+    font-style:italic; font-size:15px;
   }
 
   footer{
-    border-top:1px solid var(--line); padding:32px 0; font-family:var(--mono); font-size:13px;
+    border-top:1px solid var(--line); padding:32px 0; font-size:13px;
     color:var(--ink-soft); display:flex; justify-content:space-between;
   }
 
@@ -116,12 +162,12 @@
     .wrap{ padding:0 18px; }
     .navbar{ flex-wrap:wrap; gap:12px; padding:16px 0; }
     .nav-links{ gap:14px; flex-wrap:wrap; width:100%; }
-    .hero{ padding:40px 0; gap:28px; }
-    .hero h1{ font-size:28px; }
-    .hero-desc{ font-size:15px; }
+    .hero{ padding:40px 0; }
+    .hero h1{ font-size:26px; }
+    .hero-desc{ font-size:14px; }
     .section-label{ margin:40px 0 16px; }
     .featured-text{ padding:24px; }
-    .featured-text h2{ font-size:26px; }
+    .featured-text h2{ font-size:24px; }
     .post-card{ padding:22px; min-height:auto; }
     footer{ flex-direction:column; gap:8px; text-align:center; padding:24px 0; }
   }
@@ -136,14 +182,30 @@
       <a href="#latest-posts">Posts</a>
       <a href="projects.html">Projects</a>
       <a href="contact.html">Contact</a>
-      <button class="theme-toggle" id="themeToggle">🌙</button>
+      <button class="theme-toggle" id="themeToggle">☀️</button>
       <a href="login.html" class="btn-admin">Admin panel</a>
     </div>
   </nav>
 
   <section class="hero">
-    <h1>Building at the <u>intersection</u> of AI and <u>engineering</u></h1>
-    <p class="hero-desc">Men Muhammadjon Ibrohimov — machine learning, AI engineering, backend development va DevOps'ni o'rganyapman, shu bilan birga texnologiya va iqtisodiyot qanday kesishishini kuzataman. Bu yerda o'rganganlarim, qurgan narsalarim va o'ylarim haqida yozaman.</p>
+    <div class="hero-inner">
+      <div class="prompt-line">whoami<span class="cursor"></span></div>
+      <h1>Building at the <span class="accent">intersection</span> of AI and <span class="accent">engineering</span></h1>
+      <p class="hero-desc">Men Muhammadjon Ibrohimov — machine learning, AI engineering, backend development va DevOps'ni o'rganyapman, shu bilan birga texnologiya va iqtisodiyot qanday kesishishini kuzataman. Bu yerda o'rganganlarim, qurgan narsalarim va o'ylarim haqida yozaman.</p>
+    </div>
+    <div class="code-window">
+      <div class="code-titlebar">
+        <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+        <div class="code-tabs" id="codeTabs">
+          <button class="code-tab active" data-lang="javascript">muhammadjon.js</button>
+          <button class="code-tab" data-lang="python">muhammadjon.py</button>
+          <button class="code-tab" data-lang="go">muhammadjon.go</button>
+          <button class="code-tab" data-lang="java">Muhammadjon.java</button>
+          <button class="code-tab" data-lang="rust">muhammadjon.rs</button>
+        </div>
+      </div>
+      <pre class="code-body"><code id="codeBody"></code></pre>
+    </div>
   </section>
 
   <div class="section-label" id="latest-posts">Eng so'nggi post</div>
@@ -156,23 +218,141 @@
 
   <footer>
     <span>&copy; 2026 Muhammadjon Ibrohimov</span>
-    <span>miuceo.github.io</span>
+    <span>muhammadjon.me</span>
   </footer>
 </div>
 
+<script src="assets/theme.js"></script>
 <script>
-function initTheme(){
-  const saved = localStorage.getItem('miuceo_theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+/* ---------- CODE WINDOW: typewriter across languages ---------- */
+const CODE_SNIPPETS = {
+  javascript: [
+    ['cmt', '// $ whoami\n'],
+    ['kw', 'const'], ['plain', ' muhammadjon = {\n  role: '],
+    ['str', "'AI/ML Engineer'"], ['plain', ',\n  based_in: '],
+    ['str', "'Uzbekistan'"], ['plain', ',\n  stack: ['],
+    ['str', "'Python'"], ['plain', ', '], ['str', "'PyTorch'"], ['plain', ', '],
+    ['str', "'FastAPI'"], ['plain', ', '], ['str', "'LLMs'"], ['plain', '],\n  focus: '],
+    ['str', "'agentic AI & backend systems'"], ['plain', ',\n  currently: '],
+    ['str', "'building this site with an AI agent'"], ['plain', ',\n};\n\n'],
+    ['kw', 'export default'], ['plain', ' muhammadjon;'],
+  ],
+  python: [
+    ['cmt', '# $ whoami\n'],
+    ['kw', 'class'], ['plain', ' Muhammadjon:\n    role = '],
+    ['str', '"AI/ML Engineer"'], ['plain', '\n    based_in = '],
+    ['str', '"Uzbekistan"'], ['plain', '\n    stack = ['],
+    ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+    ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', ']\n    focus = '],
+    ['str', '"agentic AI & backend systems"'], ['plain', '\n    currently = '],
+    ['str', '"building this site with an AI agent"'],
+  ],
+  go: [
+    ['cmt', '// $ whoami\n'],
+    ['kw', 'type'], ['plain', ' Muhammadjon '], ['kw', 'struct'],
+    ['plain', ' {\n    Role      string\n    BasedIn   string\n    Stack     []string\n    Focus     string\n    Currently string\n}\n\n'],
+    ['kw', 'var'], ['plain', ' Me = Muhammadjon{\n    Role:      '],
+    ['str', '"AI/ML Engineer"'], ['plain', ',\n    BasedIn:   '],
+    ['str', '"Uzbekistan"'], ['plain', ',\n    Stack:     []string{'],
+    ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+    ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', '},\n    Focus:     '],
+    ['str', '"agentic AI & backend systems"'], ['plain', ',\n    Currently: '],
+    ['str', '"building this site with an AI agent"'], ['plain', ',\n}'],
+  ],
+  java: [
+    ['cmt', '// $ whoami\n'],
+    ['kw', 'public class'], ['plain', ' Muhammadjon {\n    String role = '],
+    ['str', '"AI/ML Engineer"'], ['plain', ';\n    String basedIn = '],
+    ['str', '"Uzbekistan"'], ['plain', ';\n    String[] stack = {'],
+    ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+    ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', '};\n    String focus = '],
+    ['str', '"agentic AI & backend systems"'], ['plain', ';\n    String currently =\n        '],
+    ['str', '"building this site with an AI agent"'], ['plain', ';\n}'],
+  ],
+  rust: [
+    ['cmt', '// $ whoami\n'],
+    ['kw', 'struct'], ['plain', " Muhammadjon<'a> {\n    role: &'a str,\n    based_in: &'a str,\n    stack: [&'a str; 4],\n    focus: &'a str,\n    currently: &'a str,\n}\n\n"],
+    ['kw', 'const'], ['plain', ' ME: Muhammadjon = Muhammadjon {\n    role: '],
+    ['str', '"AI/ML Engineer"'], ['plain', ',\n    based_in: '],
+    ['str', '"Uzbekistan"'], ['plain', ',\n    stack: ['],
+    ['str', '"Python"'], ['plain', ', '], ['str', '"PyTorch"'], ['plain', ', '],
+    ['str', '"FastAPI"'], ['plain', ', '], ['str', '"LLMs"'], ['plain', '],\n    focus: '],
+    ['str', '"agentic AI & backend systems"'], ['plain', ',\n    currently: '],
+    ['str', '"building this site with an AI agent"'], ['plain', ',\n};'],
+  ],
+};
+
+function escapeCode(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-document.getElementById('themeToggle').addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('miuceo_theme', next);
-  initTheme();
+function flattenTokens(tokens){
+  const chars = [];
+  tokens.forEach(([cls, text]) => { for(const ch of text) chars.push({ ch, cls }); });
+  return chars;
+}
+function renderChars(chars, count, withCursor){
+  let html = '';
+  let i = 0;
+  while(i < count){
+    const cls = chars[i].cls;
+    let chunk = '';
+    while(i < count && chars[i].cls === cls){ chunk += chars[i].ch; i++; }
+    const esc = escapeCode(chunk);
+    html += cls === 'plain' ? esc : `<span class="${cls}">${esc}</span>`;
+  }
+  if(withCursor) html += '<span class="type-cursor"></span>';
+  return html;
+}
+
+let currentLang = 'javascript';
+let typingTimer = null;
+let autoAdvanceTimer = null;
+const LANGS = Object.keys(CODE_SNIPPETS);
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function typeLanguage(lang){
+  clearTimeout(typingTimer);
+  const codeBody = document.getElementById('codeBody');
+  const chars = flattenTokens(CODE_SNIPPETS[lang]);
+
+  document.querySelectorAll('.code-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.lang === lang);
+  });
+
+  if(prefersReducedMotion){
+    codeBody.innerHTML = renderChars(chars, chars.length, false);
+    return;
+  }
+
+  let i = 0;
+  const SPEED_MS = 16;
+  (function tick(){
+    i = Math.min(i + 1, chars.length);
+    codeBody.innerHTML = renderChars(chars, i, i < chars.length);
+    if(i < chars.length) typingTimer = setTimeout(tick, SPEED_MS);
+  })();
+}
+
+function scheduleAutoAdvance(){
+  clearTimeout(autoAdvanceTimer);
+  if(prefersReducedMotion) return;
+  autoAdvanceTimer = setTimeout(() => {
+    currentLang = LANGS[(LANGS.indexOf(currentLang) + 1) % LANGS.length];
+    typeLanguage(currentLang);
+    scheduleAutoAdvance();
+  }, 8000);
+}
+
+document.querySelectorAll('.code-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentLang = btn.dataset.lang;
+    typeLanguage(currentLang);
+    scheduleAutoAdvance();
+  });
 });
-initTheme();
+
+typeLanguage(currentLang);
+scheduleAutoAdvance();
 
 function escapeHtml(s){
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -203,7 +383,7 @@ fetch('posts.json')
         <div class="featured-text">
           <h2>${escapeHtml(latest.title)}</h2>
           <p>${escapeHtml(latest.excerpt || '')}</p>
-          <span class="btn-dark">Continue reading →</span>
+          <span class="post-link">Continue reading →</span>
         </div>
         ${latest.cover_image
           ? `<div class="featured-img"><img src="${latest.cover_image}" alt="${escapeHtml(latest.title)}"></div>`
