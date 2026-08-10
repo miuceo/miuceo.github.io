@@ -21,6 +21,13 @@ dist/
 npm-debug.log*
 yarn-error.log*
 
+# v1 permalink bridge — copied into public/ fresh at deploy time by
+# .github/workflows/deploy.yml, never committed (see that file's comment)
+public/posts/
+public/posts-data/
+public/posts.json
+public/rss.xml
+
 # Editors
 .vscode/
 .idea/
