@@ -1,6 +1,32 @@
+# Claude Code / tooling
 .claude/
+
+# Python (any local scripts/experiments)
 .venv
 venv
 env
+
+# Secrets — never commit
 .env
-CLAUDE.md
+.env.*
+.dev.vars
+.dev.vars.*
+
+# Node / v2 + worker build artifacts
+node_modules/
+dist/
+.astro/
+.wrangler/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
