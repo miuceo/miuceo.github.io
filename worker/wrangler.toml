@@ -1,0 +1,30 @@
+name = "miuceo-worker"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+
+# No custom route yet — ships on the free *.workers.dev subdomain.
+# To move to api.muhammadjon.me later (needs the zone on Cloudflare DNS):
+#   [[routes]]
+#   pattern = "api.muhammadjon.me/*"
+#   custom_domain = true
+# and drop the workers.dev default via `workers_dev = false`.
+
+[vars]
+# Non-secret config. Secrets (tokens) are set with `wrangler secret put` — see worker/README.md.
+SITE_ORIGIN = "https://muhammadjon.me"
+GH_OWNER = "miuceo"
+GH_REPO = "miuceo.github.io"
+GH_BRANCH = "main"
+ALLOWED_TELEGRAM_ID = "7197666892"
+TG_CHANNEL = "@muhammadibrohimov_ceo"
+SESSION_COOKIE_NAME = "miuceo_session"
+SESSION_TTL_SECONDS = "2592000"  # 30 days — matches the auth duration v1's reader flow used
+
+[[d1_databases]]
+binding = "DB"
+database_name = "miuceo-db"
+database_id = "64b70544-9842-4c75-961e-54974a3dd66a"
+
+# Secrets — set via `wrangler secret put <NAME>`, never written here:
+#   GH_TOKEN        GitHub PAT, repo-write scope on miuceo/miuceo.github.io
+#   TG_BOT_TOKEN     Telegram bot token from @BotFather
