@@ -21,12 +21,34 @@ export async function createDraft(
   const id = crypto.randomUUID();
   const ts = now();
   await env.DB.prepare(
-    `INSERT INTO drafts (id, slug, target_lang, kind, source_text, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`
+    `INSERT INTO drafts (id, slug, target_lang, kind, source, source_text, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'editor', ?, 'pending', ?, ?)`
   )
     .bind(id, input.slug, input.targetLang, input.kind, input.sourceText, ts, ts)
     .run();
   return id;
+}
+
+/**
+ * A draft captured from the Telegram bot. No slug — there is no post behind it
+ * yet; the author gives it one when finishing in the Mini App.
+ */
+export async function createCapture(env: Env, sourceText: string): Promise<string> {
+  const id = crypto.randomUUID();
+  const ts = now();
+  await env.DB.prepare(
+    `INSERT INTO drafts (id, slug, target_lang, kind, source, source_text, status, created_at, updated_at)
+     VALUES (?, NULL, 'uz', 'capture', 'telegram', ?, 'pending', ?, ?)`
+  )
+    .bind(id, sourceText, ts, ts)
+    .run();
+  return id;
+}
+
+export async function discardDraft(env: Env, id: string): Promise<void> {
+  await env.DB.prepare(`UPDATE drafts SET status = 'discarded', updated_at = ? WHERE id = ?`)
+    .bind(now(), id)
+    .run();
 }
 
 export async function markDraftReady(

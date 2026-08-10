@@ -61,6 +61,11 @@ npx wrangler secret put GROQ_API_KEY
 npx wrangler secret put OPENROUTER_API_KEY
 # openrouter.ai — bepul tarifda kuniga 50 ta so'rov (karta bilan 1000 ta).
 # Groq ishlamay qolsa, zaxira provayder sifatida ishlatiladi (D12).
+
+npx wrangler secret put TG_WEBHOOK_SECRET
+# Uzun tasodifiy satr (masalan: openssl rand -hex 32).
+# Telegram bu qiymatni har bir webhook so'rovida qaytaradi —
+# /tg/webhook uchun asosiy himoya shu. Uni ham maxfiy saqlang.
 ```
 
 AI kalitlari bo'lmasa sayt va nashr qilish odatdagidek ishlayveradi — faqat

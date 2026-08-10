@@ -21,6 +21,10 @@ export interface Env {
   TG_BOT_TOKEN: string;
   GROQ_API_KEY: string;
   OPENROUTER_API_KEY: string;
+  // Shared with Telegram at setWebhook time and sent back as the
+  // X-Telegram-Bot-Api-Secret-Token header — the primary proof that a call to
+  // /tg/webhook really came from Telegram.
+  TG_WEBHOOK_SECRET: string;
 }
 
 export interface Session {
@@ -31,15 +35,17 @@ export interface Session {
   revoked_at: number | null;
 }
 
-export type DraftStatus = 'pending' | 'ready' | 'failed';
-export type DraftKind = 'translation' | 'improvement';
+export type DraftStatus = 'pending' | 'ready' | 'failed' | 'discarded';
+export type DraftKind = 'translation' | 'improvement' | 'capture';
+export type DraftSource = 'editor' | 'telegram';
 export type Lang = 'uz' | 'en' | 'ru';
 
 export interface Draft {
   id: string;
-  slug: string;
+  slug: string | null; // null for a capture — no post behind it yet
   target_lang: Lang;
   kind: DraftKind;
+  source: DraftSource;
   source_text: string;
   result_title: string | null;
   result_excerpt: string | null;

@@ -898,8 +898,16 @@ export function initPostBuilder() {
   render();
 
   // ?edit=slug auto-load, same as post-builder.html
+  // ?draft=id loads a draft captured from the Telegram bot (Phase 5 Stage 2).
   (async () => {
     const params = new URLSearchParams(window.location.search);
+
+    const draftId = params.get('draft');
+    if (draftId) {
+      await loadCapturedDraft(draftId);
+      return;
+    }
+
     const editSlug = params.get('edit');
     if (!editSlug) return;
     try {
@@ -911,4 +919,38 @@ export function initPostBuilder() {
       alert("Postni avtomatik yuklab bo'lmadi: " + (err as Error).message);
     }
   })();
+}
+
+/**
+ * Loads a draft the author captured and approved in the Telegram bot, so they
+ * can finish and publish it here. The bot only ever produced text — the post
+ * still gets its slug, media and publish action from this editor, unchanged.
+ */
+async function loadCapturedDraft(draftId: string) {
+  try {
+    const res = await fetch(`${WORKER_URL}/api/drafts/get`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ id: draftId }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Qoralamani yuklab bo\'lmadi');
+
+    const titleInput = document.getElementById('titleInput') as HTMLInputElement;
+    titleInput.value = data.draft.title && data.draft.title !== 'Draft' ? data.draft.title : '';
+    titleInput.disabled = false;
+
+    idCounter = 0;
+    blocks = [{ id: uid(), type: 'text', content: data.draft.markdown || '' }];
+    currentSlug = null;
+    currentCreatedAt = null;
+    currentTelegramMsgId = null;
+    currentTelegramHasMedia = false;
+    document.getElementById('modeText')!.textContent = 'Telegram qoralamasi';
+    setAgentButtonsEnabled(false); // no slug yet — publish first, then translate
+    render();
+  } catch (err) {
+    alert("Qoralamani yuklab bo'lmadi: " + (err as Error).message);
+  }
 }

@@ -52,3 +52,8 @@ database_id = "64b70544-9842-4c75-961e-54974a3dd66a"
 #   TG_BOT_TOKEN        Telegram bot token from @BotFather
 #   GROQ_API_KEY        console.groq.com — free, no credit card
 #   OPENROUTER_API_KEY  openrouter.ai — free tier is 50 req/day without credit
+#   TG_WEBHOOK_SECRET   any long random string; shared with Telegram at
+#                       setWebhook time and returned as the
+#                       X-Telegram-Bot-Api-Secret-Token header. This is the
+#                       primary proof that a /tg/webhook call is really from
+#                       Telegram, so treat it like any other secret.

@@ -7,7 +7,9 @@ import {
 import { isAllowedPath, ghGetFile, ghPutFile, ghPutFileSafe, ghDeleteFile } from './github';
 import { tgSendPost, tgEditPost, tgDeleteMessage } from './telegram';
 import { runAgent, MAX_INPUT_CHARS, type AgentTask } from './agent';
-import { createDraft, markDraftReady, markDraftFailed } from './drafts';
+import { createDraft, markDraftReady, markDraftFailed, getDraft } from './drafts';
+import { handleUpdate, updateSenderId, type TgUpdate } from './bot';
+import { tgSetWebhook } from './telegram';
 import type { DraftKind, Lang } from './types';
 
 function corsHeaders(env: Env): Record<string, string> {
@@ -111,7 +113,7 @@ async function handleAgentTask(env: Env, req: Request, task: AgentTask): Promise
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
 
@@ -120,6 +122,37 @@ export default {
     }
 
     try {
+      /* ---------- /tg/webhook — the ONLY unauthenticated route ----------
+         Telegram's servers have no session cookie, so this necessarily sits
+         above the requireSession gate below. Three independent checks stand in
+         for that gate; do not move this block downward or add siblings to it
+         without the same checks.
+
+         1. The secret-token header proves the caller is Telegram (it is set at
+            setWebhook time and known only to Telegram and this Worker).
+            Mismatch => 401, since that is not a real delivery worth suppressing
+            retries for.
+         2. The sender id must be the author. Anyone else => 200 and ignore: it
+            IS a real Telegram delivery, so 200 stops pointless retries.
+         3. Work happens in ctx.waitUntil so Telegram gets its 200 immediately;
+            an LLM call takes seconds and Telegram retries slow deliveries. */
+
+      if (path === '/tg/webhook' && req.method === 'POST') {
+        const secret = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+        if (!env.TG_WEBHOOK_SECRET || secret !== env.TG_WEBHOOK_SECRET) {
+          return new Response('unauthorized', { status: 401 });
+        }
+
+        const update = await readJson<TgUpdate>(req);
+        const senderId = updateSenderId(update);
+        if (!senderId || String(senderId) !== env.ALLOWED_TELEGRAM_ID) {
+          return new Response('ok', { status: 200 });
+        }
+
+        ctx.waitUntil(handleUpdate(env, update));
+        return new Response('ok', { status: 200 });
+      }
+
       /* ---------- /auth/* — no session required, this IS the session issuer ---------- */
 
       if (path === '/auth/telegram-widget' && req.method === 'POST') {
@@ -225,6 +258,37 @@ export default {
 
       if (path === '/api/agent/improve' && req.method === 'POST') {
         return handleAgentTask(env, req, 'improve');
+      }
+
+      /* ---------- drafts + bot administration (author only) ---------- */
+
+      if (path === '/api/drafts/get' && req.method === 'POST') {
+        const { id } = await readJson<{ id: string }>(req);
+        if (!id) return errorResponse(env, 'Draft id kerak.', 400);
+        const draft = await getDraft(env, id);
+        if (!draft) return errorResponse(env, 'Qoralama topilmadi.', 404);
+        return json(env, {
+          ok: true,
+          draft: {
+            id: draft.id,
+            kind: draft.kind,
+            status: draft.status,
+            title: draft.result_title,
+            excerpt: draft.result_excerpt,
+            markdown: draft.result_text ?? draft.source_text,
+            approved_at: draft.approved_at,
+          },
+        });
+      }
+
+      // Registers this Worker as the bot's webhook using secrets it already
+      // holds, so the author never has to handle the bot token themselves.
+      if (path === '/api/telegram/register-webhook' && req.method === 'POST') {
+        if (!env.TG_WEBHOOK_SECRET) {
+          return errorResponse(env, 'TG_WEBHOOK_SECRET sozlanmagan.', 400);
+        }
+        await tgSetWebhook(env, `${url.origin}/tg/webhook`, env.TG_WEBHOOK_SECRET);
+        return json(env, { ok: true, webhook: `${url.origin}/tg/webhook` });
       }
 
       return errorResponse(env, 'Not found', 404);
