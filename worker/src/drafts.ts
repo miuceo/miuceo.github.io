@@ -45,6 +45,24 @@ export async function createCapture(env: Env, sourceText: string): Promise<strin
   return id;
 }
 
+/* ---------- bot_settings (migration 0004) ---------- */
+
+export async function getSetting(env: Env, key: string): Promise<string | null> {
+  const row = await env.DB.prepare('SELECT value FROM bot_settings WHERE key = ?')
+    .bind(key)
+    .first<{ value: string }>();
+  return row?.value ?? null;
+}
+
+export async function setSetting(env: Env, key: string, value: string): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO bot_settings (key, value, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+  )
+    .bind(key, value, Math.floor(Date.now() / 1000))
+    .run();
+}
+
 export async function discardDraft(env: Env, id: string): Promise<void> {
   await env.DB.prepare(`UPDATE drafts SET status = 'discarded', updated_at = ? WHERE id = ?`)
     .bind(now(), id)

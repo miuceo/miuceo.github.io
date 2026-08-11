@@ -92,10 +92,51 @@ export interface TranscriptResult {
  * (SKILLS.md `voice-pipeline` step 3), so `verbose_json` is used to read the
  * detected language back rather than passing one in.
  */
+/**
+ * Groq accepts flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm — and decides
+ * from the *filename extension*, not the bytes.
+ *
+ * Telegram delivers voice notes as `.oga`, which is Ogg/Opus in an extension
+ * Groq does not list, so every voice note was rejected. Same container, wrong
+ * label: renaming it to `.ogg` is accurate, not a trick.
+ */
+const GROQ_AUDIO_EXTS = ['flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'wav', 'webm'];
+
+export function normaliseAudioFilename(filename: string): string {
+  const base = (filename.split('/').pop() || 'audio').replace(/\?.*$/, '');
+  const ext = (base.split('.').pop() || '').toLowerCase();
+  if (GROQ_AUDIO_EXTS.includes(ext)) return base;
+  const stem = base.includes('.') ? base.slice(0, base.lastIndexOf('.')) : base;
+  // .oga and .opus are both Ogg containers; anything else unknown is a better
+  // bet as ogg than as a rejected extension.
+  return `${stem}.ogg`;
+}
+
+function audioMimeFor(filename: string): string {
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  const map: Record<string, string> = {
+    ogg: 'audio/ogg', mp3: 'audio/mpeg', mpeg: 'audio/mpeg', mpga: 'audio/mpeg',
+    m4a: 'audio/mp4', mp4: 'audio/mp4', wav: 'audio/wav', webm: 'audio/webm', flac: 'audio/flac',
+  };
+  return map[ext] || 'application/octet-stream';
+}
+
+/**
+ * Whisper accepts a short `prompt` that biases spelling and vocabulary. For
+ * Uzbek this matters more than usual: without it the model tends to drift
+ * toward Turkish orthography and drop the ʻ modifiers in oʻ/gʻ.
+ */
+const STT_PROMPTS: Record<string, string> = {
+  uz: "O'zbek tilida, lotin alifbosida. Masalan: o'zbek, g'oya, ta'lim, san'at, AI, machine learning.",
+  ru: 'Текст на русском языке. Технические термины: AI, machine learning, backend.',
+  en: 'A technical blog post in English about AI, machine learning and backend engineering.',
+};
+
 export async function transcribeAudio(
   env: Env,
   audio: ArrayBuffer,
-  filename: string
+  filename: string,
+  language?: string | null
 ): Promise<TranscriptResult> {
   if (!env.GROQ_API_KEY) throw new Error('transcribe: GROQ_API_KEY not configured');
   if (audio.byteLength > MAX_AUDIO_BYTES) {
@@ -103,10 +144,22 @@ export async function transcribeAudio(
   }
 
   const model = (env.GROQ_STT_MODEL || 'whisper-large-v3').trim();
+  const safeName = normaliseAudioFilename(filename);
   const form = new FormData();
-  form.append('file', new Blob([audio]), filename);
+  // Type derived from the (normalised) extension rather than hardcoded, so an
+  // mp3 or m4a is not mislabelled as ogg.
+  form.append('file', new Blob([audio], { type: audioMimeFor(safeName) }), safeName);
   form.append('model', model);
   form.append('response_format', 'verbose_json');
+
+  // Pinning the language skips detection entirely. That is the single biggest
+  // lever for Uzbek, which is routinely detected as Turkish or Azerbaijani —
+  // and once that happens the entire note is decoded with the wrong phonetics.
+  if (language && language !== 'auto') {
+    form.append('language', language);
+    const hint = STT_PROMPTS[language];
+    if (hint) form.append('prompt', hint);
+  }
 
   const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST',

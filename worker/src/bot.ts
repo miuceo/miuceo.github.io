@@ -1,6 +1,9 @@
 import type { Env } from './types';
 import { runAgent, transcribeAudio, MAX_INPUT_CHARS, MAX_AUDIO_BYTES, MAX_AUDIO_SECONDS } from './agent';
-import { createCapture, markDraftReady, markDraftFailed, approveDraft, discardDraft, getDraft } from './drafts';
+import {
+  createCapture, markDraftReady, markDraftFailed, approveDraft, discardDraft, getDraft,
+  getSetting, setSetting,
+} from './drafts';
 import { tgSendToChat, tgEditInChat, tgAnswerCallback, tgDownloadFile, type InlineKeyboard } from './telegram';
 
 /**
@@ -21,10 +24,14 @@ const HELP =
   "qoralamaga aylantiradi, siz tekshirib tasdiqlaysiz, keyin Mini App'da tugatasiz.\n\n" +
   "🎙 Ovozli xabar: avval eshitganimni ko'rsataman, siz tasdiqlaganingizdan keyin " +
   "qoralama tayyorlanadi.\n\n" +
+  "/til uz — o'zbekcha yozib olish aniqligini sezilarli oshiradi (avtomatik aniqlash " +
+  "o'zbek tilini ko'pincha turkcha deb o'qiydi).\n\n" +
   "Rasm keyingi bosqichda qo'shiladi.";
 
 interface TgUser { id: number }
 interface TgChat { id: number }
+const STT_LANGS = ['uz', 'en', 'ru', 'auto'];
+
 interface TgVoice {
   file_id: string;
   duration?: number;
@@ -129,8 +136,28 @@ async function handleTextMessage(env: Env, msg: TgMessage): Promise<void> {
     await tgSendToChat(env, chatId, HELP);
     return;
   }
+  // /til — pins the language Whisper uses instead of auto-detecting. Auto is
+  // the default (the author speaks all three), but detection handles Uzbek
+  // badly, so pinning it is the fix when transcripts come back wrong.
+  const tilMatch = text.match(/^\/til(?:\s+(\S+))?/i);
+  if (tilMatch) {
+    const arg = (tilMatch[1] || '').toLowerCase();
+    if (!STT_LANGS.includes(arg)) {
+      const current = (await getSetting(env, 'stt_language')) || 'auto';
+      await tgSendToChat(
+        env, chatId,
+        `Ovoz tili: ${current}\n\nO'zgartirish: /til uz | /til en | /til ru | /til auto\n\n` +
+          `Agar o'zbekcha yozib olish noto'g'ri bo'lsa — /til uz buyrug'i aniqlikni sezilarli oshiradi.`
+      );
+      return;
+    }
+    await setSetting(env, 'stt_language', arg);
+    await tgSendToChat(env, chatId, `✅ Ovoz tili: ${arg}`);
+    return;
+  }
+
   if (text.startsWith('/')) {
-    await tgSendToChat(env, chatId, "Bunday buyruq yo'q. Shunchaki g'oyangizni yozing.");
+    await tgSendToChat(env, chatId, "Bunday buyruq yo'q. Shunchaki g'oyangizni yozing yoki /til.");
     return;
   }
   if (!text) return;
@@ -234,18 +261,24 @@ async function handleVoiceMessage(env: Env, msg: TgMessage, voice: TgVoice): Pro
 
   let draftId: string | null = null;
   try {
+    const pinned = await getSetting(env, 'stt_language');
     const { bytes, path } = await tgDownloadFile(env, voice.file_id);
     const filename = path.split('/').pop() || 'voice.ogg';
-    const transcript = await transcribeAudio(env, bytes, filename);
+    const transcript = await transcribeAudio(env, bytes, filename, pinned);
 
     // The transcript is the draft's source text. The raw audio goes out of
     // scope here and is never persisted.
     draftId = await createCapture(env, transcript.text);
 
-    const langNote = transcript.language ? ` (${transcript.language})` : '';
+    const langNote = pinned && pinned !== 'auto'
+      ? ` (${pinned}, qat'iy)`
+      : transcript.language ? ` (${transcript.language}, avtomatik)` : '';
+    const hint = (!pinned || pinned === 'auto')
+      ? `\n\nNoto‘g‘ri chiqdimi? /til uz — o‘zbekcha aniqlikni oshiradi.`
+      : '';
     await say(
       `🎙 Eshitganim${langNote}:\n\n${transcript.text}\n\n` +
-        `Agar xato bo‘lsa — to‘g‘rilangan matnni oddiy xabar qilib yuboring.`,
+        `Agar xato bo‘lsa — to‘g‘rilangan matnni oddiy xabar qilib yuboring.${hint}`,
       transcriptKeyboard(draftId)
     );
   } catch (err) {
