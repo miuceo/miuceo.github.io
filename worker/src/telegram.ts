@@ -105,6 +105,24 @@ export async function tgAnswerCallback(env: Env, callbackQueryId: string, text?:
  * are personal data and are transcribed, used, then dropped (SKILLS.md
  * `voice-pipeline` step 5). There is deliberately no storage helper here.
  */
+/**
+ * Resolves a file_id to a downloadable URL.
+ *
+ * Note this URL embeds the bot token, so it must never be shown to a user or
+ * stored — it is handed to a provider for a single fetch and then discarded.
+ */
+export async function tgFileUrl(env: Env, fileId: string): Promise<string> {
+  const infoRes = await fetch(apiUrl(env, 'getFile'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_id: fileId }),
+  });
+  const info = await infoRes.json() as { ok: boolean; result?: { file_path: string }; description?: string };
+  if (!info.ok || !info.result?.file_path) {
+    throw new Error('Telegram getFile failed: ' + (info.description || ''));
+  }
+  return `https://api.telegram.org/file/bot${env.TG_BOT_TOKEN}/${info.result.file_path}`;
+}
+
 export async function tgDownloadFile(env: Env, fileId: string): Promise<{ bytes: ArrayBuffer; path: string }> {
   const infoRes = await fetch(apiUrl(env, 'getFile'), {
     method: 'POST', headers: { 'Content-Type': 'application/json' },

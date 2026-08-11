@@ -324,11 +324,21 @@ function parseMeta(raw: string): { title?: string; excerpt?: string } {
  * covers them. Throws with provider detail for the server log; index.ts's
  * catch-all collapses it to a generic message before it reaches a client.
  */
+/**
+ * Either a plain prompt string, or OpenAI-shaped content parts for vision
+ * calls. Both providers accept the same shape, so one caller covers text and
+ * image work.
+ */
+type ContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+type ChatContent = string | ContentPart[];
+
 async function callChatCompletions(
   endpoint: string,
   apiKey: string,
   model: string,
-  prompt: string
+  prompt: ChatContent
 ): Promise<string> {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -379,6 +389,61 @@ interface ProviderAttempt {
  * `agent-task` step 5) — each failure just advances to the next candidate.
  * Only when every candidate is exhausted does this throw.
  */
+/* ---------- Vision: alt text ----------
+   The first place OpenRouter is genuinely primary rather than a fallback:
+   Groq has no vision model, so §10's routing table sends image work here.
+   §10 routes plain vision-language work to gemma and reserves the omni model
+   for true multimodal reasoning, so the config list is ordered that way. */
+
+export interface AltTextResult {
+  alt: string;
+  provider: string;
+  model: string;
+}
+
+/** Screen readers want the content, not the word "image". */
+function buildAltPrompt(lang: Lang): ContentPart {
+  return {
+    type: 'text',
+    text:
+      `Describe this image in ONE short factual sentence in ${LANG_NAMES[lang]}, ` +
+      `for use as HTML alt text for a blind reader.\n` +
+      `Describe only what is actually visible. If the image contains text or a chart, ` +
+      `say what it states. Do not begin with "image of", "picture of" or similar. ` +
+      `Do not speculate about meaning or context. Output the sentence and nothing else.`,
+  };
+}
+
+export async function describeImage(env: Env, imageUrl: string, lang: Lang): Promise<AltTextResult> {
+  const models = parseModelList(env.OPENROUTER_VISION_MODELS);
+  if (!env.OPENROUTER_API_KEY) throw new Error('describeImage: OPENROUTER_API_KEY not configured');
+  if (models.length === 0) throw new Error('describeImage: no vision models configured');
+
+  const content: ChatContent = [buildAltPrompt(lang), { type: 'image_url', image_url: { url: imageUrl } }];
+  const failures: string[] = [];
+
+  for (const model of models) {
+    try {
+      const raw = await callChatCompletions(
+        'https://openrouter.ai/api/v1/chat/completions',
+        env.OPENROUTER_API_KEY,
+        model,
+        content
+      );
+      const alt = stripFences(stripReasoning(raw))
+        .replace(/^["'`]+|["'`]+$/g, '') // models like to quote a one-line answer
+        .split('\n')[0]!
+        .trim();
+      if (!alt) throw new Error(`${model} returned empty alt text`);
+      return { alt, provider: 'openrouter', model };
+    } catch (err) {
+      failures.push(`openrouter/${model}: ${(err as Error).message}`);
+    }
+  }
+
+  throw new Error(`All vision models failed. ${failures.join(' | ')}`);
+}
+
 export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Promise<AgentResult> {
   const providers: ProviderAttempt[] = [
     {

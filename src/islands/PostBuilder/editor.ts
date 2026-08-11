@@ -9,7 +9,7 @@ const SITE_URL = 'https://muhammadjon.me';
 
 type Block =
   | { id: string; type: 'text'; content: string }
-  | { id: string; type: 'media'; url: string; mediaType: 'image' | 'youtube' | null };
+  | { id: string; type: 'media'; url: string; mediaType: 'image' | 'youtube' | null; alt?: string };
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -33,6 +33,15 @@ function escapeHtml(s: string | null | undefined): string {
 }
 function yamlString(s: unknown): string {
   return JSON.stringify(s == null ? '' : String(s));
+}
+
+/**
+ * Alt text going inside `![...](...)`. Brackets and newlines would break out of
+ * the markdown image syntax, so they are neutralised rather than escaped —
+ * backslash escaping inside link text is not portable across parsers.
+ */
+function markdownAlt(alt: string | undefined): string {
+  return (alt || '').replace(/[\[\]]/g, '').replace(/\s*\n\s*/g, ' ').trim();
 }
 
 /* ---------- BLOCK EDITOR ---------- */
@@ -155,15 +164,56 @@ function renderEditor() {
           </div>
         </div>
         <div class="media-hint">YouTube video linki yoki rasm URL manzilini joylashtiring</div>
-        <input type="text" class="media-url" placeholder="https://youtube.com/watch?v=... yoki https://.../image.jpg" value="${b.url}">
+        <input type="text" class="media-url" placeholder="https://youtube.com/watch?v=... yoki https://.../image.jpg" value="${escapeHtml(b.url)}">
+        ${
+          mtype === 'image'
+            ? `<div class="alt-row">
+                 <input type="text" class="media-alt" placeholder="Alt matn (ko'rmaydigan o'quvchilar uchun)" value="${escapeHtml(b.alt || '')}">
+                 <button class="btn ghost small alt-gen" type="button">🖼 Alt matn</button>
+               </div>`
+            : ''
+        }
         <div class="media-preview">${previewHtml}</div>
       `;
-      el.querySelector('input')!.addEventListener('input', (e) => {
+      el.querySelector('input.media-url')!.addEventListener('input', (e) => {
         const mb = b as Extract<Block, { type: 'media' }>;
         mb.url = (e.target as HTMLInputElement).value;
         mb.mediaType = detectMediaType(mb.url);
         renderEditor();
         renderPreview();
+      });
+
+      const altInput = el.querySelector('input.media-alt') as HTMLInputElement | null;
+      altInput?.addEventListener('input', (e) => {
+        (b as Extract<Block, { type: 'media' }>).alt = (e.target as HTMLInputElement).value;
+      });
+
+      // The agent proposes; the author keeps or edits it, exactly like every
+      // other agent output in this editor.
+      el.querySelector('button.alt-gen')?.addEventListener('click', async () => {
+        const mb = b as Extract<Block, { type: 'media' }>;
+        const btn = el.querySelector('button.alt-gen') as HTMLButtonElement;
+        if (!mb.url) return;
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = '...';
+        try {
+          const res = await fetch(`${WORKER_URL}/api/agent/alt-text`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ imageUrl: mb.url, lang: 'uz' }),
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || 'Alt matn xatosi');
+          mb.alt = data.alt;
+          if (altInput) altInput.value = data.alt;
+        } catch (err) {
+          alert('Alt matn yaratib bo\'lmadi: ' + (err as Error).message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
       });
     }
     el.querySelectorAll('[data-act]').forEach((btn) => {
@@ -198,7 +248,7 @@ function renderPreview() {
         const yid = getYoutubeId(b.url);
         if (yid) html += `<div class="preview-block"><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen></iframe></div>`;
       } else {
-        html += `<div class="preview-block"><img src="${b.url}"></div>`;
+        html += `<div class="preview-block"><img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt || '')}"></div>`;
       }
     }
   });
@@ -376,7 +426,9 @@ function generatePostHtml(title: string, postUrl: string, excerpt: string, cover
         if (yid)
           contentHtml += `<div class="media-embed"><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen loading="lazy"></iframe><p class="embed-fallback">Video ko'rinmasa, <a href="https://www.youtube.com/watch?v=${yid}" target="_blank" rel="noopener">YouTube'da tomosha qiling</a>.</p></div>\n`;
       } else {
-        contentHtml += `<img class="post-image" src="${escapeHtml(b.url)}" alt="" loading="lazy">\n`;
+        // alt is model output landing in an HTML attribute — escaped, per
+        // CLAUDE.md rule 8 / SKILLS.md repo-security-pass step 6.
+        contentHtml += `<img class="post-image" src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt || '')}" loading="lazy">\n`;
       }
     }
   });
@@ -494,7 +546,12 @@ function generatePostMarkdownBody(): string {
         const yid = getYoutubeId(b.url);
         body += `[Video](${yid ? `https://www.youtube.com/watch?v=${yid}` : b.url})\n\n`;
       } else {
-        body += `![](${b.url})\n\n`;
+        // Alt lives inside the markdown, not beside it — that is what makes
+        // it trilingual for free: translation runs over the whole body, so
+        // en.md and ru.md get translated alt text without a separate field or
+        // extra generation call. Moving this into frontmatter would silently
+        // break that.
+        body += `![${markdownAlt(b.alt)}](${b.url})\n\n`;
       }
     }
   });

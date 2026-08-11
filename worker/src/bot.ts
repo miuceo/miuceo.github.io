@@ -1,10 +1,10 @@
 import type { Env } from './types';
-import { runAgent, transcribeAudio, MAX_INPUT_CHARS, MAX_AUDIO_BYTES, MAX_AUDIO_SECONDS } from './agent';
+import { runAgent, transcribeAudio, describeImage, MAX_INPUT_CHARS, MAX_AUDIO_BYTES, MAX_AUDIO_SECONDS } from './agent';
 import {
   createCapture, markDraftReady, markDraftFailed, approveDraft, discardDraft, getDraft,
   getSetting, setSetting,
 } from './drafts';
-import { tgSendToChat, tgEditInChat, tgAnswerCallback, tgDownloadFile, type InlineKeyboard } from './telegram';
+import { tgSendToChat, tgEditInChat, tgAnswerCallback, tgDownloadFile, tgFileUrl, type InlineKeyboard } from './telegram';
 
 /**
  * Telegram bot update routing (ARCHITECTURE.md §9 Phase 5 Stage 2).
@@ -24,9 +24,10 @@ const HELP =
   "qoralamaga aylantiradi, siz tekshirib tasdiqlaysiz, keyin Mini App'da tugatasiz.\n\n" +
   "🎙 Ovozli xabar: avval eshitganimni ko'rsataman, siz tasdiqlaganingizdan keyin " +
   "qoralama tayyorlanadi.\n\n" +
+  "🖼 Rasm: tavsifini yozib beraman — uni post uchun alt matn sifatida " +
+  "ishlatishingiz mumkin.\n\n" +
   "/til uz — o'zbekcha yozib olish aniqligini sezilarli oshiradi (avtomatik aniqlash " +
-  "o'zbek tilini ko'pincha turkcha deb o'qiydi).\n\n" +
-  "Rasm keyingi bosqichda qo'shiladi.";
+  "o'zbek tilini ko'pincha turkcha deb o'qiydi).";
 
 interface TgUser { id: number }
 interface TgChat { id: number }
@@ -45,8 +46,15 @@ interface TgMessage {
   text?: string;
   voice?: TgVoice;
   audio?: TgVoice;
-  photo?: unknown;
+  photo?: TgPhotoSize[];
+  caption?: string;
   document?: unknown;
+}
+interface TgPhotoSize {
+  file_id: string;
+  width?: number;
+  height?: number;
+  file_size?: number;
 }
 interface TgCallbackQuery {
   id: string;
@@ -289,6 +297,55 @@ async function handleVoiceMessage(env: Env, msg: TgMessage, voice: TgVoice): Pro
 }
 
 /**
+ * Photo -> alt text (Phase 5 Stage 4).
+ *
+ * The description is offered as a capture the author can turn into a post, and
+ * as text they can paste into a post's alt field. Like voice, it is shown for
+ * confirmation before the agent shapes anything.
+ *
+ * Telegram sends several sizes; the last is the largest. We hand the model a
+ * Telegram file URL rather than downloading — the provider fetches it directly,
+ * which avoids pushing image bytes through the Worker.
+ */
+async function handlePhotoMessage(env: Env, msg: TgMessage, photos: TgPhotoSize[]): Promise<void> {
+  const chatId = msg.chat.id;
+  const largest = photos[photos.length - 1]!;
+
+  let ackId: number | null = null;
+  try {
+    ackId = await tgSendToChat(env, chatId, '🖼 Rasmga qarayapman...');
+  } catch {
+    /* non-fatal */
+  }
+  const say = async (body: string, keyboard?: InlineKeyboard) => {
+    if (ackId !== null) await tgEditInChat(env, chatId, ackId, body, keyboard);
+    else await tgSendToChat(env, chatId, body, keyboard);
+  };
+
+  let draftId: string | null = null;
+  try {
+    const url = await tgFileUrl(env, largest.file_id);
+    const { alt, provider, model } = await describeImage(env, url, 'uz');
+
+    // The caption, if any, is the author's own words and leads; the generated
+    // description follows it.
+    const caption = (msg.caption || '').trim();
+    const body = caption ? `${caption}\n\n![${alt}](${url})` : `![${alt}](${url})`;
+    draftId = await createCapture(env, body);
+
+    await say(
+      `🖼 Rasm tavsifi:\n\n${alt}\n\n— ${provider}/${model}\n\n` +
+        `Bu matnni post uchun alt matn sifatida ishlatishingiz mumkin.`,
+      transcriptKeyboard(draftId)
+    );
+  } catch (err) {
+    if (draftId) await markDraftFailed(env, draftId, (err as Error).message);
+    console.error('bot photo failed', err);
+    await say("Rasmni tahlil qilib bo'lmadi. Keyinroq urinib ko'ring.");
+  }
+}
+
+/**
  * Second half of the voice flow: the author confirmed the transcript, so now
  * the agent may shape it. Mirrors the text-capture path from this point on.
  */
@@ -380,12 +437,13 @@ export async function handleUpdate(env: Env, update: TgUpdate): Promise<void> {
       return;
     }
 
-    if (msg.photo || msg.document) {
-      await tgSendToChat(
-        env,
-        msg.chat.id,
-        "Hozircha matn va ovozni qabul qilaman. Rasm keyingi bosqichda qo'shiladi."
-      );
+    if (msg.photo && msg.photo.length) {
+      await handlePhotoMessage(env, msg, msg.photo);
+      return;
+    }
+
+    if (msg.document) {
+      await tgSendToChat(env, msg.chat.id, 'Hozircha matn, ovoz va rasmni qabul qilaman.');
       return;
     }
 

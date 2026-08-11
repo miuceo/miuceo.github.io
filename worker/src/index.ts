@@ -6,7 +6,7 @@ import {
 } from './auth';
 import { isAllowedPath, ghGetFile, ghPutFile, ghPutFileSafe, ghDeleteFile } from './github';
 import { tgSendPost, tgEditPost, tgDeleteMessage } from './telegram';
-import { runAgent, MAX_INPUT_CHARS, type AgentTask } from './agent';
+import { runAgent, describeImage, MAX_INPUT_CHARS, type AgentTask } from './agent';
 import { createDraft, markDraftReady, markDraftFailed, getDraft } from './drafts';
 import { handleUpdate, updateSenderId, type TgUpdate } from './bot';
 import { tgSetWebhook } from './telegram';
@@ -274,6 +274,25 @@ export default {
 
       if (path === '/api/agent/improve' && req.method === 'POST') {
         return handleAgentTask(env, req, 'improve');
+      }
+
+      // Alt text for one image. Unlike translate/improve this writes no draft
+      // row: there is no author work to lose, the result is a single short
+      // string returned immediately, and a row per image would be noise.
+      if (path === '/api/agent/alt-text' && req.method === 'POST') {
+        const { imageUrl, lang } = await readJson<{ imageUrl?: string; lang?: string }>(req);
+        const url_ = (imageUrl || '').trim();
+
+        // Only https, and bounded — this string is handed to a provider and
+        // its answer ends up in an HTML attribute.
+        if (!url_ || url_.length > 2000 || !/^https:\/\//i.test(url_)) {
+          return errorResponse(env, 'Rasm uchun https havola kerak.', 400);
+        }
+        const target = (lang || 'uz') as Lang;
+        if (!LANGS.includes(target)) return errorResponse(env, 'Yaroqsiz til.', 400);
+
+        const result = await describeImage(env, url_, target);
+        return json(env, { ok: true, alt: result.alt, provider: result.provider, model: result.model });
       }
 
       /* ---------- drafts + bot administration (author only) ---------- */

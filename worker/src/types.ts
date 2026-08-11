@@ -16,6 +16,7 @@ export interface Env {
   GROQ_TEXT_MODELS: string;
   OPENROUTER_TEXT_MODELS: string;
   GROQ_STT_MODEL: string;
+  OPENROUTER_VISION_MODELS: string;
 
   // secrets (`wrangler secret put`)
   GH_TOKEN: string;

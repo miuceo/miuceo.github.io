@@ -38,6 +38,10 @@ textarea.text-input::placeholder{ color:var(--ink-soft); }
 input.media-url{ width:100%; font-size:13px; color:var(--ink); background:var(--bg-3); border:1px solid var(--line); border-radius:6px; padding:10px 12px; outline:none; margin-bottom:10px; }
 input.media-url:focus{ border-color:var(--neon-green); }
 .media-hint{ font-size:12px; color:var(--ink-soft); margin-bottom:8px; }
+.alt-row{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.alt-row .media-alt{ flex:1; font-size:13px; color:var(--ink); background:var(--bg-3); border:1px solid var(--line); border-radius:6px; padding:9px 12px; outline:none; font-family:var(--mono); }
+.alt-row .media-alt:focus{ border-color:var(--neon-green); }
+.alt-row .alt-gen{ flex-shrink:0; white-space:nowrap; }
 .media-preview{ margin-top:8px; }
 .media-preview img{ max-width:100%; border-radius:6px; display:block; }
 .media-preview iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:6px; }

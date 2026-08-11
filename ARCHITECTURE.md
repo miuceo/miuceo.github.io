@@ -355,12 +355,26 @@ Deliberately staged rather than built in one pass. Stage 1 was chosen first beca
 - Language is **detected, not assumed** (`verbose_json`), since the author speaks all three, and the detected language is surfaced in the confirmation message.
 - **Audio is never persisted.** It exists only as bytes inside `handleVoiceMessage`; the draft stores the transcript, never the file id or the audio (§5.1: "transcribe, use, discard" — voice notes are personal data). There is deliberately no storage helper for it.
 - Duration and size guards run **before** downloading, so an oversized note costs one cheap reply rather than a 25 MB transfer and a rejected API call.
-- STT sits behind the same `agent.ts` interface as text (`transcribeAudio`), so no feature code talks to a provider directly. It is a single model rather than a ladder: OpenRouter has no equivalent free STT endpoint, so there is nothing to fall back to — worth knowing, since it means STT has no D12 redundancy.
+- STT sits behind the same `agent.ts` interface as text (`transcribeAudio`), so no feature code talks to a provider directly. It is a single model rather than a ladder: there is no *dedicated* free STT endpoint to fall back to. **Correction to an earlier claim here:** this was originally written as "OpenRouter has no equivalent", which is too strong — `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` accepts audio input and could serve as a fallback. It is a reasoning LLM rather than an ASR model, so it is untested for this and likely worse at raw transcription, but D12 redundancy is available if wanted.
+- **Uzbek accuracy remains the known weak point, as §5.1 predicted.** Live testing confirmed it. Two fixes shipped: Telegram delivers voice notes as `.oga`, which Groq's format allow-list doesn't include (it lists `ogg`), so *every* note was rejected until the filename was normalised; and auto-detection frequently reads Uzbek as Turkish, after which the whole note decodes with the wrong phonetics — so `/til uz` pins the language and adds an orthography hint. Both help materially; neither makes Uzbek match English or Russian, because that is a property of the model, not the plumbing. The confirm-the-transcript gate is the mitigation that actually matters.
 - Verified by 44 bot tests including: no agent call happens before confirmation, confirming is what triggers it, no audio identifiers reach the draft row, guards fire before any download, and a transcription failure is reported without leaking provider detail.
 
 *Voice out (TTS) — ❌ NOT STARTED, and larger than it looks.* It needs somewhere to put the audio: R2 has no binding yet, so generated files have nowhere to live. It also needs a player component and per-language generation. Groq's Orpheus is Preview status, so the site must render perfectly with no audio present (§5.1). Best treated as its own stage rather than folded into this one.
 
-*Stage 4 — media understanding + distribution fan-out — ❌ NOT STARTED.* Needs the multimodal OpenRouter route (D11). LinkedIn still blocked on the Phase 1 app review.
+*Stage 4a — media understanding (alt text) — ✅ BUILT (2026-08-11)*
+- **Fixed a real accessibility defect, not a nice-to-have:** every image on the site had `alt=""`, on both the Astro pages and the v1 post pages. `describeImage` in `agent.ts` generates alt text from the image itself, exposed as `POST /api/agent/alt-text`, an alt field + generate button on each image block in the editor, and a photo handler in the bot.
+- **First route where OpenRouter is genuinely primary rather than fallback** — Groq has no vision model, so §10 sends image work here. `OPENROUTER_VISION_MODELS` is seeded with gemma first (§10 routes plain vision-language work there, reserving the omni model for true multimodal reasoning); both verified live on the free roster.
+- **Trilingual alt text comes free, by design.** Alt is generated once in the source language and written *inside* the markdown as `![alt](url)`, so the existing Stage 1 translation pass carries it into `en.md` and `ru.md` — no per-language alt field, no schema change, no extra generation calls. This only works because alt lives in the markdown rather than in frontmatter; moving it would silently break trilingual alt.
+- Alt text is model output landing in an HTML attribute and in markdown image syntax — both injection surfaces (`CLAUDE.md` rule 8). It is HTML-escaped on the attribute paths and bracket/newline-stripped on the markdown path, with tests asserting a `"` cannot break out of `alt="…"` and a `]` cannot break out of `![…]`.
+- Backward compatible: blocks without alt render exactly as before.
+- 118 tests across six suites (24 new).
+
+*Stage 4b — platform fan-out — ❌ NOT STARTED, blocked on three independent things:*
+1. **It needs server-side publishing**, deliberately deferred in Stage 2 — publishing is still ~260 lines living only in the browser, so the Worker cannot fan anything out.
+2. **LinkedIn app review** — flagged as the long pole since Phase 1, still not started.
+3. **Threads** needs a linked Business account that doesn't exist.
+
+Telegram fan-out already works manually via `tgSendPost`. The honest sequence is: move publishing server-side, then fan out as each approval lands.
 
 ---
 

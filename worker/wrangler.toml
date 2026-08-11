@@ -41,9 +41,18 @@ SESSION_TTL_SECONDS = "2592000"  # 30 days — matches the auth duration v1's re
 # preview models can vanish without notice (same caveat as Groq TTS in §5.1).
 GROQ_TEXT_MODELS = "openai/gpt-oss-120b,qwen/qwen3.6-27b"
 OPENROUTER_TEXT_MODELS = "nvidia/nemotron-3-super-120b-a12b:free,openai/gpt-oss-20b:free"
-# Speech to text (Phase 5 Stage 3). Single value, not a ladder: OpenRouter has
-# no equivalent free STT endpoint, so there is nothing to fall back to.
+# Speech to text (Phase 5 Stage 3). Single value rather than a ladder: there is
+# no dedicated free STT endpoint to fall back to. (An audio-capable multimodal
+# model does exist on OpenRouter — nemotron-3-nano-omni — but it is a reasoning
+# LLM rather than an ASR model and is untested here.)
 GROQ_STT_MODEL = "whisper-large-v3"
+
+# Vision / alt text (Phase 5 Stage 4). OpenRouter only — Groq has no vision
+# model, so this is the one route where OpenRouter is primary rather than
+# fallback. §10 sends plain vision-language work to gemma and reserves the omni
+# model for genuine multimodal reasoning, hence the order. Verified live
+# 2026-08-11.
+OPENROUTER_VISION_MODELS = "google/gemma-4-31b-it:free,nvidia/nemotron-nano-12b-v2-vl:free"
 
 [[d1_databases]]
 binding = "DB"
