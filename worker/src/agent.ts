@@ -93,6 +93,16 @@ function parseModelList(raw: string | undefined): string[] {
  * finish_reason. Title and excerpt are short, so they get their own tiny
  * call where JSON is cheap and safe.
  */
+/**
+ * Explicit fences around the source document. The first version delimited it
+ * with a bare `---`, which models echoed back as the first line of their
+ * answer — and a body starting with `---` collides with YAML frontmatter once
+ * it is written into a .md file. Named markers are unambiguous and are
+ * stripped from the reply by `stripFences` regardless.
+ */
+const DOC_START = '<<<DOCUMENT';
+const DOC_END = 'DOCUMENT>>>';
+
 const PRESERVE_RULES =
   'Preserve every Markdown construct exactly: heading levels, lists, links, ' +
   'image syntax ![](url), code blocks and their language tags, blockquotes and ' +
@@ -108,14 +118,14 @@ function buildBodyPrompt(task: AgentTask, input: AgentInput): string {
       `Keep the author's voice and register — this is a personal technical blog, not ` +
       `marketing copy. Do not summarise, do not expand, do not add commentary. ` +
       `Technical terms and product names stay in their original form.\n${PRESERVE_RULES}\n\n` +
-      `---\n${input.markdown}`
+      `${DOC_START}\n${input.markdown}\n${DOC_END}`
     );
   }
   return (
     `Improve the writing of the Markdown document below without changing its meaning, ` +
     `its language, or its structure. Fix grammar, awkward phrasing and typos. Keep the ` +
     `author's voice. Do not add new claims, do not remove content.\n${PRESERVE_RULES}\n\n` +
-    `---\n${input.markdown}`
+    `${DOC_START}\n${input.markdown}\n${DOC_END}`
   );
 }
 
@@ -142,6 +152,26 @@ function stripReasoning(raw: string): string {
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
     .replace(/<think>[\s\S]*$/i, '') // truncated mid-think — nothing usable follows
     .trim();
+}
+
+/**
+ * Removes scaffolding models tend to echo: our own document markers, a code
+ * fence wrapped around the whole answer, and a leading `---`.
+ *
+ * The `---` case is not cosmetic: the result is written straight into a .md
+ * file below YAML frontmatter, so a body beginning with `---` produces a
+ * malformed document.
+ */
+function stripFences(text: string): string {
+  let out = text.trim();
+  out = out.replace(new RegExp(`^${DOC_START}\\s*`), '').replace(new RegExp(`\\s*${DOC_END}$`), '');
+
+  // A fence around the entire answer (```markdown … ```), not fences inside it.
+  const whole = out.match(/^```(?:\w+)?\s*\n([\s\S]*)\n```$/);
+  if (whole && whole[1]) out = whole[1];
+
+  out = out.replace(/^---\s*\n/, '');
+  return out.trim();
 }
 
 /**
@@ -272,7 +302,7 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
     for (const model of provider.models) {
       try {
         const rawBody = await callChatCompletions(provider.endpoint, provider.apiKey, model, bodyPrompt);
-        const markdown = stripReasoning(rawBody);
+        const markdown = stripFences(stripReasoning(rawBody));
 
         if (!markdown) {
           throw new Error(`${model} returned only reasoning, no document`);

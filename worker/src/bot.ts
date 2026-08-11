@@ -48,6 +48,34 @@ export function updateSenderId(update: TgUpdate): number | null {
   return update.message?.from?.id ?? update.callback_query?.from?.id ?? null;
 }
 
+/**
+ * Pulls a title out of the message if the author gave one.
+ *
+ * Accepts what people actually type — `Title:` / `Sarlavha:` / `Заголовок:`
+ * on the first line, optionally followed by a `Body:` / `Matn:` / `Текст:`
+ * marker — and otherwise falls back to treating a short standalone first line
+ * as the title. If neither applies the title is left empty rather than
+ * invented; the author sets it in the Mini App.
+ */
+export function parseCapture(text: string): { title: string; body: string } {
+  const lines = text.split('\n');
+  const titleMatch = lines[0]?.match(/^\s*(?:title|sarlavha|заголовок)\s*:\s*(.+)$/i);
+
+  if (titleMatch && titleMatch[1]) {
+    const rest = lines.slice(1).join('\n');
+    const body = rest.replace(/^\s*(?:body|matn|текст)\s*:\s*/i, '').trim();
+    return { title: titleMatch[1].trim(), body: body || rest.trim() };
+  }
+
+  // A short first line followed by a blank line reads as a heading.
+  const first = (lines[0] || '').trim();
+  if (first && first.length <= 80 && lines.length > 1 && !(lines[1] || '').trim()) {
+    return { title: first, body: lines.slice(2).join('\n').trim() };
+  }
+
+  return { title: '', body: text.trim() };
+}
+
 function reviewKeyboard(draftId: string): InlineKeyboard {
   // callback_data is capped at 64 bytes by Telegram; "ok:" + a 36-char uuid
   // is 39, comfortably inside.
@@ -113,21 +141,23 @@ async function handleTextMessage(env: Env, msg: TgMessage): Promise<void> {
   // try: if D1 itself fails, the author must still be told, not left silent.
   let draftId: string | null = null;
   try {
+    const { title, body } = parseCapture(text);
     draftId = await createCapture(env, text);
 
-    // skipMeta: one LLM call instead of two. The title here is a placeholder
-    // the author sets in the Mini App, so the second call bought nothing and
-    // doubled the latency.
+    // skipMeta: one LLM call instead of two. The author's own title is used
+    // when they gave one, so asking a model to invent another bought nothing
+    // and doubled the latency.
     const result = await runAgent(env, 'improve', {
-      title: 'Draft',
+      title,
       excerpt: '',
-      markdown: text,
+      markdown: body,
       skipMeta: true,
     });
     await markDraftReady(env, draftId, result);
 
     const preview = result.markdown.length > 3000 ? result.markdown.slice(0, 3000) + '…' : result.markdown;
-    await say(`📝 Qoralama tayyor\n\n${preview}\n\n— ${result.provider}/${result.model}`, reviewKeyboard(draftId));
+    const heading = title ? `📝 ${title}` : '📝 Qoralama tayyor';
+    await say(`${heading}\n\n${preview}\n\n— ${result.provider}/${result.model}`, reviewKeyboard(draftId));
   } catch (err) {
     if (draftId) await markDraftFailed(env, draftId, (err as Error).message);
     console.error('bot capture failed', err);
@@ -161,11 +191,12 @@ async function handleCallback(env: Env, cb: TgCallbackQuery): Promise<void> {
 
   if (action === 'ok') {
     await approveDraft(env, draftId);
+    const heading = draft.result_title ? `\n\n📝 ${draft.result_title}` : '';
     await tgEditInChat(
       env,
       chatId,
       messageId,
-      `✅ Saqlandi\n\n📝 ${draft.result_title || ''}\n\nMini App'da tugatib, nashr qiling.`,
+      `✅ Saqlandi${heading}\n\nMini App'da tugatib, nashr qiling.`,
       finishKeyboard(env, draftId)
     );
     return;

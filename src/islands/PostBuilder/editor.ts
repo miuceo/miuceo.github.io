@@ -938,7 +938,7 @@ async function loadCapturedDraft(draftId: string) {
     if (!data.ok) throw new Error(data.error || 'Qoralamani yuklab bo\'lmadi');
 
     const titleInput = document.getElementById('titleInput') as HTMLInputElement;
-    titleInput.value = data.draft.title && data.draft.title !== 'Draft' ? data.draft.title : '';
+    titleInput.value = data.draft.title || '';
     titleInput.disabled = false;
 
     idCounter = 0;
