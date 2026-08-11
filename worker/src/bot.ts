@@ -90,26 +90,54 @@ async function handleTextMessage(env: Env, msg: TgMessage): Promise<void> {
     return;
   }
 
-  // Draft row first, so a provider failure leaves retryable work rather than
-  // losing what the author wrote (SKILLS.md `agent-task` step 1).
-  const draftId = await createCapture(env, text);
-
+  // Acknowledge before the slow part, so the author sees something within a
+  // second instead of wondering whether the bot heard them. The result edits
+  // this same message in place.
+  let ackId: number | null = null;
   try {
-    const result = await runAgent(env, 'improve', { title: 'Draft', excerpt: '', markdown: text });
+    ackId = await tgSendToChat(env, chatId, '⏳ AI ishlayapti...');
+  } catch {
+    /* non-fatal — the work below still runs */
+  }
+
+  const say = async (body: string, keyboard?: InlineKeyboard) => {
+    if (ackId !== null) {
+      await tgEditInChat(env, chatId, ackId, body, keyboard);
+    } else {
+      await tgSendToChat(env, chatId, body, keyboard);
+    }
+  };
+
+  // Draft row first, so a provider failure leaves retryable work rather than
+  // losing what the author wrote (SKILLS.md `agent-task` step 1). Inside the
+  // try: if D1 itself fails, the author must still be told, not left silent.
+  let draftId: string | null = null;
+  try {
+    draftId = await createCapture(env, text);
+
+    // skipMeta: one LLM call instead of two. The title here is a placeholder
+    // the author sets in the Mini App, so the second call bought nothing and
+    // doubled the latency.
+    const result = await runAgent(env, 'improve', {
+      title: 'Draft',
+      excerpt: '',
+      markdown: text,
+      skipMeta: true,
+    });
     await markDraftReady(env, draftId, result);
 
     const preview = result.markdown.length > 3000 ? result.markdown.slice(0, 3000) + '…' : result.markdown;
-    await tgSendToChat(
-      env,
-      chatId,
-      `📝 ${result.title}\n\n${preview}\n\n— ${result.provider}/${result.model}`,
-      reviewKeyboard(draftId)
-    );
+    await say(`📝 Qoralama tayyor\n\n${preview}\n\n— ${result.provider}/${result.model}`, reviewKeyboard(draftId));
   } catch (err) {
-    await markDraftFailed(env, draftId, (err as Error).message);
-    // The author gets a readable message rather than silence; the real reason
-    // stays server-side.
-    await tgSendToChat(env, chatId, "AI hozir javob bermadi. Matningiz saqlandi — keyinroq urinib ko'ring.");
+    if (draftId) await markDraftFailed(env, draftId, (err as Error).message);
+    console.error('bot capture failed', err);
+    // A readable message rather than silence; the real reason stays
+    // server-side.
+    await say(
+      draftId
+        ? "AI hozir javob bermadi. Matningiz saqlandi — keyinroq urinib ko'ring."
+        : "Xatolik yuz berdi. Keyinroq urinib ko'ring."
+    );
   }
 }
 

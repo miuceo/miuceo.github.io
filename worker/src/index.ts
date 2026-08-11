@@ -113,7 +113,11 @@ async function handleAgentTask(env: Env, req: Request, task: AgentTask): Promise
 }
 
 export default {
-  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  // `ctx` stays in the signature (unused for now) because later stages —
+  // voice transcription, platform fan-out — will have genuinely fire-and-forget
+  // work that suits waitUntil, unlike the agent call that must finish before
+  // the author gets a reply.
+  async fetch(req: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
 
@@ -134,8 +138,20 @@ export default {
             retries for.
          2. The sender id must be the author. Anyone else => 200 and ignore: it
             IS a real Telegram delivery, so 200 stops pointless retries.
-         3. Work happens in ctx.waitUntil so Telegram gets its 200 immediately;
-            an LLM call takes seconds and Telegram retries slow deliveries. */
+         3. The update is processed inline, awaited, before returning 200.
+
+         An earlier version did the work in ctx.waitUntil to answer Telegram
+         instantly. That silently broke: the runtime only grants waitUntil a
+         short window *after* the response is sent, and two sequential
+         reasoning-model calls exceeded it, so tasks were cancelled mid-flight
+         and a posted idea produced no reply at all. `/start` still worked,
+         which made it look like the bot was fine.
+
+         Awaiting inline is correct here: the time is spent waiting on network
+         I/O, not CPU, and Telegram tolerates a slow webhook far better than a
+         fast 200 followed by nothing. The bot also acknowledges within a
+         second and edits that message with the result, so the wait is
+         visible rather than dead air. */
 
       if (path === '/tg/webhook' && req.method === 'POST') {
         const secret = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
@@ -149,7 +165,7 @@ export default {
           return new Response('ok', { status: 200 });
         }
 
-        ctx.waitUntil(handleUpdate(env, update));
+        await handleUpdate(env, update);
         return new Response('ok', { status: 200 });
       }
 

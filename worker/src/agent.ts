@@ -26,6 +26,13 @@ export interface AgentInput {
   excerpt?: string;
   markdown: string;
   targetLang?: Lang;
+  /**
+   * Skip the second (title/excerpt) call. Halves latency, which matters for
+   * the Telegram bot: a capture has a placeholder title the author replaces in
+   * the Mini App anyway, and two sequential reasoning-model calls exceeded the
+   * runtime's budget for post-response work.
+   */
+  skipMeta?: boolean;
 }
 
 export interface AgentResult {
@@ -281,6 +288,9 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
         // function used to do for the body.
         let title = input.title;
         let excerpt = input.excerpt || '';
+        if (input.skipMeta) {
+          return { title, excerpt, markdown, provider: provider.name, model };
+        }
         try {
           const rawMeta = await callChatCompletions(
             provider.endpoint,
