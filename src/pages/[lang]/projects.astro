@@ -1,5 +1,5 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
@@ -15,7 +15,6 @@ const strings = t(lang);
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/projects/`])) as Record<Lang, string>;
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
-const rendered = await Promise.all(projects.map((p) => render(p)));
 ---
 
 <BaseLayout
@@ -33,14 +32,16 @@ const rendered = await Promise.all(projects.map((p) => render(p)));
   </section>
 
   <div class="projects-grid">
-    {projects.map((p, i) => {
-      const { Content } = rendered[i];
-      return (
-        <ProjectCard lang={lang} title={p.data.title} tags={p.data.tags} url={p.data.url} external={p.data.external}>
-          <Content />
-        </ProjectCard>
-      );
-    })}
+    {projects.map((p) => (
+      <ProjectCard
+        lang={lang}
+        title={p.data.title[lang]}
+        description={p.data.description[lang]}
+        tags={p.data.tags}
+        url={p.data.url}
+        external={p.data.external}
+      />
+    ))}
   </div>
 
   <Footer lang={lang} />

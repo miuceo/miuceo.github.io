@@ -34,6 +34,7 @@ const jsonLd = {
   image: entry.data.coverImage,
   datePublished: entry.data.createdAt.toISOString(),
   dateModified: entry.data.updatedAt.toISOString(),
+  inLanguage: lang, // required by SKILLS.md `seo-surface` step 3
   author: { '@type': 'Person', name: 'Muhammadjon Ibrohimov' },
 };
 ---

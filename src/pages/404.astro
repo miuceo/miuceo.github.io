@@ -1,10 +1,16 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { DEFAULT_LANG, t } from '../lib/i18n';
+import { DEFAULT_LANG, LANGS, t } from '../lib/i18n';
 
-// GitHub Pages serves this for any unmatched path regardless of language
-// prefix, so it stays in the default language (matches v1's single 404.html).
+// GitHub Pages serves this one file for every unmatched path, so it cannot be
+// pre-rendered per language. It ships in the default language and swaps to the
+// right one before paint, using the language prefix of the URL that 404'd
+// (/en/nope -> English) and falling back to the reader's stored preference.
 const strings = t(DEFAULT_LANG);
+
+const translations = Object.fromEntries(
+  LANGS.map((l) => [l, { title: t(l).notFound.title, desc: t(l).notFound.desc, back: t(l).notFound.backHome }])
+);
 ---
 
 <BaseLayout
@@ -17,10 +23,30 @@ const strings = t(DEFAULT_LANG);
 >
   <div class="card">
     <div class="code">404</div>
-    <h1>{strings.notFound.title}</h1>
-    <p>{strings.notFound.desc}</p>
-    <a href="/" class="btn">{strings.notFound.backHome}</a>
+    <h1 id="nfTitle">{strings.notFound.title}</h1>
+    <p id="nfDesc">{strings.notFound.desc}</p>
+    <a href={`/${DEFAULT_LANG}/`} id="nfBack" class="btn">{strings.notFound.backHome}</a>
   </div>
+
+  <script is:inline define:vars={{ translations, DEFAULT_LANG }}>
+    (function () {
+      var supported = Object.keys(translations);
+      var fromPath = (location.pathname.split('/')[1] || '').toLowerCase();
+      var lang =
+        supported.indexOf(fromPath) !== -1
+          ? fromPath
+          : localStorage.getItem('miuceo_lang') || DEFAULT_LANG;
+      if (supported.indexOf(lang) === -1) lang = DEFAULT_LANG;
+
+      var s = translations[lang];
+      document.documentElement.lang = lang;
+      document.getElementById('nfTitle').textContent = s.title;
+      document.getElementById('nfDesc').textContent = s.desc;
+      var back = document.getElementById('nfBack');
+      back.textContent = s.back;
+      back.href = '/' + lang + '/';
+    })();
+  </script>
 </BaseLayout>
 
 <style>

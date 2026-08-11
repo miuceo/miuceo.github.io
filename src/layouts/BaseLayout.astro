@@ -69,6 +69,15 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
   (function(){
     var saved = localStorage.getItem('miuceo_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
+
+    // Remember the language actually being read, so "/" honours it next visit
+    // instead of re-deciding from Accept-Language. This is what makes the
+    // manual override in ARCHITECTURE.md §6 actually stick — the language
+    // switcher only navigates; nothing else persists the choice.
+    var seg = (location.pathname.split('/')[1] || '').toLowerCase();
+    if (seg === 'uz' || seg === 'en' || seg === 'ru') {
+      localStorage.setItem('miuceo_lang', seg);
+    }
   })();
 </script>
 
