@@ -1,7 +1,7 @@
 import type { Env } from './types';
-import { runAgent, MAX_INPUT_CHARS } from './agent';
+import { runAgent, transcribeAudio, MAX_INPUT_CHARS, MAX_AUDIO_BYTES, MAX_AUDIO_SECONDS } from './agent';
 import { createCapture, markDraftReady, markDraftFailed, approveDraft, discardDraft, getDraft } from './drafts';
-import { tgSendToChat, tgEditInChat, tgAnswerCallback, type InlineKeyboard } from './telegram';
+import { tgSendToChat, tgEditInChat, tgAnswerCallback, tgDownloadFile, type InlineKeyboard } from './telegram';
 
 /**
  * Telegram bot update routing (ARCHITECTURE.md §9 Phase 5 Stage 2).
@@ -17,18 +17,27 @@ import { tgSendToChat, tgEditInChat, tgAnswerCallback, type InlineKeyboard } fro
  */
 
 const HELP =
-  "Salom! Menga post g'oyangizni yozing — AI uni qoralamaga aylantiradi, " +
-  "siz tekshirib tasdiqlaysiz, keyin Mini App'da tugatasiz.\n\n" +
-  "Hozircha faqat matn qabul qilinadi. Ovoz va rasm keyingi bosqichlarda qo'shiladi.";
+  "Salom! Menga post g'oyangizni yozing yoki ovozli xabar yuboring — AI uni " +
+  "qoralamaga aylantiradi, siz tekshirib tasdiqlaysiz, keyin Mini App'da tugatasiz.\n\n" +
+  "🎙 Ovozli xabar: avval eshitganimni ko'rsataman, siz tasdiqlaganingizdan keyin " +
+  "qoralama tayyorlanadi.\n\n" +
+  "Rasm keyingi bosqichda qo'shiladi.";
 
 interface TgUser { id: number }
 interface TgChat { id: number }
+interface TgVoice {
+  file_id: string;
+  duration?: number;
+  file_size?: number;
+  mime_type?: string;
+}
 interface TgMessage {
   message_id: number;
   from?: TgUser;
   chat: TgChat;
   text?: string;
-  voice?: unknown;
+  voice?: TgVoice;
+  audio?: TgVoice;
   photo?: unknown;
   document?: unknown;
 }
@@ -83,6 +92,23 @@ function reviewKeyboard(draftId: string): InlineKeyboard {
     inline_keyboard: [
       [
         { text: '✅ Saqlash', callback_data: `ok:${draftId}` },
+        { text: '🗑 Bekor qilish', callback_data: `no:${draftId}` },
+      ],
+    ],
+  };
+}
+
+/**
+ * The transcript gate. SKILLS.md `voice-pipeline` step 2 is explicit: always
+ * show the transcript for correction *before* drafting, because Whisper is
+ * materially weaker in Uzbek than in English or Russian. So a voice note never
+ * goes straight to the agent — the author confirms what was heard first.
+ */
+function transcriptKeyboard(draftId: string): InlineKeyboard {
+  return {
+    inline_keyboard: [
+      [
+        { text: '✅ To‘g‘ri, davom et', callback_data: `tr:${draftId}` },
         { text: '🗑 Bekor qilish', callback_data: `no:${draftId}` },
       ],
     ],
@@ -171,6 +197,92 @@ async function handleTextMessage(env: Env, msg: TgMessage): Promise<void> {
   }
 }
 
+/**
+ * Voice note -> transcript, shown for confirmation. Deliberately stops there:
+ * no agent call, no draft shaping, until the author confirms what was heard.
+ *
+ * The audio itself is held only as bytes in this function and never written
+ * anywhere (SKILLS.md `voice-pipeline` step 5 — transcribe, use, discard).
+ */
+async function handleVoiceMessage(env: Env, msg: TgMessage, voice: TgVoice): Promise<void> {
+  const chatId = msg.chat.id;
+
+  // Guards before downloading anything, so an oversized note costs one cheap
+  // reply rather than a 25 MB transfer and a rejected API call.
+  if (voice.duration && voice.duration > MAX_AUDIO_SECONDS) {
+    await tgSendToChat(
+      env, chatId,
+      `Ovozli xabar juda uzun (${voice.duration}s). Eng ko‘pi ${MAX_AUDIO_SECONDS}s.`
+    );
+    return;
+  }
+  if (voice.file_size && voice.file_size > MAX_AUDIO_BYTES) {
+    await tgSendToChat(env, chatId, 'Ovozli xabar juda katta (eng ko‘pi 25 MB).');
+    return;
+  }
+
+  let ackId: number | null = null;
+  try {
+    ackId = await tgSendToChat(env, chatId, '🎧 Tinglayapman...');
+  } catch {
+    /* non-fatal */
+  }
+  const say = async (body: string, keyboard?: InlineKeyboard) => {
+    if (ackId !== null) await tgEditInChat(env, chatId, ackId, body, keyboard);
+    else await tgSendToChat(env, chatId, body, keyboard);
+  };
+
+  let draftId: string | null = null;
+  try {
+    const { bytes, path } = await tgDownloadFile(env, voice.file_id);
+    const filename = path.split('/').pop() || 'voice.ogg';
+    const transcript = await transcribeAudio(env, bytes, filename);
+
+    // The transcript is the draft's source text. The raw audio goes out of
+    // scope here and is never persisted.
+    draftId = await createCapture(env, transcript.text);
+
+    const langNote = transcript.language ? ` (${transcript.language})` : '';
+    await say(
+      `🎙 Eshitganim${langNote}:\n\n${transcript.text}\n\n` +
+        `Agar xato bo‘lsa — to‘g‘rilangan matnni oddiy xabar qilib yuboring.`,
+      transcriptKeyboard(draftId)
+    );
+  } catch (err) {
+    if (draftId) await markDraftFailed(env, draftId, (err as Error).message);
+    console.error('bot voice failed', err);
+    await say("Ovozni matnga aylantirib bo‘lmadi. Keyinroq urinib ko‘ring.");
+  }
+}
+
+/**
+ * Second half of the voice flow: the author confirmed the transcript, so now
+ * the agent may shape it. Mirrors the text-capture path from this point on.
+ */
+async function draftFromConfirmedTranscript(
+  env: Env, chatId: number, messageId: number, draftId: string, sourceText: string
+): Promise<void> {
+  const say = (body: string, keyboard?: InlineKeyboard) =>
+    tgEditInChat(env, chatId, messageId, body, keyboard);
+
+  try {
+    await say('⏳ AI ishlayapti...');
+    const { title, body } = parseCapture(sourceText);
+    const result = await runAgent(env, 'improve', {
+      title, excerpt: '', markdown: body, skipMeta: true,
+    });
+    await markDraftReady(env, draftId, result);
+
+    const preview = result.markdown.length > 3000 ? result.markdown.slice(0, 3000) + '…' : result.markdown;
+    const heading = title ? `📝 ${title}` : '📝 Qoralama tayyor';
+    await say(`${heading}\n\n${preview}\n\n— ${result.provider}/${result.model}`, reviewKeyboard(draftId));
+  } catch (err) {
+    await markDraftFailed(env, draftId, (err as Error).message);
+    console.error('bot transcript drafting failed', err);
+    await say("AI hozir javob bermadi. Matningiz saqlandi — keyinroq urinib ko‘ring.");
+  }
+}
+
 async function handleCallback(env: Env, cb: TgCallbackQuery): Promise<void> {
   // Always answer, or Telegram leaves the button spinning.
   await tgAnswerCallback(env, cb.id);
@@ -186,6 +298,12 @@ async function handleCallback(env: Env, cb: TgCallbackQuery): Promise<void> {
   const draft = await getDraft(env, draftId);
   if (!draft) {
     await tgEditInChat(env, chatId, messageId, 'Bu qoralama topilmadi.');
+    return;
+  }
+
+  // Transcript confirmed — only now may the agent see it.
+  if (action === 'tr') {
+    await draftFromConfirmedTranscript(env, chatId, messageId, draftId, draft.source_text);
     return;
   }
 
@@ -223,11 +341,17 @@ export async function handleUpdate(env: Env, update: TgUpdate): Promise<void> {
     const msg = update.message;
     if (!msg) return;
 
-    if (msg.voice || msg.photo || msg.document) {
+    const voice = msg.voice || msg.audio;
+    if (voice) {
+      await handleVoiceMessage(env, msg, voice);
+      return;
+    }
+
+    if (msg.photo || msg.document) {
       await tgSendToChat(
         env,
         msg.chat.id,
-        "Hozircha faqat matn qabul qilaman. Ovoz va rasm keyingi bosqichlarda qo'shiladi."
+        "Hozircha matn va ovozni qabul qilaman. Rasm keyingi bosqichda qo'shiladi."
       );
       return;
     }

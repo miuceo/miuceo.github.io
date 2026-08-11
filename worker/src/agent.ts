@@ -69,6 +69,61 @@ export const MAX_INPUT_CHARS = 20000;
  */
 const MAX_OUTPUT_TOKENS = 32000;
 
+/* ---------- Speech to text ----------
+   Groq whisper-large-v3, per §10's routing table. Kept behind this same
+   interface so no feature code talks to a provider directly (SKILLS.md
+   `agent-task` step 2). Free-tier limits: 25 MB per file, 20 req/min,
+   28,800 audio-seconds/day. */
+
+/** Groq's hard per-file limit. */
+export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+
+/** Our own sanity cap; well inside the daily audio-seconds allowance. */
+export const MAX_AUDIO_SECONDS = 600;
+
+export interface TranscriptResult {
+  text: string;
+  language: string | null;
+  model: string;
+}
+
+/**
+ * Language is detected, never assumed — the author speaks all three
+ * (SKILLS.md `voice-pipeline` step 3), so `verbose_json` is used to read the
+ * detected language back rather than passing one in.
+ */
+export async function transcribeAudio(
+  env: Env,
+  audio: ArrayBuffer,
+  filename: string
+): Promise<TranscriptResult> {
+  if (!env.GROQ_API_KEY) throw new Error('transcribe: GROQ_API_KEY not configured');
+  if (audio.byteLength > MAX_AUDIO_BYTES) {
+    throw new Error(`transcribe: file too large (${audio.byteLength} bytes)`);
+  }
+
+  const model = (env.GROQ_STT_MODEL || 'whisper-large-v3').trim();
+  const form = new FormData();
+  form.append('file', new Blob([audio]), filename);
+  form.append('model', model);
+  form.append('response_format', 'verbose_json');
+
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.GROQ_API_KEY}` },
+    body: form,
+  });
+
+  if (!res.ok) {
+    throw new Error(`transcribe ${model} failed: ${res.status} ${(await res.text()).slice(0, 300)}`);
+  }
+
+  const data = (await res.json()) as { text?: string; language?: string };
+  const text = (data.text || '').trim();
+  if (!text) throw new Error(`transcribe ${model} returned empty text`);
+  return { text, language: data.language ?? null, model };
+}
+
 const LANG_NAMES: Record<Lang, string> = {
   uz: 'Uzbek (Latin script)',
   en: 'English',

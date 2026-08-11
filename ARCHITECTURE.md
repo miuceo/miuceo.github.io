@@ -350,7 +350,15 @@ Deliberately staged rather than built in one pass. Stage 1 was chosen first beca
 - Verified by 27 tests against a stubbed fetch and in-memory D1, covering every security layer (wrong secret → 401 with zero side effects; wrong sender → 200 with zero side effects), draft-before-agent ordering, agent failure leaving a retryable row plus a readable user message with no provider detail leaked, and approve-vs-discard behaviour.
 - **Author actions:** set `TG_WEBHOOK_SECRET`, run migration 0003 remotely, then call `POST /api/telegram/register-webhook` once. That endpoint has the Worker register its own webhook using secrets it already holds, so the bot token never passes through a terminal. Registering a webhook is a **bot-global change** that disables `getUpdates` polling — nothing here polls, and the Mini App and Login Widget are unaffected.
 
-*Stage 3 — voice — ❌ NOT STARTED.* Whisper in before TTS out (§5.1).
+*Stage 3 — voice in — ✅ BUILT (2026-08-11). Voice out (TTS) deferred, see below.*
+- Send the bot a voice note → Groq `whisper-large-v3` transcribes it → **the transcript is shown for confirmation, and only after the author confirms does the agent see it.** That ordering is the whole point: `SKILLS.md` `voice-pipeline` step 2 exists because Whisper is materially weaker in Uzbek than in English or Russian, so drafting straight from a transcript would quietly bake in mistranscriptions.
+- Language is **detected, not assumed** (`verbose_json`), since the author speaks all three, and the detected language is surfaced in the confirmation message.
+- **Audio is never persisted.** It exists only as bytes inside `handleVoiceMessage`; the draft stores the transcript, never the file id or the audio (§5.1: "transcribe, use, discard" — voice notes are personal data). There is deliberately no storage helper for it.
+- Duration and size guards run **before** downloading, so an oversized note costs one cheap reply rather than a 25 MB transfer and a rejected API call.
+- STT sits behind the same `agent.ts` interface as text (`transcribeAudio`), so no feature code talks to a provider directly. It is a single model rather than a ladder: OpenRouter has no equivalent free STT endpoint, so there is nothing to fall back to — worth knowing, since it means STT has no D12 redundancy.
+- Verified by 44 bot tests including: no agent call happens before confirmation, confirming is what triggers it, no audio identifiers reach the draft row, guards fire before any download, and a transcription failure is reported without leaking provider detail.
+
+*Voice out (TTS) — ❌ NOT STARTED, and larger than it looks.* It needs somewhere to put the audio: R2 has no binding yet, so generated files have nowhere to live. It also needs a player component and per-language generation. Groq's Orpheus is Preview status, so the site must render perfectly with no audio present (§5.1). Best treated as its own stage rather than folded into this one.
 
 *Stage 4 — media understanding + distribution fan-out — ❌ NOT STARTED.* Needs the multimodal OpenRouter route (D11). LinkedIn still blocked on the Phase 1 app review.
 

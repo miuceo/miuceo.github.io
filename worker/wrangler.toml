@@ -41,6 +41,9 @@ SESSION_TTL_SECONDS = "2592000"  # 30 days — matches the auth duration v1's re
 # preview models can vanish without notice (same caveat as Groq TTS in §5.1).
 GROQ_TEXT_MODELS = "openai/gpt-oss-120b,qwen/qwen3.6-27b"
 OPENROUTER_TEXT_MODELS = "nvidia/nemotron-3-super-120b-a12b:free,openai/gpt-oss-20b:free"
+# Speech to text (Phase 5 Stage 3). Single value, not a ladder: OpenRouter has
+# no equivalent free STT endpoint, so there is nothing to fall back to.
+GROQ_STT_MODEL = "whisper-large-v3"
 
 [[d1_databases]]
 binding = "DB"

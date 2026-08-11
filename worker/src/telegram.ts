@@ -98,6 +98,29 @@ export async function tgAnswerCallback(env: Env, callbackQueryId: string, text?:
   });
 }
 
+/**
+ * Downloads a file the bot received (a voice note, for Stage 3).
+ *
+ * The bytes are returned to the caller and never written anywhere: voice notes
+ * are personal data and are transcribed, used, then dropped (SKILLS.md
+ * `voice-pipeline` step 5). There is deliberately no storage helper here.
+ */
+export async function tgDownloadFile(env: Env, fileId: string): Promise<{ bytes: ArrayBuffer; path: string }> {
+  const infoRes = await fetch(apiUrl(env, 'getFile'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_id: fileId }),
+  });
+  const info = await infoRes.json() as { ok: boolean; result?: { file_path: string }; description?: string };
+  if (!info.ok || !info.result?.file_path) {
+    throw new Error('Telegram getFile failed: ' + (info.description || ''));
+  }
+
+  const path = info.result.file_path;
+  const fileRes = await fetch(`https://api.telegram.org/file/bot${env.TG_BOT_TOKEN}/${path}`);
+  if (!fileRes.ok) throw new Error(`Telegram file download failed: ${fileRes.status}`);
+  return { bytes: await fileRes.arrayBuffer(), path };
+}
+
 /** Registers this Worker as the bot's webhook, using secrets it already holds. */
 export async function tgSetWebhook(env: Env, url: string, secretToken: string): Promise<void> {
   const res = await fetch(apiUrl(env, 'setWebhook'), {

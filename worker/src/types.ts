@@ -15,6 +15,7 @@ export interface Env {
   // `agent-task` step 4). The ladder walks each list in order.
   GROQ_TEXT_MODELS: string;
   OPENROUTER_TEXT_MODELS: string;
+  GROQ_STT_MODEL: string;
 
   // secrets (`wrangler secret put`)
   GH_TOKEN: string;
