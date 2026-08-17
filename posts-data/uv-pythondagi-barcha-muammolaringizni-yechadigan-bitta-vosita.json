@@ -1,0 +1,23 @@
+{
+  "title": "🚀 uv — Python'dagi barcha muammolaringizni yechadigan bitta vosita",
+  "slug": "uv-pythondagi-barcha-muammolaringizni-yechadigan-bitta-vosita",
+  "blocks": [
+    {
+      "type": "text",
+      "content": "Eslang-chi, yangi Python loyihasini boshlash qanday kechardi:\n\npyenv install 3.13  \npython -m venv .venv  \nsource .venv/bin/activate  \npip install -r requirements.txt # va 2 daqiqa kutasiz...\n\nTo‘rt xil vosita, to‘rt xil konfiguratsiya fayli va oxirida baribir “menda ishlayapti‑ku” muammosi.\n\n**uv** — Rust’da yozilgan va bularning hammasini bitta o‘zi almashtiradigan vosita. Rasmiy hujjatdagi ta’rif: pip, pip‑tools, pipx, poetry, pyenv, twine, virtualenv — barchasining o‘rniga bitta uv.\n\nAstral (Ruff’ni yaratgan jamoa) ning aytishicha, u `pip`‑dan **10–100 barobar tezroq** (keshi isigan holatda).\n"
+    },
+    {
+      "type": "media",
+      "url": "https://www.kdnuggets.com/wp-content/uploads/awan_uv_new_python_package_manager_3.png",
+      "mediaType": "image"
+    },
+    {
+      "type": "text",
+      "content": "\n⚡️ **Boshlash — 3 ta buyruq**\n\nuv init myproject  \nuv add fastapi  \nuv run main.py  \n\nBirinchisi loyiha va `src/` tuzilmasini yaratadi, ikkinchisi paketni qo‘shib lock qiladi, uchinchisi ishga tushiradi.\n\nDiqqat qiling: **`activate` yo‘q**. `uv run` virtual muhitni o‘zi topadi, kerak bo‘lsa yaratadi. Men `source .venv/bin/activate` yozganimga bir necha oy bo‘ldi.\n\n—————\n\n🔥 **Eng \"hype\" imkoniyatlar**\n\n**1. Python’ning o‘zini ham o‘rnatadi**\n\npyenv endi kerak emas:\n\nuv python install 3.13  \nuv python pin 3.13  \n\nLoyihangizda `requires-python = \">=3.13\"` bo‘lsa va sizda u yo‘q bo‘lsa — uv uni **avtomatik yuklab oladi**.\n\n**2. uvx — o‘rnatmasdan ishlatish**\n\nuvx ruff check .  \nuvx cowsay -t \"salom\"  \n\nBu npx ning Python’dagi ko‘rinishi. Vaqtinchalik muhitda ishga tushiradi, tizimingizni ifloslantirmaydi.\n\n**3. Bitta faylli skriptlar — requirements.txt’siz** 🤯\n\nMening eng sevimli imkoniyatim. Skript faylining o‘ziga bog‘liqliklarni yozasiz (PEP 723 standarti):\n\n# /// script\n# requires-python = \">=3.12\"\n# dependencies = [\"requests<3\", \"rich\"]\n# ///\n\nimport requests\nfrom rich.pretty import pprint\n\npprint(requests.get(\"https://api.github.com\").json())\n\nKeyin shunchaki:\n\nuv run script.py  \n\nHammasi tayyor. Virtual muhit yo‘q, `pip install` yo‘q, hech narsa yo‘q.\n\nBog‘liqlikni qo‘shish uchun:\n\nuv add --script script.py httpx  \n\nHatto shebang qo‘shsangiz, skript to‘g‘ridan‑to‘g‘ri bajariladigan bo‘ladi:\n\n#!/usr/bin/env -S uv run --script\n\n—————\n\n📊 **Taqqoslash**\n\n**pip + venv**  \n├ Tezlik: sekin  \n├ Lock fayl: yo‘q  \n├ Python versiyasi: yo‘q (pyenv kerak)  \n├ Vaqtinchalik vositalar: yo‘q (pipx kerak)  \n└ Nashr qilish: yo‘q (twine kerak)\n\n**poetry**  \n├ Tezlik: sekin  \n├ Lock fayl: bor  \n├ Python versiyasi: yo‘q  \n├ Vaqtinchalik vositalar: yo‘q  \n└ Nashr qilish: bor\n\n**uv** ⚡️  \n├ Tezlik: 10–100× tezroq  \n├ Lock fayl: bor  \n├ Python versiyasi: bor  \n├ Vaqtinchalik vositalar: bor (uvx)  \n├ Bitta faylli skriptlar: bor  \n└ Nashr qilish: bor  \n\nYana bir farq: pip va poetry Python’da yozilgan, uv esa 🦀 **Rust**’da.\n\n—————\n\n**Xulosa**\n\npoetry yaxshi vosita edi va o‘z vaqtida muammoni yechdi. Lekin uv bir necha bosqich oldinda: u nafaqat paketlarni, balki **Python’ning o‘zini**, vositalarni va hatto alohida skriptlarni ham boshqaradi.\n\nO‘rnatish — bitta qator:\n\ncurl -LsSf https://astral.sh/uv/install.sh | sh  \n\nYangi loyihangizni uv bilan boshlab ko‘ring. Ishoning, `pip install`ni kutib oʻtirgan kunlaringizni sog‘inmaysiz. 🐍\n\n📚 Hujjatlar: https://docs.astral.sh/uv/\n\n#python #uv #backend #dasturlash"
+    }
+  ],
+  "created_at": "2026-08-17T17:20:03.111Z",
+  "updated_at": "2026-08-17T17:20:03.111Z",
+  "telegram_message_id": null,
+  "telegram_has_media": false
+}
