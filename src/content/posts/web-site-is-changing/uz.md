@@ -4,7 +4,8 @@ excerpt: "Kimningdir xabari bo'lsa mening private blogpotrfolioprojectcontact we
 coverImage: "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/claude-ai-icon.png"
 createdAt: "2026-08-17T08:32:45.278Z"
 updatedAt: "2026-08-17T08:32:45.278Z"
-telegramHasMedia: false
+telegramMessageId: 72
+telegramHasMedia: true
 ---
 ## Kimningdir xabari bo'lsa mening private blog-potrfolio-project-contact web-site sahifam bor edi (muhammadjon.me).
 
