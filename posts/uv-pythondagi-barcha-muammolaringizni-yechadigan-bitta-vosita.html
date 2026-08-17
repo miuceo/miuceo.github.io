@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀uv — Python&#39;dagi barcha muammolaringizni yechadigan bitta vosita — miuceo</title>
+<meta name="description" content="Eslangchi, yangi Python loyihasi boshlash qanday kechardi: To&#39;rt xil vosita, to&#39;rt xil konfiguratsiya fayli va oxirida baribir &quot;menda ishlayaptiku&quot; muammosi. uv — Rust&#39;da yozilgan va bularning hammasi">
+<link rel="canonical" href="https://muhammadjon.me/posts/uv-pythondagi-barcha-muammolaringizni-yechadigan-bitta-vosita.html">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="alternate" type="application/rss+xml" title="miuceo — RSS" href="../rss.xml">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="🚀uv — Python&#39;dagi barcha muammolaringizni yechadigan bitta vosita">
+<meta property="og:description" content="Eslangchi, yangi Python loyihasi boshlash qanday kechardi: To&#39;rt xil vosita, to&#39;rt xil konfiguratsiya fayli va oxirida baribir &quot;menda ishlayaptiku&quot; muammosi. uv — Rust&#39;da yozilgan va bularning hammasi">
+<meta property="og:url" content="https://muhammadjon.me/posts/uv-pythondagi-barcha-muammolaringizni-yechadigan-bitta-vosita.html">
+<meta property="og:site_name" content="miuceo">
+<meta property="og:locale" content="uz_UZ">
+<meta property="article:published_time" content="2026-08-17T17:08:14.917Z">
+<meta property="article:modified_time" content="2026-08-17T17:08:14.923Z">
+<meta property="og:image" content="https://www.kdnuggets.com/wp-content/uploads/awan_uv_new_python_package_manager_3.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="🚀uv — Python&#39;dagi barcha muammolaringizni yechadigan bitta vosita">
+<meta name="twitter:description" content="Eslangchi, yangi Python loyihasi boshlash qanday kechardi: To&#39;rt xil vosita, to&#39;rt xil konfiguratsiya fayli va oxirida baribir &quot;menda ishlayaptiku&quot; muammosi. uv — Rust&#39;da yozilgan va bularning hammasi">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "🚀uv — Python'dagi barcha muammolaringizni yechadigan bitta vosita",
+  "description": "Eslangchi, yangi Python loyihasi boshlash qanday kechardi: To'rt xil vosita, to'rt xil konfiguratsiya fayli va oxirida baribir \"menda ishlayaptiku\" muammosi. uv — Rust'da yozilgan va bularning hammasini bitta o'zi almashtiradigan vosita.",
+  "url": "https://muhammadjon.me/posts/uv-pythondagi-barcha-muammolaringizni-yechadigan-bitta-vosita.html",
+  "datePublished": "2026-08-17T17:08:14.917Z",
+  "dateModified": "2026-08-17T17:08:14.923Z",
+  "inLanguage": "uz",
+  "author": {
+    "@type": "Person",
+    "name": "Muhammadjon Ibrohimov"
+  },
+  "image": "https://www.kdnuggets.com/wp-content/uploads/awan_uv_new_python_package_manager_3.png"
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/theme.css">
+<style>
+  .top-nav{ padding:20px 24px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+  .top-nav a{ font-size:13px; color:var(--ink-soft); }
+  .top-nav a:hover{ color:var(--neon-cyan); }
+  .post-wrap{ max-width:760px; margin:0 auto; padding:60px 24px 40px; }
+  .post-title{ font-size:36px; font-weight:800; line-height:1.2; margin:0 0 36px; }
+  .post-content p{ font-size:16px; line-height:1.8; margin:0 0 18px; }
+  .post-content h2{ font-size:24px; font-weight:700; margin:32px 0 14px; }
+  .post-content h3{ font-size:19px; font-weight:700; margin:26px 0 12px; }
+  .post-content ul, .post-content ol{ margin:0 0 18px; padding-left:26px; }
+  .post-content li{ font-size:16px; line-height:1.8; margin-bottom:6px; }
+  .post-content blockquote{ margin:22px 0; padding:6px 20px; border-left:3px solid var(--neon-green); color:var(--ink-soft); font-style:italic; }
+  .post-content code{ font-size:0.9em; background:var(--bg-3); padding:2px 6px; border-radius:4px; color:var(--neon-cyan); }
+  .post-content pre{ background:var(--bg-3); border:1px solid var(--line); border-radius:8px; padding:16px 18px; overflow-x:auto; margin:22px 0; }
+  .post-content pre code{ background:none; padding:0; }
+  .post-content hr{ border:none; border-top:1px solid var(--line); margin:32px 0; }
+  .post-content table{ border-collapse:collapse; width:100%; margin:22px 0; font-size:14px; }
+  .post-content th, .post-content td{ border:1px solid var(--line); padding:10px 12px; text-align:left; }
+  .post-content a{ color:var(--neon-green); }
+  .post-content a:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
+  .post-image{ width:100%; border-radius:8px; margin:22px 0; display:block; border:1px solid var(--line); }
+  .media-embed{ margin:22px 0; }
+  .media-embed iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:8px; }
+  .embed-fallback{ font-size:13px !important; color:var(--ink-soft) !important; margin:8px 0 0 !important; }
+  .share-bar{ max-width:760px; margin:0 auto; padding:24px; border-top:1px solid var(--line); display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .share-bar span{ font-size:12px; color:var(--ink-soft); }
+  .share-bar a{ font-size:13px; color:var(--ink); padding:6px 12px; border:1px solid var(--line); border-radius:4px; }
+  .share-bar a:hover{ border-color:var(--neon-green); color:var(--neon-green); }
+  .post-dates{ max-width:760px; margin:0 auto; padding:16px 24px 60px; font-size:12px; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="top-nav">
+  <a href="../index.html">← Orqaga</a>
+  <button class="theme-toggle" id="themeToggle">☀️</button>
+</div>
+<main class="post-wrap">
+  <h1 class="post-title">🚀uv — Python&#39;dagi barcha muammolaringizni yechadigan bitta vosita</h1>
+  <div class="post-content">
+<p>Eslang-chi, yangi Python loyihasi boshlash qanday kechardi:</p>
+<pre><code>pyenv install 3.13
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt   # va 2 daqiqa kutasiz...
+</code></pre>
+<p>To&#39;rt xil vosita, to&#39;rt xil konfiguratsiya fayli va oxirida baribir &quot;menda ishlayapti-ku&quot; muammosi.</p>
+<p><strong>uv</strong> — Rust&#39;da yozilgan va bularning hammasini bitta o&#39;zi almashtiradigan vosita. Rasmiy hujjatdagi ta&#39;rif: <code>pip</code>, <code>pip-tools</code>, <code>pipx</code>, <code>poetry</code>, <code>pyenv</code>, <code>twine</code>, <code>virtualenv</code> — barchasining o&#39;rniga bitta <code>uv</code>.</p>
+<p>Astral (Ruff&#39;ni yaratgan jamoa) ning aytishicha, u <code>pip</code>dan <strong>10–100 barobar tezroq</strong> (keshi isigan holatda).</p>
+
+<img class="post-image" src="https://www.kdnuggets.com/wp-content/uploads/awan_uv_new_python_package_manager_3.png" alt="uv pckage manager" loading="lazy">
+<p>⚡ <strong>Boshlash — 3 ta buyruq</strong></p>
+<pre><code>uv init myproject
+uv add fastapi
+uv run main.py
+</code></pre>
+<p>Birinchisi loyiha va <code>src/</code> tuzilmasini yaratadi, ikkinchisi paketni qo&#39;shib lock qiladi, uchinchisi ishga tushiradi.</p>
+<p>Diqqat qiling: <strong><code>activate</code> yo&#39;q</strong>. <code>uv run</code> virtual muhitni o&#39;zi topadi, kerak bo&#39;lsa yaratadi. Men <code>source .venv/bin/activate</code> yozganimga bir necha oy bo&#39;ldi.</p>
+<p>—————</p>
+<p>🔥 <strong>Eng &quot;hype&quot; imkoniyatlar</strong></p>
+<p><strong>1. Python&#39;ning o&#39;zini ham o&#39;rnatadi</strong></p>
+<p><code>pyenv</code> endi kerak emas:</p>
+<pre><code>uv python install 3.13
+uv python pin 3.13
+</code></pre>
+<p>Loyihangizda <code>requires-python = &quot;&gt;=3.13&quot;</code> bo&#39;lsa va sizda u yo&#39;q bo&#39;lsa — uv uni <strong>avtomatik yuklab oladi</strong>.</p>
+<p><strong>2. uvx — o&#39;rnatmasdan ishlatish</strong></p>
+<pre><code>uvx ruff check .
+uvx cowsay -t &quot;salom&quot;
+</code></pre>
+<p>Bu <code>npx</code> ning Python&#39;dagi ko&#39;rinishi. Vaqtinchalik muhitda ishga tushiradi, tizimingizni ifloslantirmaydi.</p>
+<p><strong>3. Bitta faylli skriptlar — requirements.txt&#39;siz</strong> 🤯</p>
+<p>Mening eng sevimli imkoniyatim. Skript faylining o&#39;ziga bog&#39;liqliklarni yozasiz (PEP 723 standarti):</p>
+<pre><code># /// script
+# requires-python = &quot;&gt;=3.12&quot;
+# dependencies = [&quot;requests&lt;3&quot;, &quot;rich&quot;]
+# ///
+
+import requests
+from rich.pretty import pprint
+
+pprint(requests.get(&quot;https://api.github.com&quot;).json())
+</code></pre>
+<p>Keyin shunchaki:</p>
+<pre><code>uv run script.py
+</code></pre>
+<p>Hammasi tayyor. Virtual muhit yo&#39;q, <code>pip install</code> yo&#39;q, hech narsa yo&#39;q.</p>
+<p>Bog&#39;liqlikni qo&#39;shish uchun:</p>
+<pre><code>uv add --script script.py httpx
+</code></pre>
+<p>Hatto shebang qo&#39;shsangiz, skript to&#39;g&#39;ridan-to&#39;g&#39;ri bajariladigan bo&#39;ladi:</p>
+<pre><code>#!/usr/bin/env -S uv run --script
+</code></pre>
+<p>—————</p>
+<p>📊 <strong>Taqqoslash</strong></p>
+<p><strong>pip + venv</strong><br>├ Tezlik: sekin<br>├ Lock fayl: yo&#39;q<br>├ Python versiyasi: yo&#39;q (pyenv kerak)<br>├ Vaqtinchalik vositalar: yo&#39;q (pipx kerak)<br>└ Nashr qilish: yo&#39;q (twine kerak)</p>
+<p><strong>poetry</strong><br>├ Tezlik: sekin<br>├ Lock fayl: bor<br>├ Python versiyasi: yo&#39;q<br>├ Vaqtinchalik vositalar: yo&#39;q<br>└ Nashr qilish: bor</p>
+<p><strong>uv</strong> ⚡<br>├ Tezlik: 10–100x tezroq<br>├ Lock fayl: bor<br>├ Python versiyasi: bor<br>├ Vaqtinchalik vositalar: bor (uvx)<br>├ Bitta faylli skriptlar: bor<br>└ Nashr qilish: bor</p>
+<p>Yana bir farq: <code>pip</code> va <code>poetry</code> Python&#39;da yozilgan, <code>uv</code> esa 🦀 <strong>Rust</strong>&#39;da.</p>
+<p>—————</p>
+<p><strong>Xulosa</strong></p>
+<p><code>poetry</code> yaxshi vosita edi va o&#39;z vaqtida muammoni yechdi. Lekin <code>uv</code> bir necha bosqich oldinda: u nafaqat paketlarni, balki <strong>Python&#39;ning o&#39;zini</strong>, vositalarni va hatto alohida skriptlarni ham boshqaradi.</p>
+<p>O&#39;rnatish — bitta qator:</p>
+<pre><code>curl -LsSf https://astral.sh/uv/install.sh | sh
+</code></pre>
+<p>Yangi loyihangizni uv bilan boshlab ko&#39;ring. Ishoning, <code>pip install</code> ni kutib o&#39;tirgan kunlaringizni sog&#39;inmaysiz. 🐍</p>
+<p>📚 Hujjatlar: <a href="https://docs.astral.sh/uv/">https://docs.astral.sh/uv/</a></p>
+<p>#python #uv #backend #dasturlash</p>
+
+
+  </div>
+</main>
+<div class="share-bar">
+  <span>Ulashish:</span>
+  <a href="https://t.me/share/url?url=https%3A%2F%2Fmuhammadjon.me%2Fposts%2Fuv-pythondagi-barcha-muammolaringizni-yechadigan-bitta-vosita.html&text=%F0%9F%9A%80uv%20%E2%80%94%20Python'dagi%20barcha%20muammolaringizni%20yechadigan%20bitta%20vosita" target="_blank" rel="noopener">Telegram</a>
+  <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fmuhammadjon.me%2Fposts%2Fuv-pythondagi-barcha-muammolaringizni-yechadigan-bitta-vosita.html" target="_blank" rel="noopener">LinkedIn</a>
+</div>
+<div class="post-dates">Yaratildi: 2026 M08 17 · Yangilandi: 2026 M08 17</div>
+<script src="../assets/theme.js"></script>
+</body>
+</html>
