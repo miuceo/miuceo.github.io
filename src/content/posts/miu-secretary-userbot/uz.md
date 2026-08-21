@@ -4,7 +4,8 @@ excerpt: "Telegram'dagi shaxsiy hisobingiz uchun AI kotib — Telethon userbot s
 coverImage: "https://github.com/miuceo/MIU-secretary/raw/main/icon.jpg"
 createdAt: "2026-08-21T15:14:44.359Z"
 updatedAt: "2026-08-21T15:14:44.359Z"
-telegramHasMedia: false
+telegramMessageId: 95
+telegramHasMedia: true
 ---
 ![](https://github.com/miuceo/MIU-secretary/raw/main/icon.jpg)
 
