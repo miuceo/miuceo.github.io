@@ -325,6 +325,12 @@ async function transcribeBlob(blob: Blob, ext: string): Promise<string> {
   });
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || 'Transkripsiya xatosi');
+  // Where the wait actually went. Speech-to-text runs at ~189x real time, so
+  // this is almost always the correction model — worth being able to see
+  // rather than guess when a dictation feels slow.
+  if (data.timing) {
+    console.log(`[dictation] stt=${data.timing.sttMs}ms correction=${data.timing.polishMs}ms`);
+  }
   if (!data.polished) {
     // Say so rather than let it pass as corrected text: this is Whisper's raw
     // output, so the author should expect to punctuate it themselves.

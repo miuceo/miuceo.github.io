@@ -279,20 +279,39 @@ export default {
         const lang = (String(form.get('lang') || 'uz')) as Lang;
         if (!LANGS.includes(lang)) return errorResponse(env, 'Yaroqsiz til.', 400);
 
+        // Timed separately because the two halves have wildly different costs
+        // and the intuition about which is slow is wrong: Groq transcribes at
+        // ~189x real time, so speech-to-text is well under a second even for a
+        // long recording, and effectively all of the wait is the correction
+        // model. Returned to the client so a slow dictation can be diagnosed
+        // from the browser rather than guessed at.
+        const sttStart = Date.now();
         const transcript = await transcribeAudio(env, await file.arrayBuffer(), file.name || 'voice.webm', lang);
+        const sttMs = Date.now() - sttStart;
 
-        // A polish failure must not throw away a good transcript: raw text the
-        // author has to punctuate themselves still beats losing what they said.
+        // A correction failure must not throw away a good transcript: raw text
+        // the author has to punctuate themselves still beats losing what they
+        // said.
         let text = transcript.text;
         let polished = false;
+        const polishStart = Date.now();
         try {
           text = await polishTranscript(env, transcript.text, lang);
           polished = true;
         } catch (err) {
           console.warn(`polish failed, returning raw transcript: ${(err as Error).message}`);
         }
+        const polishMs = Date.now() - polishStart;
+        console.log(`transcribe: stt=${sttMs}ms polish=${polishMs}ms polished=${polished}`);
 
-        return json(env, { ok: true, text, raw: transcript.text, polished, model: transcript.model });
+        return json(env, {
+          ok: true,
+          text,
+          raw: transcript.text,
+          polished,
+          model: transcript.model,
+          timing: { sttMs, polishMs },
+        });
       }
 
       /* ---------- Post summary, for the Telegram channel and meta tags ----------

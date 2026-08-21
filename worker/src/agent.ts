@@ -327,12 +327,37 @@ type ContentPart =
   | { type: 'image_url'; image_url: { url: string } };
 type ChatContent = string | ContentPart[];
 
+/**
+ * Every text task here is a transduction — translate this, punctuate that,
+ * summarise the other. None of them is a reasoning problem, but the models
+ * that serve them best are reasoning models, and by default those spend real
+ * wall-clock time on hidden <think> tokens before answering. That thinking is
+ * pure latency for this workload, and it is the *whole* of the wait: Groq
+ * transcribes at 189x real time, so a two-minute recording is speech-to-text
+ * in well under a second and then sits waiting on the model.
+ *
+ * Groq exposes a dial for exactly this. The values are per model family, so
+ * an unrecognised model returns undefined and the request goes out unchanged
+ * — a new id in the config can never be broken by this function.
+ *
+ * Groq only. OpenRouter expresses the same idea with a differently shaped
+ * `reasoning` object, and sending an unknown field there risks a 400 that
+ * would silently push us down the ladder.
+ */
+function minimalReasoning(providerName: string, model: string): string | undefined {
+  if (providerName !== 'groq') return undefined;
+  if (/gpt-oss/i.test(model)) return 'low'; // low | medium | high
+  if (/qwen3/i.test(model)) return 'none'; // none | default
+  return undefined;
+}
+
 async function callChatCompletions(
   endpoint: string,
   apiKey: string,
   model: string,
   prompt: ChatContent,
-  maxTokens: number = MAX_OUTPUT_TOKENS
+  maxTokens: number = MAX_OUTPUT_TOKENS,
+  reasoningEffort?: string
 ): Promise<string> {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -345,6 +370,10 @@ async function callChatCompletions(
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
       max_tokens: maxTokens,
+      // Deliberately not paired with reasoning_format, which Groq documents as
+      // mutually exclusive with this for gpt-oss. stripReasoning already
+      // removes any <think> block that does come back.
+      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
     }),
   });
 
@@ -433,7 +462,10 @@ async function walkLadder(
     }
     for (const model of provider.models) {
       try {
-        const raw = await callChatCompletions(provider.endpoint, provider.apiKey, model, content, maxTokens);
+        const raw = await callChatCompletions(
+          provider.endpoint, provider.apiKey, model, content, maxTokens,
+          minimalReasoning(provider.name, model)
+        );
         const text = validate(raw);
         return { text, providerName: provider.name, model, endpoint: provider.endpoint, apiKey: provider.apiKey };
       } catch (err) {
@@ -529,7 +561,8 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
     // tokens for a two-field JSON object was getting rejected outright
     // (429/413) even though the real reply is a few dozen tokens.
     const rawMeta = await callChatCompletions(
-      body.endpoint, body.apiKey, body.model, buildMetaPrompt(task, input), META_MAX_TOKENS
+      body.endpoint, body.apiKey, body.model, buildMetaPrompt(task, input), META_MAX_TOKENS,
+      minimalReasoning(body.providerName, body.model)
     );
     const meta = parseMeta(stripReasoning(rawMeta));
     if (meta.title) title = meta.title;
