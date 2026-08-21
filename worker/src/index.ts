@@ -8,8 +8,6 @@ import { isAllowedPath, ghGetFile, ghPutFile, ghPutFileSafe, ghDeleteFile } from
 import { tgSendPost, tgEditPost, tgDeleteMessage } from './telegram';
 import { runAgent, describeImage, MAX_INPUT_CHARS, type AgentTask } from './agent';
 import { createDraft, markDraftReady, markDraftFailed, getDraft } from './drafts';
-import { handleUpdate, updateSenderId, type TgUpdate } from './bot';
-import { tgSetWebhook } from './telegram';
 import type { DraftKind, Lang } from './types';
 
 function corsHeaders(env: Env): Record<string, string> {
@@ -126,49 +124,6 @@ export default {
     }
 
     try {
-      /* ---------- /tg/webhook — the ONLY unauthenticated route ----------
-         Telegram's servers have no session cookie, so this necessarily sits
-         above the requireSession gate below. Three independent checks stand in
-         for that gate; do not move this block downward or add siblings to it
-         without the same checks.
-
-         1. The secret-token header proves the caller is Telegram (it is set at
-            setWebhook time and known only to Telegram and this Worker).
-            Mismatch => 401, since that is not a real delivery worth suppressing
-            retries for.
-         2. The sender id must be the author. Anyone else => 200 and ignore: it
-            IS a real Telegram delivery, so 200 stops pointless retries.
-         3. The update is processed inline, awaited, before returning 200.
-
-         An earlier version did the work in ctx.waitUntil to answer Telegram
-         instantly. That silently broke: the runtime only grants waitUntil a
-         short window *after* the response is sent, and two sequential
-         reasoning-model calls exceeded it, so tasks were cancelled mid-flight
-         and a posted idea produced no reply at all. `/start` still worked,
-         which made it look like the bot was fine.
-
-         Awaiting inline is correct here: the time is spent waiting on network
-         I/O, not CPU, and Telegram tolerates a slow webhook far better than a
-         fast 200 followed by nothing. The bot also acknowledges within a
-         second and edits that message with the result, so the wait is
-         visible rather than dead air. */
-
-      if (path === '/tg/webhook' && req.method === 'POST') {
-        const secret = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
-        if (!env.TG_WEBHOOK_SECRET || secret !== env.TG_WEBHOOK_SECRET) {
-          return new Response('unauthorized', { status: 401 });
-        }
-
-        const update = await readJson<TgUpdate>(req);
-        const senderId = updateSenderId(update);
-        if (!senderId || String(senderId) !== env.ALLOWED_TELEGRAM_ID) {
-          return new Response('ok', { status: 200 });
-        }
-
-        await handleUpdate(env, update);
-        return new Response('ok', { status: 200 });
-      }
-
       /* ---------- /auth/* — no session required, this IS the session issuer ---------- */
 
       if (path === '/auth/telegram-widget' && req.method === 'POST') {
@@ -314,16 +269,6 @@ export default {
             approved_at: draft.approved_at,
           },
         });
-      }
-
-      // Registers this Worker as the bot's webhook using secrets it already
-      // holds, so the author never has to handle the bot token themselves.
-      if (path === '/api/telegram/register-webhook' && req.method === 'POST') {
-        if (!env.TG_WEBHOOK_SECRET) {
-          return errorResponse(env, 'TG_WEBHOOK_SECRET sozlanmagan.', 400);
-        }
-        await tgSetWebhook(env, `${url.origin}/tg/webhook`, env.TG_WEBHOOK_SECRET);
-        return json(env, { ok: true, webhook: `${url.origin}/tg/webhook` });
       }
 
       return errorResponse(env, 'Not found', 404);

@@ -20,13 +20,11 @@ export interface Env {
 
   // secrets (`wrangler secret put`)
   GH_TOKEN: string;
+  // Channel posting only. There is no bot webhook any more — this Worker has
+  // no unauthenticated route, and Telegram never calls in.
   TG_BOT_TOKEN: string;
   GROQ_API_KEY: string;
   OPENROUTER_API_KEY: string;
-  // Shared with Telegram at setWebhook time and sent back as the
-  // X-Telegram-Bot-Api-Secret-Token header — the primary proof that a call to
-  // /tg/webhook really came from Telegram.
-  TG_WEBHOOK_SECRET: string;
 }
 
 export interface Session {

@@ -338,7 +338,8 @@ async function callChatCompletions(
   endpoint: string,
   apiKey: string,
   model: string,
-  prompt: ChatContent
+  prompt: ChatContent,
+  maxTokens: number = MAX_OUTPUT_TOKENS
 ): Promise<string> {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -350,7 +351,7 @@ async function callChatCompletions(
       model,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
-      max_tokens: MAX_OUTPUT_TOKENS,
+      max_tokens: maxTokens,
     }),
   });
 
@@ -383,12 +384,73 @@ interface ProviderAttempt {
   models: string[];
 }
 
+function textProviders(env: Env): ProviderAttempt[] {
+  return [
+    {
+      name: 'groq',
+      endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+      apiKey: env.GROQ_API_KEY,
+      models: parseModelList(env.GROQ_TEXT_MODELS),
+    },
+    {
+      name: 'openrouter',
+      endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+      apiKey: env.OPENROUTER_API_KEY,
+      models: parseModelList(env.OPENROUTER_TEXT_MODELS),
+    },
+  ];
+}
+
+interface LadderSuccess {
+  text: string;
+  providerName: string;
+  model: string;
+  endpoint: string;
+  apiKey: string;
+}
+
 /**
  * Walks every configured model of every provider in order. Rate limits and
  * transient provider errors are a normal path, not an exception (SKILLS.md
  * `agent-task` step 5) — each failure just advances to the next candidate.
  * Only when every candidate is exhausted does this throw.
+ *
+ * `validate` both cleans the raw reply and rejects anything unusable (empty,
+ * truncated-looking, scaffolding) — a thrown error there advances the ladder
+ * exactly like a provider-level failure, it just came from the parsing side.
+ * Shared by every text task here — each needs the same
+ * Groq-first-then-OpenRouter fallback but a different prompt and a different
+ * response shape.
  */
+async function walkLadder(
+  providers: ProviderAttempt[],
+  content: ChatContent,
+  validate: (raw: string) => string,
+  maxTokens: number = MAX_OUTPUT_TOKENS
+): Promise<LadderSuccess> {
+  const failures: string[] = [];
+  for (const provider of providers) {
+    if (!provider.apiKey) {
+      failures.push(`${provider.name}: no api key configured`);
+      continue;
+    }
+    if (provider.models.length === 0) {
+      failures.push(`${provider.name}: no models configured`);
+      continue;
+    }
+    for (const model of provider.models) {
+      try {
+        const raw = await callChatCompletions(provider.endpoint, provider.apiKey, model, content, maxTokens);
+        const text = validate(raw);
+        return { text, providerName: provider.name, model, endpoint: provider.endpoint, apiKey: provider.apiKey };
+      } catch (err) {
+        failures.push(`${provider.name}/${model}: ${(err as Error).message}`);
+      }
+    }
+  }
+  throw new Error(`All providers failed. ${failures.join(' | ')}`);
+}
+
 /* ---------- Vision: alt text ----------
    The first place OpenRouter is genuinely primary rather than a fallback:
    Groq has no vision model, so §10's routing table sends image work here.
@@ -444,76 +506,47 @@ export async function describeImage(env: Env, imageUrl: string, lang: Lang): Pro
   throw new Error(`All vision models failed. ${failures.join(' | ')}`);
 }
 
-export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Promise<AgentResult> {
-  const providers: ProviderAttempt[] = [
-    {
-      name: 'groq',
-      endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-      apiKey: env.GROQ_API_KEY,
-      models: parseModelList(env.GROQ_TEXT_MODELS),
-    },
-    {
-      name: 'openrouter',
-      endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-      apiKey: env.OPENROUTER_API_KEY,
-      models: parseModelList(env.OPENROUTER_TEXT_MODELS),
-    },
-  ];
+const META_MAX_TOKENS = 1000;
 
-  const failures: string[] = [];
+export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Promise<AgentResult> {
   const bodyPrompt = buildBodyPrompt(task, input);
 
-  for (const provider of providers) {
-    if (!provider.apiKey) {
-      failures.push(`${provider.name}: no api key configured`);
-      continue;
+  const body = await walkLadder(textProviders(env), bodyPrompt, (raw) => {
+    const markdown = stripFences(stripReasoning(raw));
+    if (!markdown) throw new Error('returned only reasoning, no document');
+    if (looksLikeScaffolding(markdown)) {
+      throw new Error(`returned scaffolding instead of prose: ${markdown.slice(0, 120)}`);
     }
-    if (provider.models.length === 0) {
-      failures.push(`${provider.name}: no models configured`);
-      continue;
-    }
-    for (const model of provider.models) {
-      try {
-        const rawBody = await callChatCompletions(provider.endpoint, provider.apiKey, model, bodyPrompt);
-        const markdown = stripFences(stripReasoning(rawBody));
+    return markdown;
+  });
 
-        if (!markdown) {
-          throw new Error(`${model} returned only reasoning, no document`);
-        }
-        if (looksLikeScaffolding(markdown)) {
-          throw new Error(`${model} returned scaffolding instead of prose: ${markdown.slice(0, 120)}`);
-        }
-
-        // Title/excerpt are short and independent. If this second call fails,
-        // it must not throw away a perfectly good body — fall back to the
-        // originals and let the author edit two short fields in the review
-        // modal. That is a real graceful degradation, unlike the one this
-        // function used to do for the body.
-        let title = input.title;
-        let excerpt = input.excerpt || '';
-        if (input.skipMeta) {
-          return { title, excerpt, markdown, provider: provider.name, model };
-        }
-        try {
-          const rawMeta = await callChatCompletions(
-            provider.endpoint,
-            provider.apiKey,
-            model,
-            buildMetaPrompt(task, input)
-          );
-          const meta = parseMeta(stripReasoning(rawMeta));
-          if (meta.title) title = meta.title;
-          if (meta.excerpt) excerpt = meta.excerpt;
-        } catch (metaErr) {
-          console.warn(`meta call failed for ${model}, keeping originals: ${(metaErr as Error).message}`);
-        }
-
-        return { title, excerpt, markdown, provider: provider.name, model };
-      } catch (err) {
-        failures.push(`${provider.name}/${model}: ${(err as Error).message}`);
-      }
-    }
+  // Title/excerpt are short and independent. If this second call fails, it
+  // must not throw away a perfectly good body — fall back to the originals
+  // and let the author edit two short fields in the review modal. That is a
+  // real graceful degradation, unlike the one this function used to do for
+  // the body. Deliberately tied to the model that already succeeded above,
+  // not a fresh ladder walk — a second full fallback pass here would double
+  // the worst-case latency for a call whose failure is already recoverable.
+  let title = input.title;
+  let excerpt = input.excerpt || '';
+  if (input.skipMeta) {
+    return { title, excerpt, markdown: body.text, provider: body.providerName, model: body.model };
+  }
+  try {
+    // A short JSON reply — the full MAX_OUTPUT_TOKENS budget is unnecessary
+    // and actively harmful: Groq's per-minute token quota is checked against
+    // the *requested* max_tokens, not actual usage, so asking for 32,000
+    // tokens for a two-field JSON object was getting rejected outright
+    // (429/413) even though the real reply is a few dozen tokens.
+    const rawMeta = await callChatCompletions(
+      body.endpoint, body.apiKey, body.model, buildMetaPrompt(task, input), META_MAX_TOKENS
+    );
+    const meta = parseMeta(stripReasoning(rawMeta));
+    if (meta.title) title = meta.title;
+    if (meta.excerpt) excerpt = meta.excerpt;
+  } catch (metaErr) {
+    console.warn(`meta call failed for ${body.model}, keeping originals: ${(metaErr as Error).message}`);
   }
 
-  throw new Error(`All agent providers failed. ${failures.join(' | ')}`);
+  return { title, excerpt, markdown: body.text, provider: body.providerName, model: body.model };
 }

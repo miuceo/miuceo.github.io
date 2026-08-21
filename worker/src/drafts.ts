@@ -16,15 +16,15 @@ function now(): number {
 
 export async function createDraft(
   env: Env,
-  input: { slug: string; targetLang: Lang; kind: DraftKind; sourceText: string }
+  input: { slug: string | null; targetLang: Lang; kind: DraftKind; sourceText: string; source?: 'editor' | 'telegram' }
 ): Promise<string> {
   const id = crypto.randomUUID();
   const ts = now();
   await env.DB.prepare(
     `INSERT INTO drafts (id, slug, target_lang, kind, source, source_text, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 'editor', ?, 'pending', ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
   )
-    .bind(id, input.slug, input.targetLang, input.kind, input.sourceText, ts, ts)
+    .bind(id, input.slug, input.targetLang, input.kind, input.source || 'editor', input.sourceText, ts, ts)
     .run();
   return id;
 }
@@ -33,36 +33,6 @@ export async function createDraft(
  * A draft captured from the Telegram bot. No slug — there is no post behind it
  * yet; the author gives it one when finishing in the Mini App.
  */
-export async function createCapture(env: Env, sourceText: string): Promise<string> {
-  const id = crypto.randomUUID();
-  const ts = now();
-  await env.DB.prepare(
-    `INSERT INTO drafts (id, slug, target_lang, kind, source, source_text, status, created_at, updated_at)
-     VALUES (?, NULL, 'uz', 'capture', 'telegram', ?, 'pending', ?, ?)`
-  )
-    .bind(id, sourceText, ts, ts)
-    .run();
-  return id;
-}
-
-/* ---------- bot_settings (migration 0004) ---------- */
-
-export async function getSetting(env: Env, key: string): Promise<string | null> {
-  const row = await env.DB.prepare('SELECT value FROM bot_settings WHERE key = ?')
-    .bind(key)
-    .first<{ value: string }>();
-  return row?.value ?? null;
-}
-
-export async function setSetting(env: Env, key: string, value: string): Promise<void> {
-  await env.DB.prepare(
-    `INSERT INTO bot_settings (key, value, updated_at) VALUES (?, ?, ?)
-     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
-  )
-    .bind(key, value, Math.floor(Date.now() / 1000))
-    .run();
-}
-
 export async function discardDraft(env: Env, id: string): Promise<void> {
   await env.DB.prepare(`UPDATE drafts SET status = 'discarded', updated_at = ? WHERE id = ?`)
     .bind(now(), id)

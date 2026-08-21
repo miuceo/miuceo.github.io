@@ -52,7 +52,9 @@ npx wrangler secret put GH_TOKEN
 # faqat miuceo/miuceo.github.io repositoriyasiga cheklangan bo'lsin
 
 npx wrangler secret put TG_BOT_TOKEN
-# @BotFather'dan olingan @miuceo_pws_bot tokenini qo'ying
+# @BotFather'dan olingan @miuceo_pws_bot tokenini qo'ying.
+# Faqat kanalga post yuborish uchun — bot webhook'i yo'q, Telegram
+# bu Worker'ga hech qachon o'zi murojaat qilmaydi.
 
 npx wrangler secret put GROQ_API_KEY
 # console.groq.com — bepul, karta talab qilinmaydi.
@@ -62,10 +64,6 @@ npx wrangler secret put OPENROUTER_API_KEY
 # openrouter.ai — bepul tarifda kuniga 50 ta so'rov (karta bilan 1000 ta).
 # Groq ishlamay qolsa, zaxira provayder sifatida ishlatiladi (D12).
 
-npx wrangler secret put TG_WEBHOOK_SECRET
-# Uzun tasodifiy satr (masalan: openssl rand -hex 32).
-# Telegram bu qiymatni har bir webhook so'rovida qaytaradi —
-# /tg/webhook uchun asosiy himoya shu. Uni ham maxfiy saqlang.
 ```
 
 AI kalitlari bo'lmasa sayt va nashr qilish odatdagidek ishlayveradi — faqat
