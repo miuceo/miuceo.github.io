@@ -2,7 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /login.html
-Disallow: /post-builder.html
 Disallow: /post-builder/
 
 Sitemap: https://muhammadjon.me/sitemap-index.xml

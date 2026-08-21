@@ -74,7 +74,7 @@ function authHeaders(){
     <div style="display:flex; gap:16px; align-items:center;">
       <button class="theme-toggle" id="themeToggle">☀️</button>
       <button class="btn ghost small" id="logoutBtn">Chiqish</button>
-      <a href="index.html" class="back-link">← Bosh sahifaga</a>
+      <a href="/uz/" class="back-link">← Bosh sahifaga</a>
     </div>
   </nav>
 
@@ -82,9 +82,9 @@ function authHeaders(){
     <h1>Postlar</h1>
     <div style="display:flex; gap:10px;">
       <button class="btn ghost" id="refreshBtn">Yangilash</button>
-      <!-- The v2 editor (/post-builder/) — same Worker API, plus the AI
-           translate/improve tools. v1's post-builder.html stays reachable
-           directly as a fallback; nothing about it changed. -->
+      <!-- The only editor. v1's post-builder.html is gone: it published a
+           single language and linked at permalinks that are no longer
+           generated. -->
       <a href="/post-builder/" class="btn">+ Yangi post</a>
     </div>
   </div>
@@ -162,38 +162,6 @@ async function apiTelegramDelete(messageId){
   });
 }
 
-/* ---------- RSS ---------- */
-function escapeXml(s){
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
-}
-function generateRssXml(index, siteUrl){
-  const sorted = [...index].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-  const items = sorted.map(p => `  <item>
-    <title>${escapeXml(p.title)}</title>
-    <link>${escapeXml(siteUrl)}/posts/${escapeXml(p.slug)}.html</link>
-    <guid isPermaLink="true">${escapeXml(siteUrl)}/posts/${escapeXml(p.slug)}.html</guid>
-    <pubDate>${new Date(p.created_at).toUTCString()}</pubDate>
-    <description>${escapeXml(p.excerpt || '')}</description>
-  </item>`).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-  <title>miuceo — Muhammadjon Ibrohimov</title>
-  <link>${escapeXml(siteUrl)}/</link>
-  <description>Machine learning, AI engineering, backend va DevOps haqida.</description>
-  <language>uz</language>
-  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-${items}
-</channel>
-</rss>
-`;
-}
-async function publishRss(index, siteUrl){
-  const existing = await apiGithubGet('rss.xml');
-  const xml = generateRssXml(index, siteUrl);
-  await apiGithubPut('rss.xml', xml, 'Update rss.xml', existing ? existing.sha : null);
-}
-
 async function loadPosts(){
   const listEl = document.getElementById('postsList');
   listEl.innerHTML = '<div class="empty-state">Yuklanmoqda...</div>';
@@ -221,7 +189,7 @@ function renderPosts(){
       </div>
       <div class="post-actions">
         <a href="/post-builder/?edit=${encodeURIComponent(p.slug)}" class="btn ghost small">Tahrirlash</a>
-        <a href="posts/${p.slug}.html" target="_blank" class="btn ghost small">Ko'rish</a>
+        <a href="/uz/posts/${p.slug}/" target="_blank" class="btn ghost small">Ko'rish</a>
         <button class="btn danger small" data-slug="${p.slug}" data-title="${escapeHtml(p.title)}">O'chirish</button>
       </div>
     </div>
@@ -260,13 +228,17 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
     const dataFile = await apiGithubGet(`posts-data/${slug}.json`);
     if(dataFile){ await apiGithubDelete(`posts-data/${slug}.json`, `Delete post data: ${post.title}`, dataFile.sha); log('✓ posts-data/' + slug + '.json o\'chirildi'); }
 
-    // Best-effort: v1 deletion below must not break if the Worker hasn't been
-    // redeployed yet with the new src/content/posts/ allowlist entry.
-    try{
-      const mdFile = await apiGithubGet(`src/content/posts/${slug}/uz.md`);
-      if(mdFile){ await apiGithubDelete(`src/content/posts/${slug}/uz.md`, `Delete v2 post content: ${post.title}`, mdFile.sha); log('✓ v2 (Astro) content fayli o\'chirildi'); }
-    }catch(err){
-      log('⚠ v2 content faylini o\'chirib bo\'lmadi (' + err.message + ')');
+    // All three languages, not just uz. Astro builds a page per file that
+    // exists, so leaving en.md or ru.md behind keeps /en/posts/<slug>/ live
+    // after the post was deleted — a page with no way back to it.
+    for(const lang of ['uz','en','ru']){
+      const path = `src/content/posts/${slug}/${lang}.md`;
+      try{
+        const mdFile = await apiGithubGet(path);
+        if(mdFile){ await apiGithubDelete(path, `Delete ${lang} post content: ${post.title}`, mdFile.sha); log('✓ ' + path + ' o\'chirildi'); }
+      }catch(err){
+        log('⚠ ' + path + ' o\'chirib bo\'lmadi (' + err.message + ')');
+      }
     }
 
     const indexFile = await apiGithubGet('posts.json');
@@ -279,10 +251,6 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
       await apiTelegramDelete(post.telegram_message_id);
       log('✓ Telegram xabari o\'chirildi');
     }
-
-    log('rss.xml yangilanmoqda...');
-    await publishRss(index, SITE_URL);
-    log('✓ rss.xml yangilandi');
 
     log('');
     log('Tayyor!');
@@ -301,7 +269,7 @@ document.getElementById('refreshBtn').addEventListener('click', loadPosts);
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   try{ await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include', headers: authHeaders() });
   localStorage.removeItem('miuceo_session_token'); }catch(e){}
-  window.location.href = 'index.html';
+  window.location.href = '/uz/';
 });
 
 loadPosts();
