@@ -6,7 +6,10 @@ import {
 } from './auth';
 import { isAllowedPath, ghGetFile, ghPutFile, ghPutFileSafe, ghDeleteFile } from './github';
 import { tgSendPost, tgEditPost, tgDeleteMessage } from './telegram';
-import { runAgent, describeImage, MAX_INPUT_CHARS, type AgentTask } from './agent';
+import {
+  runAgent, describeImage, transcribeAudio, polishTranscript, summarisePost,
+  MAX_INPUT_CHARS, MAX_AUDIO_BYTES, type AgentTask,
+} from './agent';
 import { createDraft, markDraftReady, markDraftFailed, getDraft } from './drafts';
 import type { DraftKind, Lang } from './types';
 
@@ -250,7 +253,74 @@ export default {
         return json(env, { ok: true, alt: result.alt, provider: result.provider, model: result.model });
       }
 
-      /* ---------- drafts + bot administration (author only) ---------- */
+      /* ---------- Voice → text, for the post-builder editor ----------
+         Whisper first, then a second pass that punctuates and corrects the
+         transcript without rewriting it. Both are needed: a raw Whisper reply
+         is one unpunctuated run of words, which is not something an author
+         can paste into a post.
+
+         D14's approval gate is satisfied structurally here rather than by a
+         confirmation step: the text lands in the author's own editor, where
+         they read and edit it before anything is published. Nothing is stored
+         server-side, and the audio is dropped as soon as it is transcribed. */
+
+      if (path === '/api/agent/transcribe' && req.method === 'POST') {
+        const form = await req.formData();
+        const file = form.get('audio');
+        if (!(file instanceof File)) return errorResponse(env, 'Audio fayl kerak.', 400);
+        if (file.size === 0) return errorResponse(env, 'Audio fayl bo\'sh.', 400);
+        if (file.size > MAX_AUDIO_BYTES) {
+          return errorResponse(env, 'Yozuv juda uzun. Qisqaroq bo\'laklarga bo\'ling.', 400);
+        }
+
+        // Pinned, never detected. The author writes in Uzbek (translations are
+        // generated), and auto-detection reads Uzbek as Turkish and then
+        // decodes the whole recording with the wrong phonetics.
+        const lang = (String(form.get('lang') || 'uz')) as Lang;
+        if (!LANGS.includes(lang)) return errorResponse(env, 'Yaroqsiz til.', 400);
+
+        const transcript = await transcribeAudio(env, await file.arrayBuffer(), file.name || 'voice.webm', lang);
+
+        // A polish failure must not throw away a good transcript: raw text the
+        // author has to punctuate themselves still beats losing what they said.
+        let text = transcript.text;
+        let polished = false;
+        try {
+          text = await polishTranscript(env, transcript.text, lang);
+          polished = true;
+        } catch (err) {
+          console.warn(`polish failed, returning raw transcript: ${(err as Error).message}`);
+        }
+
+        return json(env, { ok: true, text, raw: transcript.text, polished, model: transcript.model });
+      }
+
+      /* ---------- Post summary, for the Telegram channel and meta tags ----------
+         Two summaries from one reading of the post. Returned to the author's
+         client, which decides what to do with them — this endpoint posts
+         nothing anywhere. */
+
+      if (path === '/api/agent/summary' && req.method === 'POST') {
+        const { title, markdown } = await readJson<{ title?: string; markdown?: string }>(req);
+        const t = (title || '').trim();
+        const md = (markdown || '').trim();
+        if (!t) return errorResponse(env, 'Sarlavha kerak.', 400);
+        if (!md) return errorResponse(env, 'Post matni bo\'sh.', 400);
+        if (md.length > MAX_INPUT_CHARS) {
+          return errorResponse(env, `Post juda uzun (${md.length} belgi).`, 400);
+        }
+
+        const summary = await summarisePost(env, t, md);
+        return json(env, {
+          ok: true,
+          channel: summary.channel,
+          meta: summary.meta,
+          provider: summary.provider,
+          model: summary.model,
+        });
+      }
+
+      /* ---------- drafts (author only) ---------- */
 
       if (path === '/api/drafts/get' && req.method === 'POST') {
         const { id } = await readJson<{ id: string }>(req);

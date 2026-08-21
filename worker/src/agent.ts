@@ -26,13 +26,6 @@ export interface AgentInput {
   excerpt?: string;
   markdown: string;
   targetLang?: Lang;
-  /**
-   * Skip the second (title/excerpt) call. Halves latency, which matters for
-   * the Telegram bot: a capture has a placeholder title the author replaces in
-   * the Mini App anyway, and two sequential reasoning-model calls exceeded the
-   * runtime's budget for post-response work.
-   */
-  skipMeta?: boolean;
 }
 
 export interface AgentResult {
@@ -77,9 +70,6 @@ const MAX_OUTPUT_TOKENS = 32000;
 
 /** Groq's hard per-file limit. */
 export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
-
-/** Our own sanity cap; well inside the daily audio-seconds allowance. */
-export const MAX_AUDIO_SECONDS = 600;
 
 export interface TranscriptResult {
   text: string;
@@ -529,9 +519,6 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
   // the worst-case latency for a call whose failure is already recoverable.
   let title = input.title;
   let excerpt = input.excerpt || '';
-  if (input.skipMeta) {
-    return { title, excerpt, markdown: body.text, provider: body.providerName, model: body.model };
-  }
   try {
     // A short JSON reply — the full MAX_OUTPUT_TOKENS budget is unnecessary
     // and actively harmful: Groq's per-minute token quota is checked against
@@ -549,4 +536,152 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
   }
 
   return { title, excerpt, markdown: body.text, provider: body.providerName, model: body.model };
+}
+
+/* ---------- Transcript polishing ----------
+   Whisper returns a single unpunctuated run of words with no paragraph
+   breaks, and for Uzbek it also drops the ʻ modifiers (o'/g') even with the
+   orthography hint in STT_PROMPTS. That is unusable as blog prose, but it is
+   also not something to "improve" — the author dictated these exact words.
+   So this task is deliberately narrower than `improve`: punctuation,
+   capitalisation, orthography and paragraph breaks only. */
+
+const POLISH_MAX_TOKENS = 8000;
+
+/**
+ * The guard that makes this task safe to run unattended. A model asked to
+ * "clean up" text will sometimes summarise it instead, and a summary of the
+ * author's dictation silently replacing their dictation is exactly the class
+ * of failure this codebase already got burned by (see looksLikeScaffolding).
+ * Length is a crude but reliable signal: punctuation and diacritics move the
+ * character count by a few percent, never by half.
+ */
+function assertSameSubstance(original: string, polished: string): void {
+  const ratio = polished.length / Math.max(original.length, 1);
+  if (ratio < 0.7 || ratio > 1.5) {
+    throw new Error(
+      `polish changed the text's length by too much (${original.length} → ${polished.length} chars)`
+    );
+  }
+}
+
+/**
+ * Punctuates and corrects a raw transcript without rewriting it. Returns the
+ * cleaned text only — like everything else in this file, it proposes text and
+ * has no way to store or publish it.
+ */
+export async function polishTranscript(env: Env, raw: string, lang: Lang = 'uz'): Promise<string> {
+  const source = raw.trim();
+  if (!source) throw new Error('polish: empty transcript');
+
+  const prompt =
+    `The text below is a raw speech-to-text transcript in ${LANG_NAMES[lang]}. It was dictated by ` +
+    `the author of a personal technical blog and will be pasted straight into their editor.\n\n` +
+    `Your ONLY job is to make it readable:\n` +
+    `- Add sentence punctuation and capitalisation.\n` +
+    `- Break it into paragraphs where the speaker changes subject.\n` +
+    `- Fix spelling and orthography, including Uzbek Latin modifiers (o‘, g‘) and obvious ` +
+    `mis-transcriptions of technical terms.\n` +
+    `- Fix agreement and case endings that are clearly transcription slips.\n\n` +
+    `Do NOT summarise. Do NOT shorten. Do NOT rephrase for style. Do NOT add, remove or reorder ` +
+    `ideas. Every sentence the speaker said must still be there, in the same order, in the same ` +
+    `language. If a passage is garbled, leave it as-is rather than inventing a replacement.\n\n` +
+    `Output ONLY the corrected text — no preamble, no explanation, no code fence.\n\n` +
+    `${DOC_START}\n${source}\n${DOC_END}`;
+
+  const result = await walkLadder(
+    textProviders(env),
+    prompt,
+    (rawReply) => {
+      const text = stripFences(stripReasoning(rawReply));
+      if (!text) throw new Error('polish returned nothing');
+      if (looksLikeScaffolding(text)) throw new Error('polish returned scaffolding');
+      assertSameSubstance(source, text);
+      return text;
+    },
+    POLISH_MAX_TOKENS
+  );
+  return result.text;
+}
+
+/* ---------- Post summaries ----------
+   Two summaries of the same post, for two places with genuinely different
+   limits, produced in one call because they need the same reading of the
+   article and a second call would double both latency and free-tier spend. */
+
+const SUMMARY_MAX_TOKENS = 2000;
+
+/** Google truncates a description around here, so a 3-4 sentence summary
+ * cannot serve both this and the Telegram post. */
+const MAX_META_EXCERPT_CHARS = 160;
+
+export interface PostSummary {
+  /** 3-4 sentences. The body of the Telegram channel announcement. */
+  channel: string;
+  /** One sentence. meta description, RSS, and the post card on the index. */
+  meta: string;
+  provider: string;
+  model: string;
+}
+
+function buildSummaryPrompt(title: string, markdown: string): string {
+  return (
+    `Read the blog post below and write two summaries of it, both in the same language as the post ` +
+    `itself.\n\n` +
+    `1. "channel": 3 to 4 complete sentences, for a Telegram channel announcement. Say what the post ` +
+    `is actually about and what a reader gets from it. Write it as prose the author would write — no ` +
+    `hashtags, no emoji, no "in this article we will", no marketing tone, no call to action.\n` +
+    `2. "meta": ONE sentence, at most ${MAX_META_EXCERPT_CHARS} characters, for the page's meta ` +
+    `description and RSS feed.\n\n` +
+    `Do not invent anything that is not in the post.\n\n` +
+    `Respond with ONLY a JSON object, no code fence:\n` +
+    `{"channel": "...", "meta": "..."}\n\n` +
+    `TITLE: ${title}\n\n${DOC_START}\n${markdown}\n${DOC_END}`
+  );
+}
+
+/**
+ * Replaces post-builder's old getExcerpt(), which took the first two
+ * sentences and cut them at 240 characters — so a post opening with a
+ * scene-setting anecdote announced itself to the channel with the anecdote
+ * and nothing else.
+ */
+export async function summarisePost(env: Env, title: string, markdown: string): Promise<PostSummary> {
+  const result = await walkLadder(
+    textProviders(env),
+    buildSummaryPrompt(title, markdown),
+    (raw) => {
+      const parsed = parseSummary(stripReasoning(raw));
+      // Carried through walkLadder as JSON and split apart by the caller:
+      // `validate` is typed to return one string, and inventing a second
+      // ladder for a two-field result would be worse than re-parsing once.
+      return JSON.stringify(parsed);
+    },
+    SUMMARY_MAX_TOKENS
+  );
+  const { channel, meta } = JSON.parse(result.text) as { channel: string; meta: string };
+  return { channel, meta, provider: result.providerName, model: result.model };
+}
+
+function parseSummary(raw: string): { channel: string; meta: string } {
+  let candidate = raw.trim();
+  const fenced = candidate.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced && fenced[1]) candidate = fenced[1].trim();
+
+  const start = candidate.indexOf('{');
+  const end = candidate.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) throw new Error('summary: no JSON object in reply');
+
+  const parsed = JSON.parse(candidate.slice(start, end + 1)) as Record<string, unknown>;
+  const channel = typeof parsed.channel === 'string' ? parsed.channel.trim() : '';
+  const meta = typeof parsed.meta === 'string' ? parsed.meta.trim() : '';
+
+  // A missing field is a hard failure, not something to paper over with the
+  // other one: the two serve different places and a 4-sentence meta
+  // description or a one-line channel post is a worse outcome than an error
+  // the author can retry.
+  if (!channel) throw new Error('summary: no channel summary in reply');
+  if (!meta) throw new Error('summary: no meta description in reply');
+
+  return { channel, meta: meta.slice(0, MAX_META_EXCERPT_CHARS) };
 }
