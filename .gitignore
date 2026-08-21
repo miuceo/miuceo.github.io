@@ -26,7 +26,6 @@ yarn-error.log*
 public/posts/
 public/posts-data/
 public/posts.json
-public/rss.xml
 
 # Editors
 .vscode/

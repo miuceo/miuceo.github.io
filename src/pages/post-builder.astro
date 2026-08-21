@@ -91,6 +91,22 @@ import '../islands/PostBuilder/styles.css';
       </div>
     </div>
 
+    <!-- The publish gate. Everything the model generated — the channel
+         summary, the meta description, both translations — is shown here,
+         editable, before anything is written to GitHub or posted to the
+         channel. Cancelling here leaves nothing published. -->
+    <div id="publishReviewModal">
+      <div class="box">
+        <div class="panel-label" style="margin:0;">Nashrdan oldin ko'rib chiqing</div>
+        <div class="review-meta">AI yozgan matnlar. Tahrirlashingiz mumkin — tasdiqlamaguningizcha hech narsa yozilmaydi.</div>
+        <div id="publishReviewBody"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn ghost" id="publishCancelBtn">Bekor qilish</button>
+          <button class="btn primary" id="publishConfirmBtn">Nashr qil</button>
+        </div>
+      </div>
+    </div>
+
     <div id="copyModal">
       <div class="box">
         <div class="panel-label" style="margin:0;">Jarayon</div>

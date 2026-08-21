@@ -132,17 +132,22 @@ function renderEditor() {
         <div class="block-head">
           <span class="block-type">Matn</span>
           <div class="block-actions">
+            <button class="btn ghost small mic-btn" type="button" title="Gapirib yozdirish">🎙 Ovoz</button>
             <button class="btn ghost icon" data-act="up">↑</button>
             <button class="btn ghost icon" data-act="down">↓</button>
             <button class="btn ghost icon" data-act="del">✕</button>
           </div>
         </div>
-        <textarea class="text-input" placeholder="Markdown to'liq qo'llab-quvvatlanadi: # sarlavha, **qalin**, *qiya*, - ro'yxat, 1. raqamli ro'yxat, > iqtibos, kod uchun backtick, [link](url), --- chiziq...">${b.content}</textarea>
+        <textarea class="text-input" placeholder="Markdown to'liq qo'llab-quvvatlanadi: # sarlavha, **qalin**, *qiya*, - ro'yxat, 1. raqamli ro'yxat, > iqtibos, kod uchun backtick, [link](url), --- chiziq...">${escapeHtml(b.content)}</textarea>
       `;
       el.querySelector('textarea')!.addEventListener('input', (e) => {
         (b as Extract<Block, { type: 'text' }>).content = (e.target as HTMLTextAreaElement).value;
         renderPreview();
       });
+      wireMicButton(
+        el.querySelector('button.mic-btn') as HTMLButtonElement,
+        b as Extract<Block, { type: 'text' }>
+      );
     } else {
       const mtype = detectMediaType(b.url);
       let previewHtml = '<div class="media-empty">Link kiriting</div>';
@@ -225,6 +230,184 @@ function renderEditor() {
       });
     });
     container.appendChild(el);
+  });
+}
+
+/* ---------- VOICE → TEXT ----------
+   Dictation for a text block: record, transcribe, punctuate, append. The
+   Worker does both model calls (/api/agent/transcribe); this side only
+   captures audio and hands it over.
+
+   D14's approval gate is satisfied structurally rather than by a confirmation
+   prompt — the result lands in the author's own editor, where it sits next to
+   everything else they wrote and is read and edited before publishing. The
+   audio itself is never uploaded anywhere but the Worker, which drops it as
+   soon as Whisper has read it. */
+
+/** Long enough for a whole section, short enough to stay inside Groq's 25 MB
+ *  per-file limit and its daily audio-seconds allowance. */
+const MAX_RECORDING_MS = 10 * 60 * 1000;
+
+/**
+ * Groq decides an audio file's format from its FILENAME EXTENSION, not from
+ * its bytes or its Content-Type — so the extension we send has to match what
+ * MediaRecorder actually produced. Browsers disagree here: Chrome and Firefox
+ * give WebM/Opus, Safari gives MP4/AAC. Picking the container and its
+ * extension together is what keeps that from silently becoming a rejected
+ * upload.
+ */
+function pickAudioFormat(): { mime: string; ext: string } {
+  const candidates = [
+    { mime: 'audio/webm;codecs=opus', ext: 'webm' },
+    { mime: 'audio/webm', ext: 'webm' },
+    { mime: 'audio/ogg;codecs=opus', ext: 'ogg' },
+    { mime: 'audio/mp4', ext: 'mp4' },
+  ];
+  for (const c of candidates) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(c.mime)) return c;
+  }
+  return { mime: '', ext: 'webm' };
+}
+
+interface Recording {
+  ext: string;
+  stop(): Promise<Blob>;
+}
+
+async function beginRecording(): Promise<Recording> {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const { mime, ext } = pickAudioFormat();
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  const chunks: BlobPart[] = [];
+  rec.ondataavailable = (e) => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+  rec.start();
+
+  return {
+    ext,
+    stop() {
+      return new Promise<Blob>((resolve) => {
+        rec.onstop = () => {
+          // Release the microphone as soon as the recorder is done — leaving
+          // the track live keeps the browser's recording indicator on.
+          stream.getTracks().forEach((t) => t.stop());
+          resolve(new Blob(chunks, { type: mime || 'audio/webm' }));
+        };
+        if (rec.state === 'inactive') rec.onstop!(new Event('stop'));
+        else rec.stop();
+      });
+    },
+  };
+}
+
+/**
+ * One microphone at a time across the whole editor — two open at once
+ * produces two overlapping transcripts of the same speech.
+ *
+ * This lives outside the DOM on purpose. Every state change re-renders the
+ * block list, which destroys and rebuilds the buttons, so a state held on the
+ * button element would be lost mid-recording. `wireMicButton` reads this on
+ * each render and restores whatever phase the block is actually in.
+ */
+let micState: { blockId: string; phase: 'recording' | 'working'; stop: () => void } | null = null;
+
+async function transcribeBlob(blob: Blob, ext: string): Promise<string> {
+  const form = new FormData();
+  form.append('audio', blob, `voice.${ext}`);
+  form.append('lang', 'uz');
+  const res = await fetch(`${WORKER_URL}/api/agent/transcribe`, {
+    method: 'POST',
+    credentials: 'include',
+    // No Content-Type: the browser must set the multipart boundary itself.
+    headers: { ...authHeaders() },
+    body: form,
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Transkripsiya xatosi');
+  if (!data.polished) {
+    // Say so rather than let it pass as corrected text: this is Whisper's raw
+    // output, so the author should expect to punctuate it themselves.
+    alert("Matn tuzatilmadi — tinish belgilarini o'zingiz qo'yishingiz kerak bo'ladi.");
+  }
+  return data.text as string;
+}
+
+/**
+ * Appends rather than replaces, and writes to the block model rather than to
+ * the textarea element — a re-render between starting and stopping the
+ * recording would otherwise drop the result on the floor.
+ */
+function appendToBlock(block: Extract<Block, { type: 'text' }>, text: string) {
+  block.content = block.content.trim() ? `${block.content.trim()}\n\n${text}` : text;
+}
+
+function wireMicButton(btn: HTMLButtonElement | null, block: Extract<Block, { type: 'text' }>) {
+  if (!btn) return;
+
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    btn.disabled = true;
+    btn.title = "Bu brauzer ovoz yozishni qo'llab-quvvatlamaydi";
+    return;
+  }
+
+  if (micState) {
+    if (micState.blockId !== block.id) {
+      btn.disabled = true;
+      btn.title = 'Boshqa blokda ovoz yozilmoqda';
+      return;
+    }
+    if (micState.phase === 'working') {
+      btn.disabled = true;
+      btn.textContent = '⏳ Matnga...';
+      return;
+    }
+    btn.textContent = "⏹ To'xtatish";
+    btn.classList.add('recording');
+    const stop = micState.stop;
+    btn.addEventListener('click', () => stop());
+    return;
+  }
+
+  btn.addEventListener('click', async () => {
+    let recording: Recording;
+    try {
+      recording = await beginRecording();
+    } catch (err) {
+      alert('Mikrofonga ruxsat berilmadi yoki mikrofon topilmadi.\n\n' + (err as Error).message);
+      return;
+    }
+
+    let settled = false;
+    const finish = async () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(limit);
+      // Re-render into the working phase first, so the wait is visible on the
+      // live button rather than on the one this closure captured, which the
+      // render that started the recording already replaced.
+      micState = { blockId: block.id, phase: 'working', stop: () => {} };
+      render();
+      try {
+        const blob = await recording.stop();
+        if (blob.size === 0) throw new Error('Ovoz yozilmadi — mikrofonni tekshiring.');
+        appendToBlock(block, await transcribeBlob(blob, recording.ext));
+      } catch (err) {
+        alert("Ovozni matnga o'girib bo'lmadi: " + (err as Error).message);
+      } finally {
+        micState = null;
+        render();
+      }
+    };
+
+    const limit = setTimeout(() => {
+      alert("10 daqiqalik chegaraga yetdi — yozuv to'xtatildi va matnga o'girilmoqda.");
+      void finish();
+    }, MAX_RECORDING_MS);
+
+    micState = { blockId: block.id, phase: 'recording', stop: () => void finish() };
+    // Re-render so every other block's mic button locks while this one runs.
+    render();
   });
 }
 
@@ -378,163 +561,6 @@ async function loadPostForEdit(slug: string) {
 }
 
 /* ---------- RSS (v1 mirror, same as post-builder.html) ---------- */
-function escapeXml(s: string | null | undefined): string {
-  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-}
-function generateRssXml(index: any[], siteUrl: string): string {
-  const sorted = [...index].sort((a, b) => new Date(b.created_at).valueOf() - new Date(a.created_at).valueOf());
-  const items = sorted
-    .map(
-      (p) => `  <item>
-    <title>${escapeXml(p.title)}</title>
-    <link>${escapeXml(siteUrl)}/posts/${escapeXml(p.slug)}.html</link>
-    <guid isPermaLink="true">${escapeXml(siteUrl)}/posts/${escapeXml(p.slug)}.html</guid>
-    <pubDate>${new Date(p.created_at).toUTCString()}</pubDate>
-    <description>${escapeXml(p.excerpt || '')}</description>
-  </item>`
-    )
-    .join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-  <title>miuceo — Muhammadjon Ibrohimov</title>
-  <link>${escapeXml(siteUrl)}/</link>
-  <description>Machine learning, AI engineering, backend va DevOps haqida.</description>
-  <language>uz</language>
-  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-${items}
-</channel>
-</rss>
-`;
-}
-async function publishRss(index: any[], siteUrl: string) {
-  const existing = await ghGetFile('rss.xml');
-  const xml = generateRssXml(index, siteUrl);
-  await ghPutFileSafe('rss.xml', xml, 'Update rss.xml', existing ? existing.sha : null);
-}
-
-/* ---------- GENERATE v1 HTML (unchanged generator, keeps posts/<slug>.html working) ---------- */
-function generatePostHtml(title: string, postUrl: string, excerpt: string, coverImage: string | null): string {
-  let contentHtml = '';
-  blocks.forEach((b) => {
-    if (b.type === 'text' && b.content.trim()) {
-      contentHtml += mdToHtml(b.content) + '\n';
-    } else if (b.type === 'media' && b.url) {
-      const mtype = detectMediaType(b.url);
-      if (mtype === 'youtube') {
-        const yid = getYoutubeId(b.url);
-        if (yid)
-          contentHtml += `<div class="media-embed"><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen loading="lazy"></iframe><p class="embed-fallback">Video ko'rinmasa, <a href="https://www.youtube.com/watch?v=${yid}" target="_blank" rel="noopener">YouTube'da tomosha qiling</a>.</p></div>\n`;
-      } else {
-        // alt is model output landing in an HTML attribute — escaped, per
-        // CLAUDE.md rule 8 / SKILLS.md repo-security-pass step 6.
-        contentHtml += `<img class="post-image" src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt || '')}" loading="lazy">\n`;
-      }
-    }
-  });
-
-  const createdAtDisplay = new Date(currentCreatedAt!).toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' });
-  const updatedAt = new Date().toISOString();
-  const updatedAtDisplay = new Date(updatedAt).toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' });
-  const encodedUrl = encodeURIComponent(postUrl);
-  const encodedTitle = encodeURIComponent(title);
-  const metaDescription = escapeHtml((excerpt || '').slice(0, 200));
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: title,
-    description: excerpt || '',
-    url: postUrl,
-    datePublished: currentCreatedAt,
-    dateModified: updatedAt,
-    inLanguage: 'uz',
-    author: { '@type': 'Person', name: 'Muhammadjon Ibrohimov' },
-    ...(coverImage ? { image: coverImage } : {}),
-  };
-
-  return `<!DOCTYPE html>
-<html lang="uz">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(title)} — miuceo</title>
-<meta name="description" content="${metaDescription}">
-<link rel="canonical" href="${postUrl}">
-<link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="alternate" type="application/rss+xml" title="miuceo — RSS" href="../rss.xml">
-
-<meta property="og:type" content="article">
-<meta property="og:title" content="${escapeHtml(title)}">
-<meta property="og:description" content="${metaDescription}">
-<meta property="og:url" content="${postUrl}">
-<meta property="og:site_name" content="miuceo">
-<meta property="og:locale" content="uz_UZ">
-<meta property="article:published_time" content="${currentCreatedAt}">
-<meta property="article:modified_time" content="${updatedAt}">
-${coverImage ? `<meta property="og:image" content="${escapeHtml(coverImage)}">\n<meta name="twitter:card" content="summary_large_image">` : `<meta name="twitter:card" content="summary">`}
-<meta name="twitter:title" content="${escapeHtml(title)}">
-<meta name="twitter:description" content="${metaDescription}">
-
-<script type="application/ld+json">
-${JSON.stringify(jsonLd, null, 2).replace(/</g, '\\u003c')}
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/theme.css">
-<style>
-  .top-nav{ padding:20px 24px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
-  .top-nav a{ font-size:13px; color:var(--ink-soft); }
-  .top-nav a:hover{ color:var(--neon-cyan); }
-  .post-wrap{ max-width:760px; margin:0 auto; padding:60px 24px 40px; }
-  .post-title{ font-size:36px; font-weight:800; line-height:1.2; margin:0 0 36px; }
-  .post-content p{ font-size:16px; line-height:1.8; margin:0 0 18px; }
-  .post-content h2{ font-size:24px; font-weight:700; margin:32px 0 14px; }
-  .post-content h3{ font-size:19px; font-weight:700; margin:26px 0 12px; }
-  .post-content ul, .post-content ol{ margin:0 0 18px; padding-left:26px; }
-  .post-content li{ font-size:16px; line-height:1.8; margin-bottom:6px; }
-  .post-content blockquote{ margin:22px 0; padding:6px 20px; border-left:3px solid var(--neon-green); color:var(--ink-soft); font-style:italic; }
-  .post-content code{ font-size:0.9em; background:var(--bg-3); padding:2px 6px; border-radius:4px; color:var(--neon-cyan); }
-  .post-content pre{ background:var(--bg-3); border:1px solid var(--line); border-radius:8px; padding:16px 18px; overflow-x:auto; margin:22px 0; }
-  .post-content pre code{ background:none; padding:0; }
-  .post-content hr{ border:none; border-top:1px solid var(--line); margin:32px 0; }
-  .post-content table{ border-collapse:collapse; width:100%; margin:22px 0; font-size:14px; }
-  .post-content th, .post-content td{ border:1px solid var(--line); padding:10px 12px; text-align:left; }
-  .post-content a{ color:var(--neon-green); }
-  .post-content a:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
-  .post-image{ width:100%; border-radius:8px; margin:22px 0; display:block; border:1px solid var(--line); }
-  .media-embed{ margin:22px 0; }
-  .media-embed iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:8px; }
-  .embed-fallback{ font-size:13px !important; color:var(--ink-soft) !important; margin:8px 0 0 !important; }
-  .share-bar{ max-width:760px; margin:0 auto; padding:24px; border-top:1px solid var(--line); display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
-  .share-bar span{ font-size:12px; color:var(--ink-soft); }
-  .share-bar a{ font-size:13px; color:var(--ink); padding:6px 12px; border:1px solid var(--line); border-radius:4px; }
-  .share-bar a:hover{ border-color:var(--neon-green); color:var(--neon-green); }
-  .post-dates{ max-width:760px; margin:0 auto; padding:16px 24px 60px; font-size:12px; color:var(--ink-soft); }
-</style>
-</head>
-<body>
-<div class="top-nav">
-  <a href="../index.html">← Orqaga</a>
-  <button class="theme-toggle" id="themeToggle">☀️</button>
-</div>
-<main class="post-wrap">
-  <h1 class="post-title">${escapeHtml(title)}</h1>
-  <div class="post-content">
-${contentHtml}
-  </div>
-</main>
-<div class="share-bar">
-  <span>Ulashish:</span>
-  <a href="https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}" target="_blank" rel="noopener">Telegram</a>
-  <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}" target="_blank" rel="noopener">LinkedIn</a>
-</div>
-<div class="post-dates">Yaratildi: ${createdAtDisplay} · Yangilandi: ${updatedAtDisplay}</div>
-<script src="../assets/theme.js"></script>
-</body>
-</html>`;
-}
-
-/* ---------- v2 CONTENT COLLECTION MIRROR (Astro, ARCHITECTURE.md §9 Phase 3/4) ---------- */
 function generatePostMarkdownBody(): string {
   let body = '';
   blocks.forEach((b) => {
@@ -759,7 +785,147 @@ function appendLog(msg: string) {
   log.scrollTop = log.scrollHeight;
 }
 
-/* ---------- GENERATE & PUBLISH (identical dual-write behavior to post-builder.html) ---------- */
+/* ---------- THE PUBLISH GATE ----------
+   Everything the model wrote, in one panel, editable, before any of it is
+   written anywhere. The author writes Uzbek and does not necessarily read the
+   Russian or English that goes out under their name — so this panel is the
+   place where they can, and where a bad translation is caught before it is
+   live rather than after.
+
+   Resolves with the (possibly edited) text on Nashr qil, or null on cancel.
+   Nothing in here touches GitHub or Telegram; the caller does that, after. */
+
+interface PublishReview {
+  channel: string;
+  meta: string;
+  translations: Translated[];
+}
+
+function openPublishReview(draft: PublishReview): Promise<PublishReview | null> {
+  const modal = document.getElementById('publishReviewModal');
+  const body = document.getElementById('publishReviewBody');
+  const okBtn = document.getElementById('publishConfirmBtn') as HTMLButtonElement | null;
+  const cancelBtn = document.getElementById('publishCancelBtn') as HTMLButtonElement | null;
+
+  // No panel in the DOM means no gate, and no gate means unreviewed text would
+  // publish silently. Refuse instead: a failed publish the author can retry
+  // beats one that quietly skipped the review they asked for.
+  if (!modal || !body || !okBtn || !cancelBtn) {
+    return Promise.reject(new Error("Ko'rib chiqish oynasi topilmadi — nashr to'xtatildi."));
+  }
+
+  body.innerHTML = `
+    <label class="review-label">Telegram kanal uchun xulosa</label>
+    <textarea id="prChannel" class="review-input" rows="5"></textarea>
+
+    <label class="review-label">Qisqacha tavsif — sayt, RSS, Google (160 belgi)</label>
+    <textarea id="prMeta" class="review-input" rows="2"></textarea>
+    ${draft.translations
+      .map(
+        (tr) => `
+      <div class="pr-lang">
+        <label class="review-label">${tr.lang.toUpperCase()} — sarlavha</label>
+        <input type="text" class="review-input" data-tr-title="${tr.lang}">
+        <label class="review-label">${tr.lang.toUpperCase()} — qisqacha tavsif</label>
+        <textarea class="review-input" data-tr-excerpt="${tr.lang}" rows="2"></textarea>
+        <label class="review-label">${tr.lang.toUpperCase()} — matn</label>
+        <textarea class="review-input review-body" data-tr-body="${tr.lang}" rows="10"></textarea>
+      </div>`
+      )
+      .join('')}
+    ${
+      draft.translations.length < 2
+        ? `<div class="pr-warn">⚠ Ba'zi tillar tarjima qilinmadi — post ularsiz chiqadi. Keyinroq qayta nashr qilsangiz qo'shiladi.</div>`
+        : ''
+    }
+  `;
+
+  // Values are assigned as properties, never interpolated into the markup
+  // above: model output containing a quote or a </textarea> would otherwise
+  // break out of the element it is supposed to sit inside.
+  (document.getElementById('prChannel') as HTMLTextAreaElement).value = draft.channel;
+  (document.getElementById('prMeta') as HTMLTextAreaElement).value = draft.meta;
+  draft.translations.forEach((tr) => {
+    (body.querySelector(`[data-tr-title="${tr.lang}"]`) as HTMLInputElement).value = tr.title;
+    (body.querySelector(`[data-tr-excerpt="${tr.lang}"]`) as HTMLTextAreaElement).value = tr.excerpt;
+    (body.querySelector(`[data-tr-body="${tr.lang}"]`) as HTMLTextAreaElement).value = tr.markdown;
+  });
+
+  modal.style.display = 'flex';
+
+  return new Promise((resolve) => {
+    const close = (result: PublishReview | null) => {
+      modal.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onOk = () => {
+      close({
+        channel: (document.getElementById('prChannel') as HTMLTextAreaElement).value.trim(),
+        meta: (document.getElementById('prMeta') as HTMLTextAreaElement).value.trim().slice(0, 160),
+        translations: draft.translations.map((tr) => ({
+          lang: tr.lang,
+          title: (body.querySelector(`[data-tr-title="${tr.lang}"]`) as HTMLInputElement).value.trim(),
+          excerpt: (body.querySelector(`[data-tr-excerpt="${tr.lang}"]`) as HTMLTextAreaElement).value.trim(),
+          markdown: (body.querySelector(`[data-tr-body="${tr.lang}"]`) as HTMLTextAreaElement).value,
+          // An emptied language is a deliberate "don't publish this one".
+        })).filter((tr) => tr.title && tr.markdown.trim()),
+      });
+    };
+    const onCancel = () => close(null);
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+
+/* ---------- PUBLISH ----------
+   The author writes one post, in Uzbek. Everything else — the English and
+   Russian versions, the channel announcement, the meta description — is
+   generated from it here, in one pass, and then shown to the author before
+   anything is written anywhere.
+
+   The order matters and is deliberate: generate first, gate second, write
+   third. Nothing reaches GitHub or Telegram until the author has read the
+   generated text and clicked Nashr qil, so cancelling leaves no half-published
+   post behind — no Uzbek page live without its translations, no channel
+   message pointing at a post that was never committed.
+
+   That click is also what keeps D6 intact. The model proposes; the author
+   approves; the author's own client does the writing. */
+
+type Translated = { lang: 'en' | 'ru'; title: string; excerpt: string; markdown: string };
+
+async function generateSummary(title: string, markdown: string): Promise<{ channel: string; meta: string }> {
+  const res = await fetch(`${WORKER_URL}/api/agent/summary`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ title, markdown }),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Xulosa xatosi');
+  return { channel: data.channel, meta: data.meta };
+}
+
+async function generateTranslation(
+  slug: string,
+  lang: 'en' | 'ru',
+  title: string,
+  excerpt: string,
+  markdown: string
+): Promise<Translated> {
+  const res = await fetch(`${WORKER_URL}/api/agent/translate`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ slug, targetLang: lang, title, excerpt, markdown }),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Tarjima xatosi');
+  return { lang, title: data.title || title, excerpt: data.excerpt || '', markdown: data.markdown || '' };
+}
+
 async function publish() {
   const titleInput = document.getElementById('titleInput') as HTMLInputElement;
   const title = titleInput.value.trim();
@@ -777,9 +943,11 @@ async function publish() {
   const nowIso = new Date().toISOString();
   if (!isEdit) currentCreatedAt = nowIso;
 
-  const postUrl = `${SITE_URL}/posts/${slug}.html`;
-  const excerpt = getExcerpt();
+  // The Astro permalink, not v1's /posts/<slug>.html — that page is no longer
+  // generated for new posts, so linking the channel at it would 404.
+  const postUrl = `${SITE_URL}/uz/posts/${slug}/`;
   const coverImage = getCoverImage();
+  const sourceMarkdown = currentSourceMarkdown();
 
   document.getElementById('processLog')!.textContent = '';
   showLog();
@@ -789,12 +957,55 @@ async function publish() {
   try {
     appendLog(`Slug: ${slug}`);
 
-    appendLog('HTML post fayli tayyorlanmoqda...');
-    const postHtml = generatePostHtml(title, postUrl, excerpt, coverImage);
-    const existingPostFile = isEdit ? await ghGetFile(`posts/${slug}.html`) : null;
-    await ghPutFileSafe(`posts/${slug}.html`, postHtml, `${isEdit ? 'Update' : 'Create'} post: ${title}`, existingPostFile ? existingPostFile.sha : null);
-    appendLog('✓ posts/' + slug + ".html GitHub'ga yuklandi");
+    /* ---- 1. Summaries ---- */
+    appendLog('Xulosa yozilmoqda...');
+    let channel = '';
+    let meta = '';
+    try {
+      const summary = await generateSummary(title, sourceMarkdown);
+      channel = summary.channel;
+      meta = summary.meta;
+      appendLog('✓ Xulosa tayyor');
+    } catch (err) {
+      // Degrade to the old two-sentence cut rather than block the publish —
+      // but say so, because that cut is exactly what the summary replaced and
+      // the author will want to rewrite it in the review panel below.
+      appendLog('⚠ Xulosa yozilmadi (' + (err as Error).message + ') — matnning boshi ishlatilmoqda, tekshiring.');
+      channel = getExcerpt();
+      meta = getExcerpt().slice(0, 160);
+    }
 
+    /* ---- 2. Translations ---- */
+    // Sequential, not parallel: two full-length translations at once collide
+    // with Groq's tokens-per-minute limit, and the log reads as progress
+    // rather than as a stall.
+    const translations: Translated[] = [];
+    for (const lang of ['en', 'ru'] as const) {
+      appendLog(`${lang.toUpperCase()} tarjima qilinmoqda...`);
+      try {
+        translations.push(await generateTranslation(slug, lang, title, meta, sourceMarkdown));
+        appendLog(`✓ ${lang.toUpperCase()} tayyor`);
+      } catch (err) {
+        // One failed language must not cost the other two. Astro builds a page
+        // per file that exists, so a missing en.md means no English page for
+        // this post — not a broken build.
+        appendLog(`⚠ ${lang.toUpperCase()} tarjima qilinmadi (` + (err as Error).message + ') — bu tilsiz davom etamiz.');
+      }
+    }
+
+    /* ---- 3. The gate ---- */
+    appendLog('');
+    appendLog("Ko'rib chiqish kutilmoqda...");
+    const approved = await openPublishReview({ channel, meta, translations });
+    if (!approved) {
+      appendLog('Bekor qilindi — hech narsa yozilmadi.');
+      return;
+    }
+    channel = approved.channel;
+    meta = approved.meta;
+
+    /* ---- 4. Writes ---- */
+    appendLog('');
     appendLog("Post ma'lumotlari (posts-data) saqlanmoqda...");
     const postData: Record<string, unknown> = {
       title,
@@ -817,11 +1028,11 @@ async function publish() {
 
     appendLog('posts.json yangilanmoqda...');
     const indexFile = await ghGetFile('posts.json');
-    let index: any[] = indexFile ? JSON.parse(indexFile.content) : [];
+    const index: any[] = indexFile ? JSON.parse(indexFile.content) : [];
     const entry = {
       slug,
       title,
-      excerpt,
+      excerpt: meta,
       cover_image: coverImage,
       created_at: currentCreatedAt,
       updated_at: nowIso,
@@ -831,30 +1042,46 @@ async function publish() {
     const existingIdx = index.findIndex((p) => p.slug === slug);
     if (existingIdx >= 0) index[existingIdx] = entry;
     else index.push(entry);
-    const indexPutResult = await ghPutFileSafe('posts.json', JSON.stringify(index, null, 2), `Update posts index: ${title}`, indexFile ? indexFile.sha : null);
+    const indexPutResult = await ghPutFileSafe(
+      'posts.json',
+      JSON.stringify(index, null, 2),
+      `Update posts index: ${title}`,
+      indexFile ? indexFile.sha : null
+    );
     let indexSha = indexPutResult.content.sha;
     appendLog('✓ posts.json yangilandi');
 
-    // Best-effort only: v1's publish above must never break because the v2
-    // Astro mirror failed (e.g. the Worker allowlist not yet redeployed).
     const mdPath = `src/content/posts/${slug}/uz.md`;
-    let mdSha: string | null = null;
-    try {
-      appendLog('v2 (Astro) content fayli yozilmoqda...');
-      const existingMdFile = isEdit ? await ghGetFile(mdPath) : null;
-      const mdContent = generatePostMarkdown(title, excerpt, coverImage, currentCreatedAt!, nowIso, currentTelegramMsgId, currentTelegramHasMedia);
-      const mdPutResult = await ghPutFileSafe(mdPath, mdContent, `${isEdit ? 'Update' : 'Create'} v2 post content: ${title}`, existingMdFile ? existingMdFile.sha : null);
-      mdSha = mdPutResult.content.sha;
-      appendLog('✓ ' + mdPath + ' saqlandi');
-    } catch (err) {
-      appendLog("⚠ v2 content faylini yozib bo'lmadi (" + (err as Error).message + "), v1 nashr davom etmoqda...");
+    appendLog('uz.md yozilmoqda...');
+    const existingMdFile = isEdit ? await ghGetFile(mdPath) : null;
+    const mdContent = generatePostMarkdown(
+      title, meta, coverImage, currentCreatedAt!, nowIso, currentTelegramMsgId, currentTelegramHasMedia
+    );
+    const mdPutResult = await ghPutFileSafe(
+      mdPath, mdContent, `${isEdit ? 'Update' : 'Create'} post: ${title}`, existingMdFile ? existingMdFile.sha : null
+    );
+    let mdSha: string | null = mdPutResult.content.sha;
+    appendLog('✓ ' + mdPath + ' saqlandi');
+
+    for (const tr of approved.translations) {
+      const path = `src/content/posts/${slug}/${tr.lang}.md`;
+      appendLog(`${tr.lang}.md yozilmoqda...`);
+      const existing = await ghGetFile(path);
+      const md = generateTranslationMarkdown(
+        tr.title, tr.excerpt, coverImage, currentCreatedAt!, nowIso, tr.markdown
+      );
+      await ghPutFileSafe(
+        path, md, `${existing ? 'Update' : 'Add'} ${tr.lang} translation: ${title}`, existing ? existing.sha : null
+      );
+      appendLog('✓ ' + path + ' saqlandi');
     }
 
+    /* ---- 5. The channel ---- */
     let telegramUpdated = false;
     if (currentTelegramMsgId) {
       try {
         appendLog('Telegram xabari tahrirlanmoqda...');
-        await tgEditPost(currentTelegramMsgId, title, excerpt, coverImage, postUrl, currentTelegramHasMedia);
+        await tgEditPost(currentTelegramMsgId, title, channel, coverImage, postUrl, currentTelegramHasMedia);
         appendLog('✓ Telegram xabari yangilandi');
         telegramUpdated = true;
       } catch (err) {
@@ -863,41 +1090,44 @@ async function publish() {
     }
     if (!telegramUpdated) {
       appendLog('Telegram kanaliga yuborilmoqda...');
-      const msgId = await tgSendPost(title, excerpt, coverImage, postUrl);
+      const msgId = await tgSendPost(title, channel, coverImage, postUrl);
       currentTelegramMsgId = msgId;
       currentTelegramHasMedia = !!coverImage;
       appendLog("✓ Telegram'ga yuborildi (message_id: " + msgId + ')');
-      appendLog('posts.json va posts-data qayta yangilanmoqda (telegram_message_id bilan)...');
+
+      // The id only exists after the send, so the three files that carry it
+      // are rewritten once here rather than being written twice by default.
+      appendLog('telegram_message_id yozilmoqda...');
       (entry as any).telegram_message_id = msgId;
       (entry as any).telegram_has_media = currentTelegramHasMedia;
       index[index.findIndex((p) => p.slug === slug)] = entry;
-      const indexPutResult2 = await ghPutFileSafe('posts.json', JSON.stringify(index, null, 2), `Set telegram id: ${title}`, indexSha);
+      const indexPutResult2 = await ghPutFileSafe(
+        'posts.json', JSON.stringify(index, null, 2), `Set telegram id: ${title}`, indexSha
+      );
       indexSha = indexPutResult2.content.sha;
+
       (postData as any).telegram_message_id = msgId;
       (postData as any).telegram_has_media = currentTelegramHasMedia;
-      const dataPutResult2 = await ghPutFileSafe(`posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `Set telegram id: ${title}`, postDataSha);
+      const dataPutResult2 = await ghPutFileSafe(
+        `posts-data/${slug}.json`, JSON.stringify(postData, null, 2), `Set telegram id: ${title}`, postDataSha
+      );
       postDataSha = dataPutResult2.content.sha;
 
-      try {
-        const mdContent2 = generatePostMarkdown(title, excerpt, coverImage, currentCreatedAt!, nowIso, currentTelegramMsgId, currentTelegramHasMedia);
-        const mdPutResult2 = await ghPutFileSafe(mdPath, mdContent2, `Set telegram id: ${title}`, mdSha);
-        mdSha = mdPutResult2.content.sha;
-      } catch (err) {
-        appendLog("⚠ v2 content faylini telegram_message_id bilan yangilab bo'lmadi (" + (err as Error).message + ')');
-      }
-      appendLog('✓ Tayyor');
+      const mdContent2 = generatePostMarkdown(
+        title, meta, coverImage, currentCreatedAt!, nowIso, currentTelegramMsgId, currentTelegramHasMedia
+      );
+      const mdPutResult2 = await ghPutFileSafe(mdPath, mdContent2, `Set telegram id: ${title}`, mdSha);
+      mdSha = mdPutResult2.content.sha;
+      appendLog('✓ Yozildi');
     }
-
-    appendLog('rss.xml yangilanmoqda...');
-    await publishRss(index, SITE_URL);
-    appendLog('✓ rss.xml yangilandi');
 
     currentSlug = slug;
     titleInput.disabled = true;
     document.getElementById('modeText')!.textContent = `Tahrirlash: ${title}`;
     setAgentButtonsEnabled(true);
     appendLog('');
-    appendLog(`Tayyor! Post manzili: ${postUrl}`);
+    const langs = ['uz', ...approved.translations.map((tr) => tr.lang)].join(', ');
+    appendLog(`Tayyor (${langs})! Post manzili: ${postUrl}`);
   } catch (err) {
     appendLog('✗ Xatolik: ' + (err as Error).message);
   } finally {

@@ -98,8 +98,23 @@ footer.actions{ position:fixed; bottom:0; left:0; right:0; background:var(--bg-2
 .review-status.err{ color:var(--danger); }
 .review-status.ok{ color:var(--neon-green); }
 
+/* Publish gate — the same shell as #reviewModal, but its body scrolls: it
+   holds two full translations plus both summaries. */
+#publishReviewModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:120; }
+#publishReviewModal .box{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:24px; width:min(920px, 94vw); max-height:90vh; display:flex; flex-direction:column; gap:10px; }
+#publishReviewBody{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:6px; }
+#publishReviewBody .review-body{ min-height:180px; }
+.pr-lang{ display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
+.pr-warn{ font-size:12px; color:var(--danger); margin-top:12px; }
+
+/* Voice dictation */
+.mic-btn.recording{ color:var(--danger); border-color:var(--danger); animation:mic-pulse 1.4s ease-in-out infinite; }
+@keyframes mic-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.45; } }
+@media (prefers-reduced-motion:reduce){ .mic-btn.recording{ animation:none; } }
+
 @media (max-width:640px){
   #reviewModal .box{ padding:18px; max-height:92vh; }
+  #publishReviewModal .box{ padding:18px; max-height:94vh; }
   .review-body{ min-height:200px; }
 }
 
