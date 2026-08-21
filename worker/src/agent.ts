@@ -117,7 +117,10 @@ function audioMimeFor(filename: string): string {
  * toward Turkish orthography and drop the ʻ modifiers in oʻ/gʻ.
  */
 const STT_PROMPTS: Record<string, string> = {
-  uz: "O'zbek tilida, lotin alifbosida. Masalan: o'zbek, g'oya, ta'lim, san'at, AI, machine learning.",
+  uz:
+    "O'zbek tilida, lotin alifbosida yozilgan texnik blog. Imlo namunalari: o'zbek, g'oya, ta'lim, " +
+    "san'at, kompyuter, ovozli, matn, yozib olinmoqda, bundan tashqari, narsalar, ma'lumot, " +
+    "dastur, tarmoq, ma'lumotlar bazasi, sun'iy intellekt, AI, machine learning, backend, model.",
   ru: 'Текст на русском языке. Технические термины: AI, machine learning, backend.',
   en: 'A technical blog post in English about AI, machine learning and backend engineering.',
 };
@@ -538,55 +541,104 @@ export async function runAgent(env: Env, task: AgentTask, input: AgentInput): Pr
   return { title, excerpt, markdown: body.text, provider: body.providerName, model: body.model };
 }
 
-/* ---------- Transcript polishing ----------
-   Whisper returns a single unpunctuated run of words with no paragraph
-   breaks, and for Uzbek it also drops the ʻ modifiers (o'/g') even with the
-   orthography hint in STT_PROMPTS. That is unusable as blog prose, but it is
-   also not something to "improve" — the author dictated these exact words.
-   So this task is deliberately narrower than `improve`: punctuation,
-   capitalisation, orthography and paragraph breaks only. */
+/* ---------- Transcript reconstruction ----------
+   Whisper is materially weaker in Uzbek than in English or Russian, and it
+   fails in a specific, exploitable way: it produces a phonetically plausible
+   string that is not Uzbek. "Ushbu kompiyutirdi, o'vazli matin yazib olim
+   moqdi" is what came back for "Ushbu kompyuterda ovozli matn yozib
+   olinmoqda" — every word recognisable by sound, almost none of them real
+   words.
+
+   That is recoverable, because the information is still in the string: a
+   model that knows Uzbek can read the sounds and reconstruct the words. This
+   task does exactly that, and nothing more. It is emphatically not `improve`
+   — it does not restyle, shorten or edit the author's thinking, it only turns
+   heard-sounds back into written Uzbek.
+
+   An earlier version of this prompt told the model to leave garbled passages
+   alone rather than "invent a replacement". That was the wrong instinct:
+   it is the difference between a transcript the author can use and one they
+   have to retype, and reconstruction from phonetics is not invention. The
+   protection against invention is the guard below plus the fact that the
+   author reads the result in their own editor before it is published. */
 
 const POLISH_MAX_TOKENS = 8000;
 
 /**
- * The guard that makes this task safe to run unattended. A model asked to
- * "clean up" text will sometimes summarise it instead, and a summary of the
- * author's dictation silently replacing their dictation is exactly the class
- * of failure this codebase already got burned by (see looksLikeScaffolding).
- * Length is a crude but reliable signal: punctuation and diacritics move the
- * character count by a few percent, never by half.
+ * The guard that keeps reconstruction from becoming rewriting. A model asked
+ * to fix text will sometimes summarise it instead, and a summary silently
+ * replacing the author's dictation is the same class of failure as the
+ * truncation incident `looksLikeScaffolding` exists to prevent.
+ *
+ * Length is crude but reliable for this: correcting words to their real
+ * spellings moves the character count by a few percent in either direction,
+ * never by half. The band is deliberately tighter on the low side, because
+ * the dangerous failure is losing content, not gaining punctuation.
  */
-function assertSameSubstance(original: string, polished: string): void {
-  const ratio = polished.length / Math.max(original.length, 1);
-  if (ratio < 0.7 || ratio > 1.5) {
+function assertSameSubstance(original: string, rebuilt: string): void {
+  const ratio = rebuilt.length / Math.max(original.length, 1);
+  if (ratio < 0.75 || ratio > 1.4) {
     throw new Error(
-      `polish changed the text's length by too much (${original.length} → ${polished.length} chars)`
+      `reconstruction changed the text's length by too much (${original.length} → ${rebuilt.length} chars)`
     );
   }
 }
 
+const RECONSTRUCT_RULES: Record<Lang, string> = {
+  uz:
+    'This transcript is Uzbek dictated aloud, and the speech recogniser is weak at Uzbek: it wrote ' +
+    'down what it HEARD, not real words. Your job is to read it phonetically and write what the ' +
+    'speaker actually said, in correct Uzbek (Latin script).\n\n' +
+    'The errors follow patterns. Fix all of them:\n' +
+    "- Vowels swapped: a/o, i/u, e/i. \"matin\" → \"matn\", \"yazib\" → \"yozib\", \"boshqan\" → \"boshqa\".\n" +
+    "- Missing or wrong modifiers: write oʻ and gʻ where the word needs them. \"o'vazli\" → \"ovozli\", " +
+    '"kop" → "koʻp".\n' +
+    '- Suffixes and case endings mangled or split off the wrong word. "yazib olim moqdi" → ' +
+    '"yozib olinmoqda", "kompiyutirdi" → "kompyuterda".\n' +
+    '- Word boundaries in the wrong place — sounds run together or split apart. "arsanar xan" → ' +
+    '"narsalar ham".\n' +
+    '- Borrowed and technical terms mangled: restore the normal spelling ("kompyuter", "internet", ' +
+    '"model", "server"). English technical terms stay in English.\n\n' +
+    'Worked example — this exact input:\n' +
+    "  Ushbu kompiyutirdi, o'vazli matin yazib olim moqdi.\n" +
+    'must become:\n' +
+    '  Ushbu kompyuterda ovozli matn yozib olinmoqda.\n\n' +
+    'Every content word there was wrong and every one was recoverable from its sound. Be that ' +
+    'thorough. A sentence that still contains a non-word means you did not finish.',
+  en:
+    'This transcript is English dictated aloud. Fix mis-heard words using the surrounding sense, ' +
+    'restore the normal spelling of technical terms and proper nouns, and repair word boundaries.',
+  ru:
+    'This transcript is Russian dictated aloud. Fix mis-heard words using the surrounding sense, ' +
+    'restore the normal spelling of technical terms and proper nouns, and repair word boundaries.',
+};
+
 /**
- * Punctuates and corrects a raw transcript without rewriting it. Returns the
- * cleaned text only — like everything else in this file, it proposes text and
- * has no way to store or publish it.
+ * Turns a raw speech-to-text transcript back into correct prose. Returns the
+ * text only — like everything else in this file it proposes text and has no
+ * way to store or publish it.
  */
 export async function polishTranscript(env: Env, raw: string, lang: Lang = 'uz'): Promise<string> {
   const source = raw.trim();
   if (!source) throw new Error('polish: empty transcript');
 
   const prompt =
-    `The text below is a raw speech-to-text transcript in ${LANG_NAMES[lang]}. It was dictated by ` +
-    `the author of a personal technical blog and will be pasted straight into their editor.\n\n` +
-    `Your ONLY job is to make it readable:\n` +
+    `You are correcting a speech-to-text transcript for the author of a personal technical blog. ` +
+    `It will be pasted straight into their editor.\n\n` +
+    `${RECONSTRUCT_RULES[lang]}\n\n` +
+    `Then make it readable:\n` +
     `- Add sentence punctuation and capitalisation.\n` +
-    `- Break it into paragraphs where the speaker changes subject.\n` +
-    `- Fix spelling and orthography, including Uzbek Latin modifiers (o‘, g‘) and obvious ` +
-    `mis-transcriptions of technical terms.\n` +
-    `- Fix agreement and case endings that are clearly transcription slips.\n\n` +
-    `Do NOT summarise. Do NOT shorten. Do NOT rephrase for style. Do NOT add, remove or reorder ` +
-    `ideas. Every sentence the speaker said must still be there, in the same order, in the same ` +
-    `language. If a passage is garbled, leave it as-is rather than inventing a replacement.\n\n` +
-    `Output ONLY the corrected text — no preamble, no explanation, no code fence.\n\n` +
+    `- Break it into paragraphs where the speaker changes subject.\n\n` +
+    `Hard limits. The speaker's words are the content; you are fixing how they were heard, not ` +
+    `what they said:\n` +
+    `- Keep every sentence, in the same order, in the same language.\n` +
+    `- Do NOT summarise, shorten, expand, or rephrase for style.\n` +
+    `- Do NOT add a fact, an opinion, an example or a conclusion that is not already there.\n` +
+    `- If a passage is so garbled that no reading is plausible, write the closest real words you ` +
+    `can and leave it at that — never replace it with something you made up.\n` +
+    `- If a sentence is already correct, leave it exactly as it is.\n\n` +
+    `Output ONLY the corrected text — no preamble, no explanation, no notes about what you ` +
+    `changed, no code fence.\n\n` +
     `${DOC_START}\n${source}\n${DOC_END}`;
 
   const result = await walkLadder(
@@ -594,8 +646,8 @@ export async function polishTranscript(env: Env, raw: string, lang: Lang = 'uz')
     prompt,
     (rawReply) => {
       const text = stripFences(stripReasoning(rawReply));
-      if (!text) throw new Error('polish returned nothing');
-      if (looksLikeScaffolding(text)) throw new Error('polish returned scaffolding');
+      if (!text) throw new Error('reconstruction returned nothing');
+      if (looksLikeScaffolding(text)) throw new Error('reconstruction returned scaffolding');
       assertSameSubstance(source, text);
       return text;
     },
