@@ -14,7 +14,7 @@ Reusable procedures for subagents working in this repo. Each entry is a recurrin
 |---|---|---|
 | [`seo-surface`](#seo-surface) | Adding or auditing metadata, feeds, sitemaps | Low |
 | [`design-token-change`](#design-token-change) | Any colour, font, spacing, or motion change | Low |
-| [`v1-safe-edit`](#v1-safe-edit) | Touching the live hand-written HTML | **High** |
+| [`v1-safe-edit`](#v1-safe-edit) | Touching `public/login.html` or `public/admin.html` | **High** |
 | [`worker-endpoint`](#worker-endpoint) | Adding an API route to the Worker | **High** |
 | [`agent-task`](#agent-task) | Adding anything that calls an LLM | **High** |
 | [`voice-pipeline`](#voice-pipeline) | Speech-to-text or text-to-speech work | Medium |
@@ -63,19 +63,20 @@ Reusable procedures for subagents working in this repo. Each entry is a recurrin
 
 ## `v1-safe-edit`
 
-**When:** editing `index.html`, `projects.html`, `contact.html`, `admin.html`, `post-builder.html`, or anything in `posts/`.
+**When:** editing `public/login.html` or `public/admin.html` — the two v1 pages still in service.
 
-**This is the live site and the only working publishing path.** Breaking `post-builder.html` means the author cannot publish at all.
+**These are load-bearing.** `login.html` issues the session and `/post-builder/` redirects to it when there isn't one, so breaking it locks the author out of publishing entirely. `admin.html` is the post list and the only way to delete a post.
 
 **Steps**
 1. Read the whole file first. These are single-file pages with inline `<style>` and `<script>`; context lives above and below the edit.
 2. Match the existing style: 2-space indent, compact one-line CSS rules, no build step, no dependencies.
-3. Never introduce a framework, bundler, or npm package into v1. That is what v2 is for.
-4. Test locally with `python3 -m http.server 8000` before committing.
-5. If the change touches publishing, walk the full flow: settings → load posts → edit → publish → verify the post renders.
+3. Never introduce a framework, bundler, or npm package into these files.
+4. They live in `public/`, so Astro serves them verbatim — check with `npm run build` and open `dist/`.
+5. If the change touches deletion, walk the full flow: load posts → delete → confirm all three language files went and the channel message was removed.
 
 **Never**
-- Delete `login.html`, `admin.html`, or `post-builder.html` until the Worker and Mini App actually work (`ARCHITECTURE.md` §9).
+- Delete either file. There is no other session issuer and no other post list.
+- Edit the root duplicates — there are none any more, and recreating them reintroduces the drift that got them deleted.
 - Hand-edit `posts.json`, `posts/`, or `posts-data/`. Generated; edits desync the index.
 
 ---
@@ -103,37 +104,43 @@ Reusable procedures for subagents working in this repo. Each entry is a recurrin
 
 **When:** any feature that calls an LLM.
 
-**The rule that outranks everything: the agent writes drafts, never publishes (D6).**
+**The rule that outranks everything: the LLM returns text, never publishes (D6).**
+
+**Give it one job.** There is no agent here any more (D15): each task in `agent.ts` has one prompt, one caller, and one shape of output. If a feature seems to need the model to *decide* what to do next, that is the signal to write the branch yourself instead.
 
 **Steps**
-1. Write the draft to D1 **before** calling any model. A provider failure must degrade to "translation pending", never lost work.
-2. Call through the single interface in `worker/src/agent.ts`. Never import a provider SDK into feature code.
+1. Call through the single interface in `worker/src/agent.ts`. Never import a provider SDK into feature code.
+2. Go through `walkLadder` so the task inherits the Groq→OpenRouter fallback for free. Its `validate` callback is where you reject an unusable reply — a throw there advances the ladder exactly like a provider error.
 3. Pick the route by task, not habit — see the routing table in `ARCHITECTURE.md` §10. Multimodal work goes to OpenRouter; fast text goes to Groq.
 4. Model IDs live in Worker config, never in code. **The free roster rotates** — a hardcoded ID is a future outage.
-5. Handle rate limits as a normal path, not an exception: fall back down the ladder, then queue and retry.
-6. Surface output to the human for approval. Always.
+5. Set `max_tokens` from what the reply actually needs. Groq checks its per-minute quota against the *requested* value, not actual usage, so asking for 32,000 tokens for a two-field JSON object gets the call rejected outright.
+6. Constrain the output and check it. A prompt saying "do not summarise" is not enough on its own — add a cheap assertion (length ratio, required field, scaffolding check) that fails loudly.
+7. Surface output to the human for approval. Always.
 
 **Never**
+- Fall back to "use the raw output" on a parse failure. That shipped chain-of-thought and raw JSON as published article bodies once already. Truncation, `<think>` blocks and scaffolding are hard failures.
 - Add Gemini or Claude (D13). Not as a fallback, not "just for testing".
 - Let a text-only model handle a task involving media. It will confidently invent image descriptions.
-- Treat a system prompt as a security control. If the agent must not do something, remove the capability.
+- Treat a system prompt as a security control. If the model must not do something, remove the capability.
 
 ---
 
 ## `voice-pipeline`
 
-**When:** speech-to-text or text-to-speech work (D14, `ARCHITECTURE.md` §5.1).
+**When:** speech-to-text or text-to-speech work (D14, D17, `ARCHITECTURE.md` §5.1).
 
 **Steps**
-1. STT is Groq `whisper-large-v3`. Limits: 25 MB per file, 20 req/min, 28,800 audio-seconds/day. Check duration before upload.
-2. **Always show the transcript for correction before drafting.** Uzbek accuracy is materially worse than English or Russian.
-3. Let Whisper detect the language rather than assuming — the author speaks all three.
-4. TTS is best-effort. The site must render perfectly with no audio present. Never make layout depend on an audio file existing.
-5. Discard raw audio once the draft is created. Voice notes are personal data and do not belong in long-term storage.
+1. STT is Groq `whisper-large-v3`. Limits: 25 MB per file, 20 req/min, 28,800 audio-seconds/day. Check size before upload.
+2. **Speech may only produce text for the author to read. It must never cause an action.** Dictation into the editor satisfies this by construction. If you build a path where speech triggers something, put a confirmation in front of it — that is what D14 is.
+3. **Pin `uz`, do not detect.** The author writes Uzbek. Auto-detection reads Uzbek as Turkish and then decodes the whole recording with the wrong phonetics. Pass the orthography hint too.
+4. Follow the transcript with a correction pass, and keep that pass narrow — punctuation, capitalisation, orthography. Guard it: a model told to "clean up" text will sometimes return a summary of it.
+5. Discard raw audio once transcribed. Voice notes are personal data; there is deliberately no storage helper for them.
+6. TTS is unbuilt and best-effort if ever added. The site must render perfectly with no audio present.
 
 **Gotchas**
-- Groq TTS (Orpheus) is Preview status — it can change or vanish. Keep Workers AI TTS behind it.
-- A spoken command is a *proposal*, not an instruction. It goes through the same confirmation as everything else.
+- **Groq decides an audio format from the filename extension**, not the bytes or the Content-Type. Telegram's `.oga` was rejected until renamed; browsers differ too (WebM/Opus in Chrome, MP4/AAC in Safari). Choose container and extension together.
+- Uzbek accuracy is a property of the model. Pinning and hinting help materially; neither closes the gap. The author reading the result is the mitigation that matters.
+- Groq TTS (Orpheus) is Preview status — it can change or vanish.
 
 ---
 

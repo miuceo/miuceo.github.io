@@ -1,8 +1,12 @@
 # muhammadjon.me — Architecture v2
 
-**Status:** Design approved, not yet built
+**Status:** Phases 0–4 live. Phase 5 partly built, partly removed — see §12.
 **Author:** Muhammadjon Ibrohimov, with Claude
-**Date:** 2026-08-09
+**Date:** 2026-08-09, last revised 2026-08-21
+
+**The decision log is D1–D17.** D1–D14 are referenced inline throughout;
+D15–D17 (§12) removed the Telegram bot and the agent loop, and are the most
+recent word wherever they contradict an earlier section.
 
 ---
 
@@ -142,59 +146,61 @@ Browser (non-Telegram) access uses the Telegram Login Widget against the same ve
 
 ## 5. Publishing pipeline
 
+> **Superseded 2026-08-21 by D15–D17 (§12).** The two-entry-point design below
+> was built and then removed: there is one entry point now, the editor, and the
+> LLM has three fixed jobs instead of an agent loop. Kept because the reasoning
+> about the approval gate still holds and explains why the gate survived the
+> simplification unchanged.
+
 ```mermaid
 flowchart LR
-    A["Idea<br/>text · voice · photo"] --> B["Agent drafts<br/>+ improves"]
-    B --> C["Agent translates<br/>uz · en · ru"]
-    C --> D{"Author reviews<br/>in Telegram"}
-    D -->|edit| B
+    A["Idea, in Uzbek<br/>typed or dictated"] --> B["Author writes<br/>in the editor"]
+    B --> C["LLM: translate ×2<br/>+ summarise"]
+    C --> D{"Author reviews<br/>every generated string"}
+    D -->|edit| D
     D -->|approve| E["Commit to GitHub"]
     E --> F["Actions rebuild"]
-    F --> G["Fan out to<br/>platforms"]
+    F --> G["Telegram channel"]
 ```
 
-**Two entry points, one pipeline.**
+**One entry point.** The block editor at `/post-builder/`, an Astro island talking to the Worker instead of holding a GitHub token. The author writes Uzbek; English, Russian, the channel summary and the meta description are generated from it at publish time.
 
-- *Quick post* — message the bot. Agent drafts, translates, replies with a preview and inline Approve / Edit / Discard buttons.
-- *Full post* — open the Mini App. The v1 block editor, rebuilt as an Astro island: same blocks, same live preview, but talking to the Worker instead of holding a GitHub token.
+**Approval gate (D6).** The LLM returns text and stops. Nothing reaches GitHub or Telegram until the author has read the generated strings in the review panel and clicked *Nashr qil*, and the write is then made by the author's own client against `/api/github/put`. There is no code path from model output to publication. Prompting is not a security boundary; the missing endpoint is.
 
-**Approval gate (D6).** The agent writes proposals to D1 and stops. Only an authenticated human hitting `POST /publish` moves content to GitHub or social. There is no code path from agent output to publication. Prompting is not a security boundary; the missing endpoint is.
+**Media.** Images are hotlinked URLs today; R2 is not bound. Alt text is generated from the image itself and lives *inside* the markdown, which is what makes it trilingual for free (§9 Stage 4a).
 
-**Media.** Uploads go to R2, not external hotlinks. The agent generates alt text in all three languages from the image itself — an accessibility win that also feeds SEO.
+**Cross-platform variants.** Telegram gets a generated 3–4 sentence summary rather than a cut of the body. LinkedIn and Threads remain unbuilt (§9 Stage 4b).
 
-**Cross-platform variants.** One post, several shapes: Telegram keeps the full caption, LinkedIn gets a professional framing, Threads gets a conversational cut. The agent proposes each; the author approves each.
+### 5.1 Voice (D14, narrowed by D17)
 
-### 5.1 Voice (D14)
-
-Voice is treated as a first-class input *and* output, not a bolt-on. It is also the purest expression of "publish from anywhere" — speaking needs no keyboard, no screen, and no good connection.
+Speaking is still a first-class way to get words into a post — it needs no keyboard and no good connection. What changed on 2026-08-21 is *where* you speak: into the editor, not into a bot.
 
 ```mermaid
 flowchart LR
-    V["🎙 Voice note<br/>to the bot"] --> W["Whisper<br/>transcribe + detect language"]
-    W --> A["Agent drafts<br/>+ translates ×3"]
-    A --> R{"Author reviews"}
-    R -->|approve| P["Publish"]
-    P --> T["TTS: audio version<br/>per language"]
-    T --> S["Site player +<br/>Telegram voice message"]
+    V["🎙 Dictate into<br/>a text block"] --> W["Whisper<br/>transcribe (uz, pinned)"]
+    W --> P["LLM: punctuate<br/>+ correct only"]
+    P --> E["Text lands in<br/>the editor"]
+    E --> R{"Author reads<br/>and edits"}
+    R --> Pub["Publish"]
 ```
 
-**Four capabilities:**
+**What exists:**
 
-1. **Speak a post.** Send a voice note in Uzbek, English or Russian. Whisper transcribes it, detects the language automatically, and the agent shapes it into a draft and translates it into the other two. Walking, driving, no laptop — the post still gets written.
+1. **Dictate a post.** Each text block has a microphone. Whisper transcribes, a second narrow pass punctuates and fixes orthography without rewriting, and the text is appended to the block. The author then edits it like anything else they typed.
 
-2. **Listen to any post.** Every published post gets a generated audio version in each language, exposed as a small player on the site and pushed to the Telegram channel as a native voice message. Real accessibility, and it meets an audience that would rather listen than read.
+2. **Auto-transcribe uploaded media** — still unbuilt. One Whisper call would turn an attached video into captions and indexable text.
 
-3. **Voice commands.** Short spoken instructions to the bot — *"publish the draft"*, *"make it shorter"*, *"translate to Russian only"*. Transcribed, matched to an intent, and — per D6 — **still surfaced for confirmation before anything is published.** Voice does not bypass the approval gate.
+**What was removed (D17):** spoken *commands* to a bot, and listening to a post (TTS). Commands are gone with the bot. TTS was never built: it needs an R2 binding that does not exist, a player, per-language generation, and it depends on Groq's Orpheus, which is Preview status and can disappear.
 
-4. **Auto-transcribe uploaded media.** Video or audio attached to a post gets transcribed for captions, on-page text, and search. One Whisper call turns an opaque media file into indexable, accessible content.
+**Why the transcript is no longer shown for confirmation.** It does not need to be. D14's rule was that a spoken command is a proposal, never an action — and the mitigation for weak Uzbek transcription was to show the text before acting on it. Dictation into an editor satisfies both structurally: the text lands where the author is already reading and editing, and nothing acts on it. There is no longer a path where speech causes something to happen.
 
-**Cost:** Groq's free Whisper allowance is 28,800 audio-seconds/day — **eight hours of transcription daily.** Realistic use is minutes. This is comfortably free.
+**Cost:** Groq's free Whisper allowance is 28,800 audio-seconds/day — eight hours. Realistic use is minutes. Comfortably free.
 
 **Honest caveats:**
 
-- **Uzbek accuracy is the weak point.** Whisper is markedly stronger in English and Russian than in Uzbek, and TTS voice quality for Uzbek is worse still. Always show the transcript for correction before drafting, and never publish a voice transcript unreviewed.
-- **TTS is Preview.** Groq's Orpheus models can change or disappear. Audio is best-effort: the site must be perfect with no audio present, and Workers AI TTS stands behind it.
-- **Voice notes are personal data.** Transcribe, use, discard. Do not archive raw audio in R2 beyond the draft's life.
+- **Uzbek accuracy is the weak point**, and it is a property of the model, not the plumbing. `uz` is pinned rather than detected (auto-detection reads Uzbek as Turkish and then decodes with the wrong phonetics) and an orthography hint biases the `oʻ`/`gʻ` modifiers. Both help materially; neither closes the gap to English or Russian. The correction pass helps more than either, and the author reading the result helps most.
+- **Groq reads an audio format from the filename extension**, not the bytes. Browsers disagree on container — WebM/Opus in Chrome and Firefox, MP4/AAC in Safari — so the extension is chosen together with the container, not assumed.
+- **Voice notes are personal data.** Transcribe, use, discard. The audio exists only as bytes inside one request handler and is never stored.
 
 ---
 
@@ -326,7 +332,13 @@ Ordered so the site keeps working throughout. Nothing here breaks publishing bef
 - **Not done / explicit follow-up:** pointing the bot's Mini App URL at `/post-builder/` in BotFather — the author's own action, and the actual "go live" moment for this phase.
 - `.nojekyll` (added during Phase 3/4 follow-up — see above) applies to this page too; without it, `hreflangPaths={{}}` in `post-builder.astro` itself broke the Pages build.
 
-**Phase 5 — agent, voice & distribution — 🚧 STAGE 1 BUILT, REST NOT STARTED**
+**Phase 5 — agent, voice & distribution — 🚧 PARTLY BUILT, PARTLY REMOVED**
+
+> **Read §12 first.** Stages 2, 3 and 5 were built and then deliberately
+> removed on 2026-08-21 (D15–D17). Their entries below are kept as-is because
+> the failures they document — Telegram's retry window, Groq's filename-based
+> format detection, the truncation incident — are real and were paid for once
+> already. Do not rediscover them. Do not restore the code.
 
 Deliberately staged rather than built in one pass. Stage 1 was chosen first because it makes two thirds of the site real — `/en/` and `/ru/` shipped in Phase 3 but have shown "no posts yet" ever since, since translation was always this phase's job — and because it adds **no new unauthenticated surface**.
 
@@ -340,7 +352,7 @@ Deliberately staged rather than built in one pass. Stage 1 was chosen first beca
 - **Blocked on the author:** `GROQ_API_KEY` and `OPENROUTER_API_KEY` must be created (both free; Groq needs no card) and set via `wrangler secret put`. Until then the AI buttons return an error and everything else works normally.
 - Known limit: input capped at 24,000 characters with an explicit refusal rather than a silent truncation. Chunking long posts is the first follow-up.
 
-*Stage 2 — Telegram bot as a capture surface — ✅ BUILT (2026-08-10), needs the author's webhook registration*
+*Stage 2 — Telegram bot as a capture surface — ⛔ BUILT (2026-08-10), REMOVED 2026-08-21 (D15)*
 - Message the bot with an idea → the agent shapes it → preview with `[✅ Saqlash][🗑 Bekor qilish]` → approving stores it and hands off to `/post-builder/?draft=<id>` to finish. `worker/src/bot.ts`, migration `0003`, chat-scoped Telegram helpers, `POST /tg/webhook`.
 - **Scope was deliberately capture-only: the bot does not publish.** Publishing lives entirely in the browser today (`publish()` 144 lines + `generatePostHtml` 117 in `editor.ts`); moving it server-side would create a second implementation free to drift from the one the author depends on daily. Deferred rather than rushed — two live breakages earlier in this same session came from changes near the publish path.
 - **This is the Worker's first and only unauthenticated route**, since Telegram's servers carry no session cookie, so it necessarily sits *above* the positional `requireSession` gate. Three independent checks replace that gate: the `X-Telegram-Bot-Api-Secret-Token` header must match `TG_WEBHOOK_SECRET` (mismatch → 401), the sender id must be `ALLOWED_TELEGRAM_ID` (anyone else → 200 and ignore, so Telegram stops retrying a real delivery), and input is capped before reaching the agent. Do not add sibling routes above that gate without the same checks.
@@ -350,7 +362,7 @@ Deliberately staged rather than built in one pass. Stage 1 was chosen first beca
 - Verified by 27 tests against a stubbed fetch and in-memory D1, covering every security layer (wrong secret → 401 with zero side effects; wrong sender → 200 with zero side effects), draft-before-agent ordering, agent failure leaving a retryable row plus a readable user message with no provider detail leaked, and approve-vs-discard behaviour.
 - **Author actions:** set `TG_WEBHOOK_SECRET`, run migration 0003 remotely, then call `POST /api/telegram/register-webhook` once. That endpoint has the Worker register its own webhook using secrets it already holds, so the bot token never passes through a terminal. Registering a webhook is a **bot-global change** that disables `getUpdates` polling — nothing here polls, and the Mini App and Login Widget are unaffected.
 
-*Stage 3 — voice in — ✅ BUILT (2026-08-11). Voice out (TTS) deferred, see below.*
+*Stage 3 — voice in — 🔁 BUILT (2026-08-11) into the bot, MOVED into the editor 2026-08-21 (D17). Voice out (TTS) still not started, see below.*
 - Send the bot a voice note → Groq `whisper-large-v3` transcribes it → **the transcript is shown for confirmation, and only after the author confirms does the agent see it.** That ordering is the whole point: `SKILLS.md` `voice-pipeline` step 2 exists because Whisper is materially weaker in Uzbek than in English or Russian, so drafting straight from a transcript would quietly bake in mistranscriptions.
 - Language is **detected, not assumed** (`verbose_json`), since the author speaks all three, and the detected language is surfaced in the confirmation message.
 - **Audio is never persisted.** It exists only as bytes inside `handleVoiceMessage`; the draft stores the transcript, never the file id or the audio (§5.1: "transcribe, use, discard" — voice notes are personal data). There is deliberately no storage helper for it.
@@ -369,12 +381,12 @@ Deliberately staged rather than built in one pass. Stage 1 was chosen first beca
 - Backward compatible: blocks without alt render exactly as before.
 - 118 tests across six suites (24 new).
 
-*Stage 4b — platform fan-out — ❌ NOT STARTED, blocked on three independent things:*
-1. **It needs server-side publishing**, deliberately deferred in Stage 2 — publishing is still ~260 lines living only in the browser, so the Worker cannot fan anything out.
+*Stage 4b — platform fan-out — ❌ NOT STARTED, and the blockers changed shape:*
+1. **It still needs server-side publishing.** Publishing remains browser-only, and D16 made that a deliberate choice rather than a deferral: the review gate lives in the editor, so the browser is where the approved text is.
 2. **LinkedIn app review** — flagged as the long pole since Phase 1, still not started.
 3. **Threads** needs a linked Business account that doesn't exist.
 
-Telegram fan-out already works manually via `tgSendPost`. The honest sequence is: move publishing server-side, then fan out as each approval lands.
+Telegram is no longer "manual fan-out" — it is part of the publish flow, and it now carries a generated 3–4 sentence summary instead of a cut of the body (D16). LinkedIn and Threads stay unbuilt.
 
 ---
 
@@ -442,3 +454,52 @@ Gemini and Claude are excluded by D13 — Gemini by preference, Claude because i
 3. **Projects data** — **Hand-written.** Projects live in a content file (same pattern as posts), not pulled from the GitHub API. Full control over presentation, no API calls or rate limits.
 4. **Newsletter** — **None — Telegram channel is the distribution channel.** No email capture, no email service to keep inside D10's free-tier constraint.
 5. **Worker domain** — **Keep `*.workers.dev`.** Already working since Phase 2, CORS already configured. No DNS migration needed.
+
+---
+
+## 12. The 2026-08-21 simplification — D15, D16, D17
+
+Phase 5 built an agent: a bot that classified free-text intent, held conversation memory, drafted posts from voice notes and answered as a persona. It worked. It was also more machine than the job needed, and the author asked for it to be taken out. These three decisions record what replaced it and why, so the next person does not rebuild what was deliberately removed.
+
+**D15 — The Telegram bot is removed. The LLM has fixed jobs, not an agent loop.**
+
+The bot was the wrong shape for a one-person blog. Every message paid for an intent-classification call before anything useful happened, a conversational surface needed conversation memory to not feel broken, and the persona needed grounding rules to stop it claiming capabilities it did not have — each addition existing to hold up the one before it.
+
+What replaced it is three tasks with no discretion: translate this document, transcribe this audio, summarise this post. Each has one prompt, one caller, and one place its output can go. There is no classification step, no memory, no persona, and nothing for a wrong guess about intent to break.
+
+The security consequence is worth stating separately: `/tg/webhook` was the Worker's only unauthenticated route, and it is gone. Every route now sits behind `requireSession`. `TG_BOT_TOKEN` remains, for posting to the channel; `TG_WEBHOOK_SECRET` is deleted.
+
+**D16 — One Uzbek source, three published languages, one review gate.**
+
+The author writes Uzbek and only Uzbek. English and Russian are generated at publish time, along with the channel summary and the meta description, and all of it is shown in one editable panel before anything is written.
+
+Two things about the ordering are deliberate:
+
+- *Generate, then gate, then write.* Not write-then-translate. Cancelling at the gate leaves nothing published — no Uzbek page live without its translations, no channel message pointing at a post that was never committed.
+- *The gate is a gate, not a notification.* The author does not read Russian closely and will not audit a translation word by word. But text going out under someone's name should at least pass in front of them, and a visibly mangled translation is caught here rather than by a reader.
+
+**D6 survives this unchanged, and is stronger for it.** There is no agent left to constrain: `agent.ts` imports no publishing capability, the endpoints return text, and the only thing that writes to GitHub is the author's own client after their click. The boundary was always the absent endpoint rather than a prompt, and there are fewer endpoints now.
+
+**Two summaries, not one.** The Telegram channel gets 3–4 sentences; the meta description and RSS get one sentence under 160 characters. They are generated in a single call because they need the same reading of the post, and kept separate because Google truncates a description at roughly that length — a 4-sentence meta tag is a 4-sentence meta tag with half of it cut off. This replaced `getExcerpt()`, which took the first two sentences of the body, so a post opening with a scene-setting anecdote announced itself to the channel with the anecdote and nothing else.
+
+**Translations run sequentially, not in parallel.** Two full-length translations at once collide with Groq's tokens-per-minute limit. The publish log reads as progress rather than as a stall.
+
+**A failed language is skipped, not fatal.** Astro builds a page per file that exists, so a missing `en.md` costs the English page for that post and nothing else. Posts are per-file; only *projects* require all three translations in frontmatter, where a missing one does fail the build.
+
+**D17 — Voice moves from the bot into the editor, and narrows.**
+
+Dictation now happens into a text block: record, transcribe with `uz` pinned, punctuate with a second narrow pass, append to the block. Spoken commands are gone with the bot.
+
+**The correction pass is narrower than `improve` on purpose.** The author dictated those exact words, so the prompt forbids summarising, reordering and restyling, and a length-ratio guard rejects a reply that ignored the instruction. Without it, a model asked to "clean up" text will sometimes return a précis — silently replacing dictation with a summary of it, which is the same class of failure as the truncation incident that `looksLikeScaffolding` exists to prevent.
+
+**D14's gate is satisfied structurally rather than by a confirmation step.** Its rule was that speech is a proposal, never an action. Dictation into an editor makes that true by construction: the text lands where the author is already reading, and nothing acts on it. The old confirm-the-transcript prompt existed because a bot *would* act; there is no such path now.
+
+**What was removed alongside.** v1's `post-builder.html` — it published one language, generated `posts/<slug>.html`, sent the channel a cut of the body, and rewrote the root feed in the old permalink shape; keeping it as a fallback meant keeping a way to publish a broken post. `login.html` and `admin.html` stay: they are the session issuer and the post list, not the editor.
+
+**Consequences to know about:**
+
+- **New posts have no `/posts/<slug>.html` permalink.** Already-published pages stay where they are and their links keep working; new posts are shared as `/uz/posts/<slug>/`, which is what the channel message links to.
+- **`/rss.xml` is generated by the Astro build now** (`src/pages/rss.xml.ts`), not written by a client, so it cannot drift from what the site publishes. One-time cost: item guids moved to the new permalink shape, so existing subscribers saw the back catalogue once. Preferable to a feed of 404s.
+- **Deleting a post now removes all three language files.** It removed only `uz.md` before, which left `/en/posts/<slug>/` live and unreachable after the post was "deleted".
+
+---
