@@ -28,5 +28,15 @@
     "updated_at": "2026-08-21T15:16:12.225Z",
     "telegram_message_id": 95,
     "telegram_has_media": true
+  },
+  {
+    "slug": "telegram-mcp-connector-to-any-ai-mainly-claude",
+    "title": "Telegram MCP connector to any AI (mainly Claude)",
+    "excerpt": "Model Context Protocol asosida Telegram \"Saved Messages\"ni Claude AI bilan bog'laydigan ochiq kodli MCP connector.",
+    "cover_image": "https://github.com/miuceo/telegram-account-mcp/raw/main/assets/banner.jpg",
+    "created_at": "2026-09-07T16:55:10.436Z",
+    "updated_at": "2026-09-07T16:55:10.436Z",
+    "telegram_message_id": null,
+    "telegram_has_media": false
   }
 ]
