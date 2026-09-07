@@ -4,7 +4,8 @@ excerpt: "Model Context Protocol asosida Telegram \"Saved Messages\"ni Claude AI
 coverImage: "https://github.com/miuceo/telegram-account-mcp/raw/main/assets/banner.jpg"
 createdAt: "2026-09-07T16:55:10.436Z"
 updatedAt: "2026-09-07T16:55:10.436Z"
-telegramHasMedia: false
+telegramMessageId: 100
+telegramHasMedia: true
 ---
 Sun'iy intellekt vositalarini kundalik ish jarayonlarimiz bilan bog'lash tobora qiziq bo'lib bormoqda. 
 
