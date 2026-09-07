@@ -1,0 +1,24 @@
+{
+  "title": "Telegram MCP connector to any AI (mainly Claude)",
+  "slug": "telegram-mcp-connector-to-any-ai-mainly-claude",
+  "blocks": [
+    {
+      "type": "text",
+      "content": "Sun'iy intellekt vositalarini kundalik ish jarayonlarimiz bilan bog'lash tobora qiziq bo'lib bormoqda. \n\nYaqinda Anthropic taqdim etgan Model Context Protocol (MCP) standartidan foydalanib, yangi ochiq kodli loyihamni yakunladim — Telegram Account MCP Connector.\n\n💡 Bu nima uchun kerak edi?\nBiz ko'pincha Telegramdagi \"Saved Messages\" (Saqlangan xabarlar)da muhim qaydlar, havolalar va fayllarni saqlaymiz. Ushbu MCP konnektor orqali endi Claude Desktop to'g'ridan-to'g'ri ushbu xabarlarni o'qishi, kerakli fayllarni topishi, kanallardagi yangiliklarni saralab berishi va hatto xabarlarga javob qaytarishi mumkin."
+    },
+    {
+      "type": "media",
+      "url": "https://github.com/miuceo/telegram-account-mcp/raw/main/assets/banner.jpg",
+      "mediaType": "image",
+      "alt": "telegram-mcp"
+    },
+    {
+      "type": "text",
+      "content": "Loyiha to'liq Python (Telethon + FastMCP) texnologiyalarida yozildi:\n🔹 Xavfsizlik birinchi o'rinda: Barcha sessiyalar va kalitlar 100% lokal saqlanadi;\n🔹 Dual-rejim: Claude Desktop (stdio) va 24/7 bulutli serverlar (Render SSE) uchun moslashtirilgan;\n🔹 Telegramdagi barcha chat turlari (kanallar, guruhlar, botlar, fayllar) bilan ishlaydi.\n\nLoyiha to'liq ochiq manbali (MIT License) qilib GitHub'ga joylandi. Dasturchilar va AI ishqibozlari uchun foydali bo'ladi degan umiddaman:\n\n🔗 Repozitoriya: https://github.com/miuceo/telegram-account-mcp\n\nFikr va mulohazalaringizni kutib qolaman! ⭐️"
+    }
+  ],
+  "created_at": "2026-09-07T16:55:10.436Z",
+  "updated_at": "2026-09-07T16:55:10.436Z",
+  "telegram_message_id": null,
+  "telegram_has_media": false
+}
