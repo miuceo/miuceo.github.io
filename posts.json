@@ -36,7 +36,7 @@
     "cover_image": "https://github.com/miuceo/telegram-account-mcp/raw/main/assets/banner.jpg",
     "created_at": "2026-09-07T16:55:10.436Z",
     "updated_at": "2026-09-07T16:55:10.436Z",
-    "telegram_message_id": null,
-    "telegram_has_media": false
+    "telegram_message_id": 100,
+    "telegram_has_media": true
   }
 ]
