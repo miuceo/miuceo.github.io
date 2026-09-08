@@ -13,18 +13,115 @@ const { lang, active, langPaths } = Astro.props;
 const strings = t(lang);
 ---
 
-<nav class="navbar">
-  <a href={`/${lang}/`} class="brand">{strings.nav.brand}</a>
-  <div class="nav-links">
-    <a href={`/${lang}/#latest-posts`} class={active === 'posts' ? 'active' : ''}>{strings.nav.posts}</a>
-    <a href={`/${lang}/projects/`} class={active === 'projects' ? 'active' : ''}>{strings.nav.projects}</a>
-    <a href={`/${lang}/contact/`} class={active === 'contact' ? 'active' : ''}>{strings.nav.contact}</a>
-    <div class="lang-switch">
-      {LANGS.map((l) => (
-        <a href={langPaths[l]} class={l === lang ? 'active' : ''}>{l.toUpperCase()}</a>
-      ))}
+<header class="navbar-wrapper">
+  <div class="navbar">
+    <a href={`/${lang}/`} class="brand">Muhammadjon.</a>
+    
+    <nav class="nav-links">
+      <a href={`/${lang}/#latest-posts`} class={active === 'posts' ? 'active' : ''}>{strings.nav.posts}</a>
+      <a href={`/${lang}/projects/`} class={active === 'projects' ? 'active' : ''}>{strings.nav.projects}</a>
+      <a href={`/${lang}/contact/`} class={active === 'contact' ? 'active' : ''}>{strings.nav.contact}</a>
+    </nav>
+
+    <div class="nav-actions">
+      <div class="lang-switch">
+        {LANGS.map((l) => (
+          <a href={langPaths[l]} class={l === lang ? 'active' : ''}>{l.toUpperCase()}</a>
+        ))}
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+      <a href="/login.html" class="nav-admin" title={strings.nav.admin}>
+        <!-- Admin/Dashboard Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      </a>
     </div>
-    <button class="theme-toggle" id="themeToggle">☀️</button>
-    <a href="/login.html" class="btn-admin">{strings.nav.admin}</a>
   </div>
-</nav>
+</header>
+
+<style>
+  .navbar-wrapper {
+    width: 100%;
+    padding: 20px 40px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    z-index: 100;
+  }
+  .navbar {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap; /* Bitta qatorda saqlash uchun */
+    gap: 20px;
+  }
+  .brand {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .brand:hover {
+    color: var(--accent);
+  }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex-shrink: 1;
+    white-space: nowrap;
+  }
+  .nav-links a {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  .nav-links a:hover, .nav-links a.active {
+    color: var(--ink);
+  }
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+  .lang-switch {
+    display: flex;
+    gap: 12px;
+  }
+  .lang-switch a {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    transition: color 0.2s;
+  }
+  .lang-switch a:hover {
+    color: var(--ink);
+  }
+  .lang-switch a.active {
+    color: var(--accent);
+  }
+  
+  .nav-admin {
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+  .nav-admin:hover {
+    color: var(--ink);
+  }
+
+  @media (max-width: 768px) {
+    .navbar-wrapper { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .nav-actions { gap: 16px; }
+  }
+</style>

@@ -5,6 +5,10 @@ export default defineConfig({
   site: 'https://muhammadjon.me',
   output: 'static',
   trailingSlash: 'always',
+  prefetch: true,
+  devToolbar: {
+    enabled: false
+  },
   integrations: [
     sitemap({
       i18n: {

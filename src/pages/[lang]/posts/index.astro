@@ -1,0 +1,130 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Nav from '../../../components/Nav.astro';
+import Footer from '../../../components/Footer.astro';
+import { LANGS, t, type Lang } from '../../../lib/i18n';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const strings = t(lang);
+
+const allPosts = await getCollection('posts');
+const postsForLang = allPosts
+  .filter((entry) => entry.slug.endsWith(`/${lang}`))
+  .map((entry) => ({ slug: entry.slug.split('/')[0], data: entry.data }))
+  .sort((a, b) => b.data.createdAt.valueOf() - a.data.createdAt.valueOf());
+
+const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/posts/`])) as Record<Lang, string>;
+
+const dateFmt = new Intl.DateTimeFormat(lang, {
+  year: 'numeric', month: 'short', day: 'numeric'
+});
+---
+
+<BaseLayout
+  lang={lang}
+  title={`Barcha postlar | ${strings.meta.siteTitle}`}
+  description={strings.meta.siteDescription}
+  canonicalPath={`/${lang}/posts/`}
+  hreflangPaths={langPaths}
+>
+  <Nav lang={lang} active="posts" langPaths={langPaths} />
+
+  <main class="page-container">
+    <div class="header">
+      <h1>Barcha postlar</h1>
+      <p>Barcha yozilgan maqolalar xronologik ketma-ketlikda.</p>
+    </div>
+
+    <div class="posts-list">
+      {postsForLang.length === 0 ? (
+        <div class="empty-state">{strings.home.noPosts}</div>
+      ) : (
+        postsForLang.map((p) => (
+          <a href={`/${lang}/posts/${p.slug}/`} class="list-item">
+            <span class="list-title">{p.data.title}</span>
+            <span class="list-date">{dateFmt.format(p.data.createdAt)}</span>
+          </a>
+        ))
+      )}
+    </div>
+  </main>
+
+  <Footer lang={lang} />
+</BaseLayout>
+
+<style>
+  .page-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 100px 40px 120px;
+  }
+  .header {
+    margin-bottom: 60px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 30px;
+  }
+  .header h1 {
+    font-size: 36px;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+  .header p {
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--line-soft);
+    text-decoration: none;
+    transition: background-color 0.2s;
+  }
+  .list-item:hover {
+    background-color: var(--bg-2);
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-left: -16px;
+    margin-right: -16px;
+    border-radius: 8px;
+    border-bottom-color: transparent;
+  }
+  .list-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .list-item:hover .list-title {
+    color: var(--accent);
+  }
+  .list-date {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  .empty-state { 
+    text-align: center; 
+    padding: 60px 20px; 
+    color: var(--ink-soft); 
+    font-style: italic; 
+    font-size: 15px; 
+  }
+
+  @media (max-width: 640px) {
+    .page-container { padding: 60px 20px; }
+    .header h1 { font-size: 28px; }
+    .list-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+</style>
