@@ -7,9 +7,13 @@ import {
 import { z } from "zod";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
-// Define where the portfolio files are located relative to this server
-const PORTFOLIO_ROOT = path.resolve(process.cwd(), "..");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Define where the portfolio files are located relative to this script
+const PORTFOLIO_ROOT = path.resolve(__dirname, "..", "..");
 const POSTS_DIR = path.join(PORTFOLIO_ROOT, "src", "content", "posts");
 
 const server = new Server(
