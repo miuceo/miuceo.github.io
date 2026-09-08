@@ -51,6 +51,7 @@ const strings = t(lang);
     border-bottom: 1px solid var(--line);
     position: relative;
     z-index: 100;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
   }
   .navbar {
     max-width: 1000px;
@@ -68,6 +69,7 @@ const strings = t(lang);
     color: var(--ink);
     letter-spacing: -0.02em;
     flex-shrink: 0;
+    transition: color 0.2s ease;
   }
   .brand:hover {
     color: var(--accent);

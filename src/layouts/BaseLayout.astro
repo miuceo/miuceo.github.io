@@ -92,8 +92,6 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
   (function(){
     function applyTheme(theme){
       document.documentElement.setAttribute('data-theme', theme);
-      var btn = document.getElementById('themeToggle');
-      if(btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
     }
     function init(){
       applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
@@ -116,23 +114,11 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 <style is:global>
   .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; position:relative; }
 
-  .navbar{ display:flex; justify-content:space-between; align-items:center; padding:22px 0; border-bottom:1px solid var(--line); position:relative; z-index:2; }
-  .brand{ font-weight:800; font-size:20px; letter-spacing:-0.01em; color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); }
-  .nav-links{ display:flex; align-items:center; gap:32px; }
-  .nav-links a{ font-size:14px; font-weight:500; color:var(--ink-soft); transition:color .15s; }
-  .nav-links a:hover{ color:var(--neon-cyan); }
-  .nav-links a.active{ color:var(--neon-green); }
-  .lang-switch{ display:flex; gap:6px; }
-  .lang-switch a{ font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--line-soft); }
-  .lang-switch a.active{ color:var(--neon-green); border-color:var(--neon-green); }
-  .btn-admin{ border:1px solid var(--neon-green); color:var(--neon-green) !important; padding:9px 18px; border-radius:4px; font-size:13px; font-weight:600; transition:box-shadow .2s, background .2s, color .2s; }
-  .btn-admin:hover{ background:var(--neon-green); color:var(--bg) !important; box-shadow:var(--glow-md) var(--neon-green); }
-
   .page-header{ padding:80px 0 50px; border-bottom:1px solid var(--line); }
   .page-header h1{ font-weight:800; font-size:40px; letter-spacing:-0.01em; margin:0 0 16px; }
   .page-header p{ font-size:16px; color:var(--ink-soft); max-width:600px; margin:0; line-height:1.7; }
 
-  .section-label{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--neon-cyan); margin:64px 0 20px; }
+  .section-label{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); margin:64px 0 20px; }
   .section-label::before{ content:'// '; opacity:0.6; }
 
   footer{ border-top:1px solid var(--line); padding:32px 0; font-size:13px; color:var(--ink-soft); display:flex; justify-content:space-between; }
