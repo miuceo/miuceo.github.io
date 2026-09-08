@@ -63,6 +63,12 @@ h1,h2,h3,h4{ font-family:var(--font-serif); font-weight:500; letter-spacing:-0.0
 }
 .theme-toggle:hover{ background:var(--bg-3); color:var(--ink); }
 
+/* Theme toggle icon logic */
+html .sun-icon { display: block; }
+html .moon-icon { display: none; }
+html[data-theme="light"] .sun-icon { display: none; }
+html[data-theme="light"] .moon-icon { display: block; }
+
 .btn{
   font-family:var(--font-sans); font-size:14px; font-weight:500; padding:10px 20px;
   border-radius:8px; border:1px solid transparent; background:var(--accent);
