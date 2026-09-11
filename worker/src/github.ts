@@ -59,6 +59,24 @@ export interface GhFile {
   content: string;
 }
 
+export interface GhDirItem {
+  name: string;
+  path: string;
+  type: 'file' | 'dir';
+}
+
+export async function ghListDir(env: Env, path: string): Promise<GhDirItem[]> {
+  const res = await fetch(`${apiUrl(env, path)}?ref=${env.GH_BRANCH}`, { headers: ghHeaders(env) });
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`GitHub list ${path} failed: ${res.status} ${await res.text()}`);
+  const data = await res.json() as Array<{ name: string; path: string; type: string }>;
+  return data.map((item) => ({
+    name: item.name,
+    path: item.path,
+    type: item.type === 'dir' ? 'dir' : 'file',
+  }));
+}
+
 export async function ghGetFile(env: Env, path: string): Promise<GhFile | null> {
   const res = await fetch(`${apiUrl(env, path)}?ref=${env.GH_BRANCH}`, { headers: ghHeaders(env) });
   if (res.status === 404) return null;

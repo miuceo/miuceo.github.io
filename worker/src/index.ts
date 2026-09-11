@@ -11,6 +11,7 @@ import {
   MAX_INPUT_CHARS, MAX_AUDIO_BYTES, type AgentTask,
 } from './agent';
 import { createDraft, markDraftReady, markDraftFailed, getDraft } from './drafts';
+import { handleMcpRequest } from './mcp';
 import type { DraftKind, Lang } from './types';
 
 function corsHeaders(env: Env): Record<string, string> {
@@ -127,6 +128,11 @@ export default {
     }
 
     try {
+      /* ---------- /mcp/* — Remote MCP Server for Gemini Spark, Claude, Cursor ---------- */
+      if (path.startsWith('/mcp')) {
+        return await handleMcpRequest(req, env);
+      }
+
       /* ---------- /auth/* — no session required, this IS the session issuer ---------- */
 
       if (path === '/auth/telegram-widget' && req.method === 'POST') {

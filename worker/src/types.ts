@@ -18,13 +18,14 @@ export interface Env {
   GROQ_STT_MODEL: string;
   OPENROUTER_VISION_MODELS: string;
 
-  // secrets (`wrangler secret put`)
+  // Secrets (`wrangler secret put` or optional vars)
   GH_TOKEN: string;
   // Channel posting only. There is no bot webhook any more — this Worker has
   // no unauthenticated route, and Telegram never calls in.
   TG_BOT_TOKEN: string;
   GROQ_API_KEY: string;
   OPENROUTER_API_KEY: string;
+  MCP_SECRET?: string;
 }
 
 export interface Session {
