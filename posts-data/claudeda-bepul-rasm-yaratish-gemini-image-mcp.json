@@ -1,0 +1,28 @@
+{
+  "title": "Claude'da bepul rasm yaratish: Gemini Image MCP",
+  "slug": "claudeda-bepul-rasm-yaratish-gemini-image-mcp",
+  "blocks": [
+    {
+      "type": "media",
+      "url": "https://github.com/miuceo/gemini-image-mcp/raw/main/assets/banner.jpg",
+      "mediaType": "image"
+    },
+    {
+      "type": "text",
+      "content": "🎨 **Gemini Image MCP — Claude uchun bepul rasm generatori**\n\nClaude'dan to'g'ridan-to'g'ri rasm yaratishni xohlaganmisiz, lekin pullik API uchun to'lashni istamaysizmi? Shu muammoni hal qiluvchi ochiq kodli MCP server yozdim."
+    },
+    {
+      "type": "media",
+      "url": "https://github.com/miuceo/gemini-image-mcp/raw/main/assets/logo.png",
+      "mediaType": "image"
+    },
+    {
+      "type": "text",
+      "content": "## Bu nima qiladi?\n\nServer Gemini'ning veb ilovasi (gemini.google.com) bilan sizning akkauntingiz orqali ishlaydi. Pullik Gemini API ishlatilmaydi, har bir rasm uchun to'lov ham yo'q.\n\n## Imkoniyatlari\n\n- 🖼 Matnli tavsifdan rasm yaratish\n- ✏️ Mavjud rasmlarni tahrirlash\n- 🔄 Gemini modellaridan birini tanlash\n- 🗂 Barcha rasmlar bitta HTML galereyada saqlanadi\n\n## Yangi: Firefox orqali avtomatik kirish 🦊\n\nEndi cookie'larni qo'lda nusxalash shart emas. Firefox'da Gemini'ga bir marta kirasiz, server esa login ma'lumotlarini o'zi o'qiydi. Sessiya eskirsa, yangisini o'zi oladi. Firefox ochiq turishi ham shart emas.\n\n## Kimlar uchun?\n\nClaude Code yoki Claude Desktop'da ishlaydigan dasturchilar, dizaynerlar va kontent yaratuvchilar uchun. Banner, illyustratsiya yoki loyiha uchun rasm kerak bo'lsa, Claude'ga yozasiz, xolos.\n\n> ⚠️ **Eslatma:** bu norasmiy vosita. U sizning shaxsiy Gemini sessiyangizdan foydalanadi, shuning uchun cookie'laringizni hech kimga bermang.\n\n🔗 **GitHub:** [miuceo/gemini-image-generator-mcp](https://github.com/miuceo/gemini-image-generator-mcp)\n\n⭐ Foydali bo'lsa, star qo'yishni unutmang!\n\n`#MCP` `#Claude` `#Gemini` `#AI` `#OpenSource` `#Python`\n"
+    }
+  ],
+  "created_at": "2026-09-16T11:34:35.838Z",
+  "updated_at": "2026-09-16T11:34:35.838Z",
+  "telegram_message_id": null,
+  "telegram_has_media": false
+}
