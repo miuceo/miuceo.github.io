@@ -4,7 +4,8 @@ excerpt: "Claude uchun bepul Gemini Image MCP serveri: rasm yaratish, tahrirlash
 coverImage: "https://github.com/miuceo/gemini-image-mcp/raw/main/assets/banner.jpg"
 createdAt: "2026-09-16T11:34:35.838Z"
 updatedAt: "2026-09-16T11:34:35.838Z"
-telegramHasMedia: false
+telegramMessageId: 101
+telegramHasMedia: true
 ---
 ![](https://github.com/miuceo/gemini-image-mcp/raw/main/assets/banner.jpg)
 
