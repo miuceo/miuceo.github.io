@@ -4,7 +4,8 @@ excerpt: "Memento filmida xotira ishonchsizligi va teskari hikoya tuzilishi orqa
 coverImage: "https://m.media-amazon.com/images/I/91OJsdscU9L._AC_UF894,1000_QL80_.jpg"
 createdAt: "2026-09-21T14:26:14.539Z"
 updatedAt: "2026-09-21T14:26:14.539Z"
-telegramHasMedia: false
+telegramMessageId: 104
+telegramHasMedia: true
 ---
 ![](https://m.media-amazon.com/images/I/91OJsdscU9L._AC_UF894,1000_QL80_.jpg)
 
