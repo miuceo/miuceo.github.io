@@ -1,0 +1,36 @@
+---
+title: "Memento"
+excerpt: "В фильме «Memento» поиск истины изображён через недоверие к памяти и обратную структуру повествования."
+coverImage: "https://m.media-amazon.com/images/I/91OJsdscU9L._AC_UF894,1000_QL80_.jpg"
+createdAt: "2026-09-21T14:26:14.539Z"
+updatedAt: "2026-09-21T14:26:14.539Z"
+---
+![](https://m.media-amazon.com/images/I/91OJsdscU9L._AC_UF894,1000_QL80_.jpg)
+
+Christopher Nolaning eng birinchi kinolaridan hisoblanadi. Shaxsiy tajribamni aytsam, avvaliga kinoni boshlanishi umuman tushunmaganman. 20-daqiqalardagina kinoning qanday tardibda ketayotgani va qanday mavzuda ekanligini tushunganman.
+
+Tasavvur qiling...
+
+Sizning qisqa muddatli xotirangiz atigi 10-15 daqiqa ishlaydi. Undan keyin nima bo'lganini, qayerda turganingizni yoki oldingizdagi odam kimligini umuman eslolmaysiz. Bosh qahramonimiz Leonard (Gay Pirs o'ynagan) aynan shunday daxshatli holatda yashaydi. Ayolining fojiali o'limidan so'ng u qattiq bosh jarohati oladi. Endi uning hayotidagi yagona va eng katta maqsadi — ayolini o'ldirgan qotilni topish.
+
+Lekin qanday qilib? Axir u hozirgina kim bilan muloqot qilganini ham eslay olmaydi-ku? Buning uchun u o'ziga xos juda g'alati, ammo ishlashga majbur bo'lgan tizim o'ylab topgan. U doim o'zi bilan Polaroid kamerasini olib yuradi, hamma narsani rasmga olib, orqasiga yozib qo'yadi. Eng muhim faktlarni, hech qachon unutmasligi kerak bo'lgan ismlar va manzillarni esa o'z tanasiga tatuirovka qildiradi. O'ylab ko'ring-a, o'z tanangiz sizning yagona ishonchli kundaligingizga aylanib qoladi.
+
+![](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQro83kgrdqKc5jZ54FcFPZkIQg9hEwlftOd1R7CBZeKdBX2pUij0r4je4X&s=10)
+
+Miyangizni charchatadigan (lekin zo'r) tuzilma
+
+Bu filmni hamma orasida bunchalik mashhur qilgan narsa — voqealarning qanday ko'rsatilishida. Nolan bizni Leonardning holatiga tushirish uchun shafqatsiz, lekin daho usulni tanlagan. Kino voqealari odatdagidek boshidan oxiriga qarab emas, balki oxiridan boshiga qarab ketadi!
+
+Har gal yangi sahna boshlanganda, xuddi qahramon kabi biz ham qayerdaligimizni, atrofimizdagi odamlar do'stmi yoki dushmanmi ekanligini umuman tushunmay turamiz. Faqatgina sahnaning oxiriga borganda (ya'ni xronologik jihatdan undan oldingi voqeani ko'rganda) "Ha, demak u shu sababdan bu yerdaga kelgan ekan-da" degan xulosaga kelamiz. Qisqasi, kino oq-qora (to'g'ri xronologiya) va rangli (teskari xronologiya) sahnalarga bo'lingan va ular film oxirida bir nuqtada birlashib, hamma jumboqlarni bittada yechib beradi.
+
+O'z-o'zimizni qanday aldaymiz?
+
+Aslida, "Memento" shunchaki o'ch olish haqidagi oddiy hikoya emas. U inson xotirasi qanchalik ishonchsiz ekanligi haqida. O'ylab ko'rинг, biz aslida kim ekanligimizni xotiralarimiz orqali bilamiz, to'g'rimi? Agar xotiramiz bizni aldasa-chi?
+
+Film davomida Leonardning qog'ozlari, rasmlari va yozuvlari haqiqatan ham ishonchlimi, degan savol tug'iladi. Eng qo'rqinchlisi, u o'ziga kerakli "haqiqat"ni o'zi yaratyaptimi? Film tomoshabinni bitta og'ir haqiqat ustida o'ylashga majbur qiladi: inson ba'zida o'z hayotiga ma'no berish, maqsadsiz qolib ketmaslik uchun haqiqatni bilishdan ko'ra, o'zini o'zi yolg'on bilan ovutishni afzal ko'rishi mumkin.
+
+Xullas...
+
+"Memento" sizdan yuz foizlik diqqatni talab qiladi. Bitta xabar yozish uchun telefoningizga chalg'isangiz, butunlay ipni yo'qotib qo'yishingiz mumkin. Lekin agar siz miyangizni yaxshigina ishlatishni, har bir detaldan ma'no izlashni va filmni tugatgandan keyin ham soatlab u haqida o'ylashni yoqtirsangiz — bu kino aynan siz uchun. Uni birinchi marta ko'rganingizda barcha qismlarni yig'ish bilan ovora bo'lasiz, ikkinchi marta ko'rganingizda esa mutlaqo yangi, chuqurroq ma'nolarni kashf qilasiz.
+
+**Film uchun havola**: https://t.me/muhammadibrohimov_ceo/103
