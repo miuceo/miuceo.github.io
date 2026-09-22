@@ -4,7 +4,7 @@ import {
   createSession, requireSession, revokeSession, readSessionToken,
   buildSessionCookie, buildClearCookie,
 } from './auth';
-import { isAllowedPath, ghGetFile, ghPutFile, ghPutFileSafe, ghDeleteFile } from './github';
+import { isAllowedPath, isArtifactFilePath, ghGetFile, ghPutFileSafe, ghDeleteFile, ghListDir } from './github';
 import { tgSendPost, tgEditPost, tgDeleteMessage } from './telegram';
 import {
   runAgent, describeImage, transcribeAudio, polishTranscript, summarisePost,
@@ -45,6 +45,29 @@ async function readJson<T>(req: Request): Promise<T> {
 
 const LANGS: Lang[] = ['uz', 'en', 'ru'];
 const SLUG_RE = /^[a-z0-9-]+$/;
+
+const ARTIFACT_HTML_MAX_BYTES = 2 * 1024 * 1024; // 2 MB, per the admin upload spec
+const SECRET_PATTERNS: RegExp[] = [
+  /sk-[A-Za-z0-9]{10,}/,
+  /AIza[0-9A-Za-z\-_]{10,}/,
+  /ghp_[A-Za-z0-9]{20,}/,
+  /gho_[A-Za-z0-9]{20,}/,
+  /github_pat_[A-Za-z0-9_]{20,}/,
+  /Bearer\s+[A-Za-z0-9._\-]{10,}/,
+];
+
+/** A heuristic scan for leaked API keys/tokens in an uploaded artifact —
+ * a warning surfaced to the author, not a hard block (some are false
+ * positives, e.g. a code sample that mentions "Bearer <token>"). Only a
+ * short, truncated fragment is returned, never the full match. */
+function findSecretMatches(html: string): string[] {
+  const found: string[] = [];
+  for (const re of SECRET_PATTERNS) {
+    const m = html.match(re);
+    if (m) found.push(m[0].slice(0, 12) + '…');
+  }
+  return found;
+}
 
 interface AgentRequestBody {
   slug?: string;
@@ -206,6 +229,112 @@ export default {
         if (!isAllowedPath(filePath)) return errorResponse(env, 'Path not allowed', 403);
         await ghDeleteFile(env, filePath, message, sha);
         return json(env, { ok: true });
+      }
+
+      /* ---------- /api/artifacts/* — AI-chat HTML artifacts, sandboxed on the public site ----------
+         The artifact's own HTML never goes through the generic /api/github/put:
+         isArtifactFilePath() is deliberately absent from isAllowedPath(), so
+         this is the only place that file can be written, and the only place
+         that enforces the size cap and secret scan. */
+
+      if (path === '/api/artifacts/save' && req.method === 'POST') {
+        const body = await readJson<{
+          slug?: string;
+          html?: string | null;
+          meta?: Record<string, unknown>;
+          htmlSha?: string | null;
+          metaSha?: string | null;
+          force?: boolean;
+        }>(req);
+
+        const slug = (body.slug || '').trim();
+        const meta = body.meta;
+        if (!SLUG_RE.test(slug)) return errorResponse(env, 'Yaroqsiz slug.', 400);
+        if (!meta || typeof meta !== 'object') return errorResponse(env, 'Meta ma\'lumot kerak.', 400);
+
+        const htmlPath = `public/artifacts/files/${slug}.html`;
+        const metaPath = `src/content/artifacts/${slug}.json`;
+        if (!isArtifactFilePath(htmlPath) || !isAllowedPath(metaPath)) {
+          return errorResponse(env, 'Path not allowed', 403);
+        }
+
+        const isNew = !body.metaSha;
+        const html = typeof body.html === 'string' && body.html.trim() ? body.html : null;
+        if (isNew && !html) return errorResponse(env, 'Yangi artifact uchun HTML fayl kerak.', 400);
+
+        let htmlSha = body.htmlSha ?? null;
+        if (html !== null) {
+          const htmlBytes = new TextEncoder().encode(html).length;
+          if (htmlBytes > ARTIFACT_HTML_MAX_BYTES) {
+            return errorResponse(
+              env,
+              `Fayl juda katta (${(htmlBytes / 1024 / 1024).toFixed(2)} MB). Eng ko'pi 2 MB.`,
+              400
+            );
+          }
+          const matches = findSecretMatches(html);
+          if (matches.length > 0 && !body.force) {
+            return json(env, { ok: false, warning: true, matches });
+          }
+          const htmlResult = await ghPutFileSafe(
+            env, htmlPath, html, `${isNew ? 'Add' : 'Update'} artifact: ${slug}`, htmlSha
+          );
+          htmlSha = htmlResult.sha;
+        }
+        if (!htmlSha) return errorResponse(env, 'Artifact uchun HTML fayl topilmadi.', 400);
+
+        const metaContent = JSON.stringify({ ...meta, file: `/artifacts/files/${slug}.html` }, null, 2);
+        const metaResult = await ghPutFileSafe(
+          env, metaPath, metaContent, `${isNew ? 'Add' : 'Update'} artifact metadata: ${slug}`, body.metaSha ?? null
+        );
+
+        // Announce once, on creation only — an edit (tags, description) would
+        // otherwise spam the channel with the same artifact repeatedly.
+        let telegramMessageId: number | null = null;
+        if (isNew) {
+          try {
+            const m = meta as { title?: unknown; description?: unknown };
+            const title = typeof m.title === 'string' ? m.title : (m.title as { uz?: string } | undefined)?.uz || slug;
+            const description = typeof m.description === 'string'
+              ? m.description
+              : (m.description as { uz?: string } | undefined)?.uz || '';
+            telegramMessageId = await tgSendPost(env, title, description, null, `${env.SITE_ORIGIN}/uz/artifacts/${slug}/`);
+          } catch (err) {
+            console.warn('artifact telegram announce failed: ' + (err as Error).message);
+          }
+        }
+
+        return json(env, { ok: true, htmlSha, metaSha: metaResult.sha, telegramMessageId });
+      }
+
+      if (path === '/api/artifacts/delete' && req.method === 'POST') {
+        const { slug, htmlSha, metaSha } = await readJson<{
+          slug?: string; htmlSha?: string | null; metaSha?: string | null;
+        }>(req);
+        if (!SLUG_RE.test(slug || '')) return errorResponse(env, 'Yaroqsiz slug.', 400);
+        if (htmlSha) await ghDeleteFile(env, `public/artifacts/files/${slug}.html`, `Delete artifact: ${slug}`, htmlSha);
+        if (metaSha) await ghDeleteFile(env, `src/content/artifacts/${slug}.json`, `Delete artifact metadata: ${slug}`, metaSha);
+        return json(env, { ok: true });
+      }
+
+      if (path === '/api/artifacts/list' && req.method === 'POST') {
+        const items = await ghListDir(env, 'src/content/artifacts');
+        const results: Record<string, unknown>[] = [];
+        for (const item of items) {
+          if (item.type !== 'file' || !item.name.endsWith('.json')) continue;
+          const metaFile = await ghGetFile(env, item.path);
+          if (!metaFile) continue;
+          let meta: Record<string, unknown>;
+          try {
+            meta = JSON.parse(metaFile.content);
+          } catch {
+            continue;
+          }
+          const slug = item.name.replace(/\.json$/, '');
+          const htmlFile = await ghGetFile(env, `public/artifacts/files/${slug}.html`);
+          results.push({ slug, metaSha: metaFile.sha, htmlSha: htmlFile?.sha ?? null, ...meta });
+        }
+        return json(env, { ok: true, artifacts: results });
       }
 
       if (path === '/api/telegram/send' && req.method === 'POST') {

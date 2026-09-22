@@ -47,6 +47,31 @@ function authHeaders(){
   .post-actions{ display:flex; gap:8px; flex-shrink:0; }
   .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); font-style:italic; font-size:15px; }
 
+  .tabs{ display:flex; gap:6px; border-bottom:1px solid var(--line); margin-bottom:28px; }
+  .tab-btn{ background:transparent; border:none; padding:12px 18px; font-size:14px; font-weight:600; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tab-btn:hover{ color:var(--ink); }
+  .tab-btn.active{ color:var(--neon-green); border-bottom-color:var(--neon-green); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  .model-tag{ display:inline-block; font-size:11px; font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--neon-green); background:var(--bg-3); border:1px solid var(--line); padding:3px 9px; border-radius:999px; margin-right:8px; }
+
+  #artifactModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; padding:20px; overflow-y:auto; }
+  #artifactModal .box{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:28px; width:min(520px, 100%); margin:auto; }
+  #artifactModal h2{ font-size:19px; margin:0 0 20px; }
+  #artifactModal label{ display:block; font-size:13px; font-weight:600; color:var(--ink-soft); margin:14px 0 6px; }
+  #artifactModal label:first-of-type{ margin-top:0; }
+  #artifactModal input[type=text], #artifactModal input[type=file], #artifactModal select, #artifactModal textarea{
+    width:100%; background:var(--bg-3); border:1px solid var(--line); border-radius:6px; color:var(--ink);
+    padding:9px 12px; font-size:14px; font-family:inherit;
+  }
+  #artifactModal textarea{ min-height:70px; resize:vertical; }
+  #artifactModal .checkbox-row{ display:flex; align-items:center; gap:8px; margin-top:14px; }
+  #artifactModal .checkbox-row input{ width:auto; }
+  #artifactModal .checkbox-row label{ margin:0; font-weight:500; color:var(--ink); }
+  #artifactModal .warning-box{ display:none; background:rgba(224,79,79,0.1); border:1px solid var(--danger); color:var(--danger); border-radius:6px; padding:12px 14px; font-size:13px; margin-top:14px; }
+  #artifactModal .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:24px; }
+
   #confirmModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; }
   #confirmModal .box{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:28px; width:min(440px, 90vw); }
   #confirmModal p{ font-size:15px; margin:0 0 20px; }
@@ -78,19 +103,87 @@ function authHeaders(){
     </div>
   </nav>
 
-  <div class="page-header">
-    <h1>Postlar</h1>
-    <div style="display:flex; gap:10px;">
-      <button class="btn ghost" id="refreshBtn">Yangilash</button>
-      <!-- The only editor. v1's post-builder.html is gone: it published a
-           single language and linked at permalinks that are no longer
-           generated. -->
-      <a href="/post-builder/" class="btn">+ Yangi post</a>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabPostsBtn" data-tab="posts">Postlar</button>
+    <button class="tab-btn" id="tabArtifactsBtn" data-tab="artifacts">Artifacts</button>
+  </div>
+
+  <div class="tab-panel active" id="postsPanel">
+    <div class="page-header">
+      <h1>Postlar</h1>
+      <div style="display:flex; gap:10px;">
+        <button class="btn ghost" id="refreshBtn">Yangilash</button>
+        <!-- The only editor. v1's post-builder.html is gone: it published a
+             single language and linked at permalinks that are no longer
+             generated. -->
+        <a href="/post-builder/" class="btn">+ Yangi post</a>
+      </div>
+    </div>
+
+    <div id="postsList">
+      <div class="empty-state">Yuklanmoqda...</div>
     </div>
   </div>
 
-  <div id="postsList">
-    <div class="empty-state">Yuklanmoqda...</div>
+  <div class="tab-panel" id="artifactsPanel">
+    <div class="page-header">
+      <h1>Artifacts</h1>
+      <div style="display:flex; gap:10px;">
+        <button class="btn ghost" id="refreshArtifactsBtn">Yangilash</button>
+        <button class="btn" id="newArtifactBtn">+ Yangi artifact</button>
+      </div>
+    </div>
+
+    <div id="artifactsList">
+      <div class="empty-state">Yuklanmoqda...</div>
+    </div>
+  </div>
+</div>
+
+<div id="artifactModal">
+  <div class="box">
+    <h2 id="artifactModalTitle">Yangi artifact</h2>
+    <input type="hidden" id="artifactSlug">
+    <input type="hidden" id="artifactHtmlSha">
+    <input type="hidden" id="artifactMetaSha">
+
+    <label for="artifactFile">HTML fayl <span id="artifactFileHint" style="font-weight:400;"></span></label>
+    <input type="file" id="artifactFile" accept=".html,text/html">
+
+    <label for="artifactTitle">Nomi *</label>
+    <input type="text" id="artifactTitle" placeholder="Masalan: Pomodoro taymer">
+
+    <label for="artifactModel">Model *</label>
+    <select id="artifactModel">
+      <option value="Claude">Claude</option>
+      <option value="Gemini">Gemini</option>
+      <option value="ChatGPT">ChatGPT</option>
+      <option value="Boshqa">Boshqa</option>
+    </select>
+
+    <label for="artifactDescription">Tavsif</label>
+    <textarea id="artifactDescription" placeholder="Nima maqsadda yaratilgan"></textarea>
+
+    <label for="artifactPrompt">Prompt</label>
+    <textarea id="artifactPrompt" placeholder="Artefakt qaysi promptdan chiqqan"></textarea>
+
+    <label for="artifactTags">Teglar (vergul bilan)</label>
+    <input type="text" id="artifactTags" placeholder="vosita, vaqt">
+
+    <label for="artifactLicense">Litsenziya</label>
+    <input type="text" id="artifactLicense" placeholder="MIT">
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="artifactRequiresClaude">
+      <label for="artifactRequiresClaude">Faqat Claude ichida ishlaydi (api.anthropic.com / window.storage ishlatadi)</label>
+    </div>
+
+    <div class="warning-box" id="artifactWarningBox"></div>
+
+    <div class="modal-actions">
+      <button class="btn ghost small" id="cancelArtifactBtn">Bekor qilish</button>
+      <button class="btn small" id="saveArtifactBtn">Saqlash</button>
+    </div>
   </div>
 </div>
 
@@ -116,6 +209,9 @@ function authHeaders(){
 const SITE_URL = 'https://muhammadjon.me';
 let posts = [];
 let slugToDelete = null;
+let confirmDeleteMode = 'post'; // 'post' | 'artifact' — which flow confirmDeleteBtn runs
+let artifacts = [];
+let artifactSlugToDelete = null;
 
 function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function formatDate(iso){
@@ -197,6 +293,7 @@ function renderPosts(){
 
   listEl.querySelectorAll('button.danger').forEach(btn => {
     btn.addEventListener('click', () => {
+      confirmDeleteMode = 'post';
       slugToDelete = btn.getAttribute('data-slug');
       document.getElementById('confirmText').textContent = `"${btn.getAttribute('data-title')}" postini butunlay o'chirmoqchimisiz? Bu amalni orqaga qaytarib bo'lmaydi.`;
       document.getElementById('confirmModal').style.display = 'flex';
@@ -207,10 +304,12 @@ function renderPosts(){
 document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
   document.getElementById('confirmModal').style.display = 'none';
   slugToDelete = null;
+  artifactSlugToDelete = null;
 });
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
   document.getElementById('confirmModal').style.display = 'none';
+  if(confirmDeleteMode === 'artifact'){ await runArtifactDelete(); return; }
   if(!slugToDelete) return;
   const slug = slugToDelete;
   const post = posts.find(p => p.slug === slug);
@@ -270,6 +369,279 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   try{ await fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', credentials: 'include', headers: authHeaders() });
   localStorage.removeItem('miuceo_session_token'); }catch(e){}
   window.location.href = '/uz/';
+});
+
+/* ---------- TABS ---------- */
+let artifactsLoaded = false;
+function switchTab(tab){
+  document.getElementById('tabPostsBtn').classList.toggle('active', tab === 'posts');
+  document.getElementById('tabArtifactsBtn').classList.toggle('active', tab === 'artifacts');
+  document.getElementById('postsPanel').classList.toggle('active', tab === 'posts');
+  document.getElementById('artifactsPanel').classList.toggle('active', tab === 'artifacts');
+  if(tab === 'artifacts' && !artifactsLoaded){ artifactsLoaded = true; loadArtifacts(); }
+}
+document.getElementById('tabPostsBtn').addEventListener('click', () => switchTab('posts'));
+document.getElementById('tabArtifactsBtn').addEventListener('click', () => switchTab('artifacts'));
+document.getElementById('refreshArtifactsBtn').addEventListener('click', loadArtifacts);
+
+/* ---------- ARTIFACTS: WORKER API ---------- */
+async function apiArtifactsList(){
+  const res = await fetch(`${WORKER_URL}/api/artifacts/list`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+  });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'Artifacts ro\'yxatini olishda xato');
+  return data.artifacts;
+}
+async function apiArtifactsSave(payload){
+  const res = await fetch(`${WORKER_URL}/api/artifacts/save`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+async function apiArtifactsDelete(slug, htmlSha, metaSha){
+  const res = await fetch(`${WORKER_URL}/api/artifacts/delete`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ slug, htmlSha, metaSha }),
+  });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'Artifact o\'chirishda xato');
+}
+
+function localizedText(v){
+  if(!v) return '';
+  if(typeof v === 'string') return v;
+  return v.uz || v.en || v.ru || '';
+}
+
+async function loadArtifacts(){
+  const listEl = document.getElementById('artifactsList');
+  listEl.innerHTML = '<div class="empty-state">Yuklanmoqda...</div>';
+  try{
+    artifacts = await apiArtifactsList();
+    artifacts.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+    renderArtifacts();
+  }catch(err){
+    listEl.innerHTML = `<div class="empty-state">Xatolik: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderArtifacts(){
+  const listEl = document.getElementById('artifactsList');
+  if(artifacts.length === 0){
+    listEl.innerHTML = '<div class="empty-state">Hali artifact yo\'q. "+ Yangi artifact" tugmasini bosing.</div>';
+    return;
+  }
+  listEl.innerHTML = artifacts.map(a => `
+    <div class="post-row">
+      <div class="post-info">
+        <h3><span class="model-tag">${escapeHtml(a.model || '')}</span>${escapeHtml(localizedText(a.title))}</h3>
+        <div class="meta">Sana: ${formatDate(a.date)}${a.tags && a.tags.length ? ' · ' + a.tags.map(escapeHtml).join(', ') : ''}</div>
+      </div>
+      <div class="post-actions">
+        <a href="/uz/artifacts/${a.slug}/" target="_blank" class="btn ghost small">Ko'rish</a>
+        <button class="btn ghost small" data-edit-slug="${a.slug}">Tahrirlash</button>
+        <button class="btn danger small" data-delete-slug="${a.slug}" data-title="${escapeHtml(localizedText(a.title))}">O'chirish</button>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('button[data-edit-slug]').forEach(btn => {
+    btn.addEventListener('click', () => openArtifactModal(btn.getAttribute('data-edit-slug')));
+  });
+  listEl.querySelectorAll('button[data-delete-slug]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      confirmDeleteMode = 'artifact';
+      artifactSlugToDelete = btn.getAttribute('data-delete-slug');
+      document.getElementById('confirmText').textContent = `"${btn.getAttribute('data-title')}" artifaktini butunlay o'chirmoqchimisiz? Bu amalni orqaga qaytarib bo'lmaydi.`;
+      document.getElementById('confirmModal').style.display = 'flex';
+    });
+  });
+}
+
+async function runArtifactDelete(){
+  if(!artifactSlugToDelete) return;
+  const slug = artifactSlugToDelete;
+  const artifact = artifacts.find(a => a.slug === slug);
+  document.getElementById('processLog').textContent = '';
+  document.getElementById('logModal').style.display = 'flex';
+  const log = (m) => { document.getElementById('processLog').textContent += m + '\n'; };
+  try{
+    log(`"${localizedText(artifact && artifact.title)}" o'chirilmoqda...`);
+    await apiArtifactsDelete(slug, artifact && artifact.htmlSha, artifact && artifact.metaSha);
+    log('✓ Artifact o\'chirildi');
+    log('');
+    log('Tayyor!');
+    artifacts = artifacts.filter(a => a.slug !== slug);
+    renderArtifacts();
+  }catch(err){
+    log('✗ Xatolik: ' + err.message);
+  }
+  artifactSlugToDelete = null;
+}
+
+/* ---------- ARTIFACTS: UPLOAD/EDIT MODAL ---------- */
+const ARTIFACT_MAX_BYTES = 2 * 1024 * 1024;
+const SECRET_PATTERNS = [
+  /sk-[A-Za-z0-9]{10,}/, /AIza[0-9A-Za-z\-_]{10,}/, /ghp_[A-Za-z0-9]{20,}/,
+  /gho_[A-Za-z0-9]{20,}/, /github_pat_[A-Za-z0-9_]{20,}/, /Bearer\s+[A-Za-z0-9._\-]{10,}/,
+];
+function findSecretMatches(html){
+  const found = [];
+  for(const re of SECRET_PATTERNS){ const m = html.match(re); if(m) found.push(m[0].slice(0,12) + '…'); }
+  return found;
+}
+function slugify(title){
+  return title.toLowerCase().trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'artifact-' + Date.now();
+}
+
+let pendingArtifactHtml = null; // read from file input, held until save
+let pendingArtifactForce = false;
+
+function resetArtifactModal(){
+  document.getElementById('artifactSlug').value = '';
+  document.getElementById('artifactHtmlSha').value = '';
+  document.getElementById('artifactMetaSha').value = '';
+  document.getElementById('artifactTitle').value = '';
+  document.getElementById('artifactModel').value = 'Claude';
+  document.getElementById('artifactDescription').value = '';
+  document.getElementById('artifactPrompt').value = '';
+  document.getElementById('artifactTags').value = '';
+  document.getElementById('artifactLicense').value = '';
+  document.getElementById('artifactRequiresClaude').checked = false;
+  document.getElementById('artifactFile').value = '';
+  document.getElementById('artifactFileHint').textContent = '';
+  document.getElementById('artifactWarningBox').style.display = 'none';
+  document.getElementById('artifactWarningBox').innerHTML = '';
+  pendingArtifactHtml = null;
+  pendingArtifactForce = false;
+}
+
+function openArtifactModal(editSlug){
+  resetArtifactModal();
+  const isEdit = !!editSlug;
+  document.getElementById('artifactModalTitle').textContent = isEdit ? 'Artifactni tahrirlash' : 'Yangi artifact';
+  if(isEdit){
+    const a = artifacts.find(x => x.slug === editSlug);
+    if(!a) return;
+    document.getElementById('artifactSlug').value = a.slug;
+    document.getElementById('artifactHtmlSha').value = a.htmlSha || '';
+    document.getElementById('artifactMetaSha').value = a.metaSha || '';
+    document.getElementById('artifactTitle').value = localizedText(a.title);
+    document.getElementById('artifactModel').value = a.model || 'Claude';
+    document.getElementById('artifactDescription').value = localizedText(a.description);
+    document.getElementById('artifactPrompt').value = a.prompt || '';
+    document.getElementById('artifactTags').value = (a.tags || []).join(', ');
+    document.getElementById('artifactLicense').value = a.license || '';
+    document.getElementById('artifactRequiresClaude').checked = !!a.requiresClaude;
+    document.getElementById('artifactFileHint').textContent = '(bo\'sh qoldirsangiz, eski HTML fayl saqlanadi)';
+  }
+  document.getElementById('artifactModal').style.display = 'flex';
+}
+
+document.getElementById('newArtifactBtn').addEventListener('click', () => openArtifactModal(null));
+document.getElementById('cancelArtifactBtn').addEventListener('click', () => {
+  document.getElementById('artifactModal').style.display = 'none';
+});
+
+document.getElementById('artifactFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  pendingArtifactHtml = null;
+  pendingArtifactForce = false;
+  document.getElementById('artifactWarningBox').style.display = 'none';
+  if(!file) return;
+  if(file.size > ARTIFACT_MAX_BYTES){
+    document.getElementById('artifactFileHint').textContent = `Fayl juda katta (${(file.size/1024/1024).toFixed(2)} MB). Eng ko'pi 2 MB.`;
+    e.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingArtifactHtml = String(reader.result || '');
+    document.getElementById('artifactFileHint').textContent = `${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+    const matches = findSecretMatches(pendingArtifactHtml);
+    if(matches.length > 0){
+      const box = document.getElementById('artifactWarningBox');
+      box.style.display = 'block';
+      box.innerHTML = `⚠ Faylda tokenga o'xshash qatorlar topildi: ${matches.map(escapeHtml).join(', ')}. Baribir yuklashni xohlaysizmi?`
+        + '<div style="margin-top:8px;"><label style="font-weight:500; color:var(--ink); display:flex; gap:6px; align-items:center;">'
+        + '<input type="checkbox" id="artifactForceUpload"> Ha, baribir yuklash</label></div>';
+      document.getElementById('artifactForceUpload').addEventListener('change', (ev) => {
+        pendingArtifactForce = ev.target.checked;
+      });
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('saveArtifactBtn').addEventListener('click', async () => {
+  const slugInput = document.getElementById('artifactSlug').value.trim();
+  const title = document.getElementById('artifactTitle').value.trim();
+  const model = document.getElementById('artifactModel').value;
+  const isEdit = !!slugInput;
+
+  if(!title){ alert('Nom kiritish shart.'); return; }
+  if(!isEdit && !pendingArtifactHtml){ alert('Yangi artifact uchun HTML fayl tanlang.'); return; }
+
+  const matches = pendingArtifactHtml ? findSecretMatches(pendingArtifactHtml) : [];
+  if(matches.length > 0 && !pendingArtifactForce){
+    alert('Fayl shubhali qator(lar) bo\'lgani uchun avval ogohlantirish ostidagi katakchani belgilang.');
+    return;
+  }
+
+  let slug = isEdit ? slugInput : slugify(title);
+  if(!isEdit){
+    const existingSlugs = new Set(artifacts.map(a => a.slug));
+    let candidate = slug, n = 2;
+    while(existingSlugs.has(candidate)){ candidate = `${slug}-${n++}`; }
+    slug = candidate;
+  }
+  const tags = document.getElementById('artifactTags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const meta = {
+    title,
+    model,
+    description: document.getElementById('artifactDescription').value.trim() || undefined,
+    date: isEdit ? (artifacts.find(a => a.slug === slug) || {}).date || new Date().toISOString() : new Date().toISOString(),
+    tags,
+    prompt: document.getElementById('artifactPrompt').value.trim() || undefined,
+    requiresClaude: document.getElementById('artifactRequiresClaude').checked,
+    license: document.getElementById('artifactLicense').value.trim() || undefined,
+  };
+
+  const btn = document.getElementById('saveArtifactBtn');
+  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
+  try{
+    const result = await apiArtifactsSave({
+      slug,
+      html: pendingArtifactHtml,
+      meta,
+      htmlSha: document.getElementById('artifactHtmlSha').value || null,
+      metaSha: document.getElementById('artifactMetaSha').value || null,
+      force: pendingArtifactForce,
+    });
+    if(!result.ok){
+      if(result.warning){
+        alert('Fayl shubhali qator(lar) bo\'lgani uchun ogohlantirish katakchasini belgilab, qayta saqlang.');
+      } else {
+        alert('Xatolik: ' + (result.error || 'nomalum'));
+      }
+      return;
+    }
+    document.getElementById('artifactModal').style.display = 'none';
+    artifactsLoaded = false;
+    await loadArtifacts();
+    artifactsLoaded = true;
+  }catch(err){
+    alert('Xatolik: ' + err.message);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Saqlash';
+  }
 });
 
 loadPosts();

@@ -1,0 +1,137 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Nav from '../../../components/Nav.astro';
+import Footer from '../../../components/Footer.astro';
+import ArtifactCard from '../../../components/ArtifactCard.astro';
+import { LANGS, t, type Lang } from '../../../lib/i18n';
+import { resolveLocalized } from '../../../lib/artifacts';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const strings = t(lang);
+const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/artifacts/`])) as Record<Lang, string>;
+
+const artifacts = (await getCollection('artifacts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const models = [...new Set(artifacts.map((a) => a.data.model))].sort();
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${strings.artifacts.title} — miuceo`}
+  description={strings.artifacts.desc}
+  canonicalPath={`/${lang}/artifacts/`}
+  hreflangPaths={langPaths}
+>
+  <Nav lang={lang} active="artifacts" langPaths={langPaths} />
+
+  <section class="page-header">
+    <h1>{strings.artifacts.title}</h1>
+    <p>{strings.artifacts.desc}</p>
+  </section>
+
+  {artifacts.length === 0 ? (
+    <div class="empty-state">{strings.artifacts.empty}</div>
+  ) : (
+    <>
+      <div class="filter-bar">
+        <input type="search" id="artifactSearch" placeholder={strings.artifacts.filterPlaceholder} />
+        <select id="artifactModelFilter">
+          <option value="">{strings.artifacts.allModels}</option>
+          {models.map((m) => <option value={m}>{m}</option>)}
+        </select>
+      </div>
+
+      <div class="artifacts-grid" id="artifactsGrid">
+        {artifacts.map((a) => (
+          <div class="artifact-item" data-model={a.data.model} data-search={`${resolveLocalized(a.data.title, lang)} ${a.data.tags.join(' ')}`.toLowerCase()}>
+            <ArtifactCard
+              lang={lang}
+              slug={a.id}
+              title={resolveLocalized(a.data.title, lang)}
+              description={a.data.description ? resolveLocalized(a.data.description, lang) : undefined}
+              model={a.data.model}
+              date={a.data.date}
+              tags={a.data.tags}
+              requiresClaude={a.data.requiresClaude}
+            />
+          </div>
+        ))}
+      </div>
+      <div class="empty-state" id="noResults" style="display:none;">{strings.artifacts.noResults}</div>
+    </>
+  )}
+
+  <Footer lang={lang} />
+</BaseLayout>
+
+<script>
+  const search = document.getElementById('artifactSearch') as HTMLInputElement | null;
+  const modelFilter = document.getElementById('artifactModelFilter') as HTMLSelectElement | null;
+  const items = Array.from(document.querySelectorAll<HTMLElement>('.artifact-item'));
+  const noResults = document.getElementById('noResults');
+
+  function applyFilter() {
+    const q = (search?.value || '').trim().toLowerCase();
+    const model = modelFilter?.value || '';
+    let visible = 0;
+    for (const item of items) {
+      const matchesModel = !model || item.dataset.model === model;
+      const matchesSearch = !q || (item.dataset.search || '').includes(q);
+      const show = matchesModel && matchesSearch;
+      item.style.display = show ? '' : 'none';
+      if (show) visible++;
+    }
+    if (noResults) noResults.style.display = visible === 0 ? '' : 'none';
+  }
+
+  search?.addEventListener('input', applyFilter);
+  modelFilter?.addEventListener('change', applyFilter);
+</script>
+
+<style>
+  .page-header { padding: 80px 0 50px; }
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+  .filter-bar input,
+  .filter-bar select {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    color: var(--ink);
+  }
+  .filter-bar input { flex: 1; min-width: 200px; }
+  .filter-bar input::placeholder { color: var(--ink-soft); }
+
+  .artifacts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding-bottom: 100px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-soft);
+    font-style: italic;
+    font-size: 15px;
+  }
+
+  @media (max-width: 900px) {
+    .artifacts-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .artifacts-grid { grid-template-columns: 1fr; }
+    .filter-bar { flex-direction: column; }
+  }
+</style>

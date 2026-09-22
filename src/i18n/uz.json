@@ -7,22 +7,27 @@
     "brand": "MIUCEO\\",
     "posts": "Postlar",
     "projects": "Loyihalar",
+    "about": "Men haqimda",
     "contact": "Bog'lanish",
+    "artifacts": "Artifaktlar",
     "admin": "Admin panel"
   },
   "hero": {
     "prompt": "whoami",
-    "titlePre": "Building at the",
-    "titleAccent1": "intersection",
-    "titleMid": "of AI and",
-    "titleAccent2": "engineering",
-    "desc": "Men Muhammadjon Ibrohimov — machine learning, AI engineering, backend development va DevOps'ni o'rganyapman, shu bilan birga texnologiya va iqtisodiyot qanday kesishishini kuzataman. Bu yerda o'rganganlarim, qurgan narsalarim va o'ylarim haqida yozaman."
+    "titlePre": "Sun'iy intellekt va",
+    "titleAccent1": "muhandislik",
+    "titleMid": "tutashgan",
+    "titleAccent2": "nuqtada",
+    "desc": "Men Muhammadjon Ibrohimov — machine learning, AI engineering, backend development va DevOps'ni o'rganyapman, shu bilan birga texnologiya va iqtisodiyot qanday kesishishini kuzataman. Bu yerda o'rganganlarim, qurgan narsalarim va o'ylarim haqida yozaman.",
+    "ctaProjects": "Loyihalarni ko'rish",
+    "ctaContact": "Bog'lanish",
+    "ctaTelegram": "Telegram kanal"
   },
   "home": {
     "latestPost": "Eng so'nggi post",
     "latestPosts": "Latest posts",
-    "continueReading": "Continue reading →",
-    "readPost": "Read post →",
+    "continueReading": "Davomini o'qish →",
+    "readPost": "Postni o'qish →",
     "noPosts": "Hali post yo'q. Admin panel orqali birinchi postingizni yarating.",
     "noPostsShort": "Hali post yo'q",
     "noOtherPosts": "Boshqa postlar hali yo'q"
@@ -31,7 +36,13 @@
     "title": "Loyihalar",
     "desc": "Men qurgan va o'rgangan narsalarim — Machine Learning'dan tortib backend tizimlarigacha.",
     "viewGithub": "GitHub'da ko'rish →",
-    "openTool": "Vositani ochish →"
+    "openTool": "Vositani ochish →",
+    "problem": "Muammo",
+    "solution": "Yechim",
+    "result": "Natija",
+    "statusActive": "Faol",
+    "statusArchived": "Arxiv",
+    "starsLabel": "GitHub yulduzlar"
   },
   "contact": {
     "title": "Bog'lanish",
@@ -42,6 +53,50 @@
     "githubLink": "Profilni ko'rish →",
     "emailDesc": "Rasmiy yoki batafsilroq murojaatlar uchun email orqali yozishingiz mumkin.",
     "emailLink": "Xat yozish →"
+  },
+  "about": {
+    "title": "Men haqimda",
+    "desc": "Backend va AI yo'nalishida ishlayotgan muhandisman — masshtablanadigan tizimlar quraman va ularga sun'iy intellektni integratsiya qilaman.",
+    "introTitle": "Salom, men Muhammadjon",
+    "intro": "Farg'onada tug'ilib o'sganman, hozir Toshkentga ko'chishni rejalashtiryapman. Iqtisodiyot yo'nalishida bakalavriat o'qiyman, ammo asosiy vaqtimni kodga sarflayman: masshtablanadigan, xatolarga chidamli tizimlar qurish va ularga sun'iy intellektni integratsiya qilish. Ko'p narsani avtomatlashtirishga harakat qilaman — takrorlanadigan ishni kodga topshirib, o'zim qiziqarli muammolar bilan shug'ullanish uchun.",
+    "focusTitle": "Yo'nalishlar",
+    "focusItems": ["Machine Learning", "AI Engineering", "Backend Development", "DevOps (o'rganish jarayonida)"],
+    "skillsTitle": "Ko'nikmalar",
+    "skills": ["Python", "Go", "TypeScript / Astro", "FastAPI / Django", "PyTorch", "scikit-learn / XGBoost", "SQL", "Cloudflare Workers", "Model Context Protocol (MCP)", "Telegram Bot API / Telethon", "Git / GitHub Actions", "Prompt Engineering"],
+    "timelineTitle": "Yo'l xaritasi",
+    "timeline": [
+      { "date": "2024 — hozirgacha", "title": "B.Sc Economics", "desc": "International Islamic Academy of Uzbekistan. Jahon iqtisodiyoti, islom moliyasi va xalqaro iqtisodiy munosabatlar yo'nalishi, GPA 4.5/5.0." },
+      { "date": "2025-yil apreldan oktabrgacha", "title": "Assistant Teacher, Najot Ta'lim (Farg'ona filiali)", "desc": "Talabalarga dasturlash asoslarini, operatsion tizimlar, dasturlash tillari, SQL va web workflow'ni o'rgatdim." },
+      { "date": "2025-yil may-iyul", "title": "Data Science Internship, Valk Research", "desc": "Ma'lumotlarni yig'ish va tozalash, feature engineering, machine learning pipeline uchun ma'lumotlarni tayyorlash." },
+      { "date": "2026", "title": "Ochiq kodli AI vositalari", "desc": "Post Builder, Local RAG Agent, Local Voice Agent, Gemini Image MCP, Telegram Account MCP va MIU secretary kabi ochiq kodli loyihalarni qurdim." },
+      { "date": "2027 (reja)", "title": "Farg'ona → Toshkent", "desc": "Toshkentga ko'chishni rejalashtiryapman." }
+    ],
+    "cvTitle": "CV",
+    "cvButton": "CV yuklab olish (EN)",
+    "cvNote": "Hozircha faqat inglizcha versiya mavjud.",
+    "socialTitle": "Ijtimoiy tarmoqlar"
+  },
+  "artifacts": {
+    "title": "Artifaktlar",
+    "desc": "Claude, Gemini va boshqa AI chatbotlarda yaratilgan interaktiv vositalar — to'g'ridan-to'g'ri brauzeringizda ishlaydi.",
+    "filterPlaceholder": "Artifaktlarni qidirish...",
+    "allModels": "Barcha modellar",
+    "empty": "Hali artifakt yo'q.",
+    "noResults": "Hech narsa topilmadi.",
+    "openFullscreen": "To'liq ekran",
+    "openNewTab": "Yangi tabda ochish",
+    "reload": "Qayta yuklash",
+    "download": "HTML yuklab olish",
+    "copyLink": "Havolani nusxalash",
+    "copyEmbed": "Embed kodini nusxalash",
+    "linkCopied": "Havola nusxalandi",
+    "embedCopied": "Embed kodi nusxalandi",
+    "promptLabel": "Prompt",
+    "promptToggle": "Promptni ko'rsatish",
+    "disclaimer": "Bu artifakt sun'iy intellekt tomonidan yaratilgan va hech qanday kafolatsiz taqdim etiladi.",
+    "noStorageNote": "Xavfsizlik uchun artifakt alohida sandbox ichida ishlaydi — u asosiy sayt ma'lumotlariga (localStorage, sessiya) kira olmaydi, shuning uchun saqlash funksiyalari ishlamasligi mumkin.",
+    "requiresClaudeBadge": "Faqat Claude ichida ishlaydi",
+    "backToList": "Artifaktlarga qaytish"
   },
   "footer": {
     "copyright": "© 2026 Muhammadjon Ibrohimov"

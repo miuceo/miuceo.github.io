@@ -1,0 +1,89 @@
+---
+import type { Lang } from '../lib/i18n';
+import { t } from '../lib/i18n';
+import { modelBadge } from '../lib/artifacts';
+
+interface Props {
+  lang: Lang;
+  slug: string;
+  title: string;
+  description?: string;
+  model: string;
+  date: Date;
+  tags: string[];
+  requiresClaude: boolean;
+}
+
+const { lang, slug, title, description, model, date, tags, requiresClaude } = Astro.props;
+const strings = t(lang);
+const badge = modelBadge(model);
+
+const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<a href={`/${lang}/artifacts/${slug}/`} class="card">
+  <div class="card-top">
+    <span class="model-badge">
+      <span class="model-emoji" aria-hidden="true">{badge.emoji}</span>
+      {badge.label}
+    </span>
+    <span class="card-date">{dateFmt.format(date)}</span>
+  </div>
+  <h3 class="card-title">{title}</h3>
+  {description && <p class="card-desc">{description}</p>}
+  <div class="card-bottom">
+    {tags.length > 0 && (
+      <div class="tags">
+        {tags.slice(0, 4).map((tag) => <span class="tag">{tag}</span>)}
+      </div>
+    )}
+    {requiresClaude && <span class="claude-only">{strings.artifacts.requiresClaudeBadge}</span>}
+  </div>
+</a>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 28px;
+    text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    height: 100%;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--glow-md) rgba(218,122,94,0.15);
+    transform: translateY(-2px);
+  }
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .model-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(218,122,94,0.12);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .model-emoji { font-size: 12px; }
+  .card-date { font-size: 12px; color: var(--ink-soft); }
+  .card-title { font-size: 19px; font-weight: 600; margin: 0 0 8px; color: var(--ink); line-height: 1.35; }
+  .card-desc { font-size: 14px; color: var(--ink-soft); line-height: 1.6; margin: 0 0 20px; flex-grow: 1; }
+  .card-bottom { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 11px; color: var(--neon-cyan); background: var(--bg-3); border: 1px solid var(--line); padding: 4px 8px; border-radius: 4px; }
+  .claude-only { font-size: 11px; color: var(--ink-soft); font-style: italic; }
+</style>

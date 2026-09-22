@@ -4,7 +4,7 @@ import { LANGS, t } from '../lib/i18n';
 
 interface Props {
   lang: Lang;
-  active: 'posts' | 'projects' | 'contact' | 'none';
+  active: 'posts' | 'projects' | 'about' | 'contact' | 'artifacts' | 'none';
   /** slug of the equivalent page in each language, e.g. { uz: '/uz/', en: '/en/', ru: '/ru/' } */
   langPaths: Record<Lang, string>;
 }
@@ -20,6 +20,8 @@ const strings = t(lang);
     <nav class="nav-links">
       <a href={`/${lang}/#latest-posts`} class={active === 'posts' ? 'active' : ''}>{strings.nav.posts}</a>
       <a href={`/${lang}/projects/`} class={active === 'projects' ? 'active' : ''}>{strings.nav.projects}</a>
+      <a href={`/${lang}/artifacts/`} class={active === 'artifacts' ? 'active' : ''}>{strings.nav.artifacts}</a>
+      <a href={`/${lang}/about/`} class={active === 'about' ? 'active' : ''}>{strings.nav.about}</a>
       <a href={`/${lang}/contact/`} class={active === 'contact' ? 'active' : ''}>{strings.nav.contact}</a>
     </nav>
 
