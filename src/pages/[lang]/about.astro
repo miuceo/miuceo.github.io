@@ -1,0 +1,207 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import { LANGS, t, type Lang } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const strings = t(lang);
+const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/about/`])) as Record<Lang, string>;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Muhammadjon Ibrohimov',
+  alternateName: 'miuceo',
+  url: 'https://muhammadjon.me/',
+  image: 'https://muhammadjon.me/images/avatar.png',
+  sameAs: ['https://t.me/muhammadibrohimov_ceo', 'https://github.com/miuceo'],
+  jobTitle: 'AI/ML Engineer',
+};
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${strings.about.title} — miuceo`}
+  description={strings.about.desc}
+  canonicalPath={`/${lang}/about/`}
+  hreflangPaths={langPaths}
+  jsonLd={jsonLd}
+>
+  <Nav lang={lang} active="about" langPaths={langPaths} />
+
+  <section class="page-header">
+    <h1>{strings.about.title}</h1>
+    <p>{strings.about.desc}</p>
+  </section>
+
+  <section class="intro">
+    <img class="avatar" src="/images/avatar.png" alt="Muhammadjon Ibrohimov" width="160" height="160" loading="lazy" />
+    <div class="intro-text">
+      <h2>{strings.about.introTitle}</h2>
+      <p>{strings.about.intro}</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="block-title">{strings.about.focusTitle}</h2>
+    <div class="pill-row">
+      {strings.about.focusItems.map((item: string) => <span class="pill">{item}</span>)}
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="block-title">{strings.about.skillsTitle}</h2>
+    <div class="pill-row">
+      {strings.about.skills.map((item: string) => <span class="pill pill-skill">{item}</span>)}
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="block-title">{strings.about.timelineTitle}</h2>
+    <ol class="timeline">
+      {strings.about.timeline.map((entry: { date: string; title: string; desc: string }) => (
+        <li class="timeline-item">
+          <span class="timeline-date">{entry.date}</span>
+          <h3 class="timeline-title">{entry.title}</h3>
+          <p class="timeline-desc">{entry.desc}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="block cv-block">
+    <h2 class="block-title">{strings.about.cvTitle}</h2>
+    <a href="/cv/muhammadjon-ibrohimov-cv-en.pdf" download class="btn">{strings.about.cvButton}</a>
+    <p class="cv-note">{strings.about.cvNote}</p>
+  </section>
+
+  <section class="block">
+    <h2 class="block-title">{strings.about.socialTitle}</h2>
+    <div class="social-row">
+      <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="social-link">Telegram →</a>
+      <a href="https://github.com/miuceo" target="_blank" rel="noopener" class="social-link">GitHub →</a>
+      <a href="mailto:ibrokhimovmiu@gmail.com" class="social-link">Email →</a>
+    </div>
+  </section>
+
+  <Footer lang={lang} />
+</BaseLayout>
+
+<style>
+  .intro {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    padding: 56px 0 24px;
+  }
+  .avatar {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .intro-text h2 {
+    font-size: 24px;
+    margin: 0 0 12px;
+  }
+  .intro-text p {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 640px;
+  }
+
+  .block {
+    padding: 32px 0;
+    border-top: 1px solid var(--line-soft);
+  }
+  .block-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin: 0 0 20px;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .pill {
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    background: var(--bg-2);
+  }
+  .pill-skill {
+    color: var(--ink-soft);
+  }
+
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .timeline-item {
+    padding-left: 20px;
+    border-left: 2px solid var(--line);
+  }
+  .timeline-date {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .timeline-title {
+    font-size: 17px;
+    margin: 6px 0 6px;
+    color: var(--ink);
+    font-family: var(--font-serif);
+  }
+  .timeline-desc {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    margin: 0;
+    max-width: 620px;
+  }
+
+  .cv-block .cv-note {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 12px 0 0;
+  }
+
+  .social-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  .social-link {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .social-link:hover {
+    text-shadow: var(--glow-sm) var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    .intro { flex-direction: column; align-items: flex-start; text-align: left; padding: 40px 0 16px; }
+    .avatar { width: 120px; height: 120px; }
+  }
+</style>
