@@ -4,7 +4,8 @@ excerpt: "Claude Opus 5.5 kuchliroq, tezroq, arzonroq va xavfsizroq model – 
 coverImage: "https://github.com/miuceo/images/blob/main/image.png?raw=true"
 createdAt: "2026-09-22T17:43:07.271Z"
 updatedAt: "2026-09-22T17:43:07.271Z"
-telegramHasMedia: false
+telegramMessageId: 109
+telegramHasMedia: true
 ---
 ![](https://github.com/miuceo/images/blob/main/image.png?raw=true)
 
