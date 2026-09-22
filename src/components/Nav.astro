@@ -17,7 +17,7 @@ const strings = t(lang);
   <div class="navbar">
     <a href={`/${lang}/`} class="brand">Muhammadjon.</a>
     
-    <nav class="nav-links">
+    <nav class="nav-links" id="navLinks">
       <a href={`/${lang}/posts/`} class={active === 'posts' ? 'active' : ''}>{strings.nav.posts}</a>
       <a href={`/${lang}/projects/`} class={active === 'projects' ? 'active' : ''}>{strings.nav.projects}</a>
       <a href={`/${lang}/artifacts/`} class={`nav-artifacts ${active === 'artifacts' ? 'active' : ''}`}>
@@ -26,6 +26,10 @@ const strings = t(lang);
       </a>
       <a href={`/${lang}/about/`} class={active === 'about' ? 'active' : ''}>{strings.nav.about}</a>
       <a href={`/${lang}/contact/`} class={active === 'contact' ? 'active' : ''}>{strings.nav.contact}</a>
+      <a href="/login.html" class="nav-admin-mobile">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        {strings.nav.admin}
+      </a>
     </nav>
 
     <div class="nav-actions">
@@ -44,6 +48,12 @@ const strings = t(lang);
         <!-- Admin/Dashboard Icon -->
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
       </a>
+      <!-- Mobile only: .nav-links is hidden under 768px, this opens it as a
+           dropdown panel below the bar. -->
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false" aria-controls="navLinks">
+        <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+        <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+      </button>
     </div>
   </div>
 </header>
@@ -51,11 +61,10 @@ const strings = t(lang);
 <script>
   // Nav is position:fixed (see below), and every page reserves --nav-height
   // of top space for it. The static fallback in tokens.css is a single
-  // number, but the nav itself isn't: it wraps to two lines under ~768px
-  // (`.nav-links{display:none}` still leaves room for wrap on very narrow
-  // screens) and web-font swap can shift its measured height by a pixel or
-  // two. Measuring the real height keeps every page's spacing exact instead
-  // of chasing breakpoint-specific magic numbers.
+  // number, but the nav itself isn't: its padding shrinks under 768px and
+  // web-font swap can shift its measured height by a pixel or two.
+  // Measuring the real height keeps every page's spacing exact instead of
+  // chasing breakpoint-specific magic numbers.
   function setNavHeight() {
     const nav = document.querySelector('.navbar-wrapper');
     if (nav instanceof HTMLElement) {
@@ -65,6 +74,27 @@ const strings = t(lang);
   setNavHeight();
   window.addEventListener('resize', setNavHeight);
   if (document.fonts) document.fonts.ready.then(setNavHeight);
+
+  // Mobile menu. The panel is absolutely positioned under the bar, so
+  // opening it doesn't change the nav's height (--nav-height stays exact).
+  const header = document.querySelector('.navbar-wrapper');
+  const toggle = document.getElementById('navToggle');
+  if (header && toggle) {
+    const setOpen = (open: boolean) => {
+      header.classList.toggle('menu-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    };
+    toggle.addEventListener('click', () => setOpen(!header.classList.contains('menu-open')));
+    document.addEventListener('click', (e) => {
+      if (!header.contains(e.target as Node)) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    });
+    window.matchMedia('(min-width: 769px)').addEventListener('change', (e) => {
+      if (e.matches) setOpen(false);
+    });
+  }
 </script>
 
 <style>
@@ -190,9 +220,81 @@ const strings = t(lang);
     color: var(--ink);
   }
 
+  .nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-right: -8px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .nav-toggle:hover { background: var(--bg-3); }
+  .nav-toggle .close-icon { display: none; }
+  .menu-open .nav-toggle .menu-icon { display: none; }
+  .menu-open .nav-toggle .close-icon { display: block; }
+  .nav-admin-mobile { display: none; }
+
   @media (max-width: 768px) {
-    .navbar-wrapper { padding: 16px 20px; }
-    .nav-links { display: none; }
-    .nav-actions { gap: 16px; }
+    .navbar-wrapper { padding: 14px 20px; }
+    .nav-actions { gap: 14px; }
+    .nav-actions .nav-admin { display: none; }
+    .nav-toggle { display: flex; }
+
+    /* Dropdown panel under the bar — same background and hairline border
+       as the bar itself, so it reads as the nav unfolding. */
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      padding: 8px 20px 20px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 24px 40px rgba(0, 0, 0, 0.3);
+      max-height: calc(100dvh - 100%);
+      overflow-y: auto;
+    }
+    .menu-open .nav-links { display: flex; }
+    .nav-links a {
+      padding: 14px 2px;
+      font-size: 16px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .nav-links a.nav-artifacts {
+      order: -1;
+      height: 46px;
+      margin: 8px 0 6px;
+      padding: 0 16px;
+      font-size: 15px;
+      border-bottom: none;
+      align-self: flex-start;
+    }
+    .nav-links a.nav-admin-mobile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      border-bottom: none;
+    }
+  }
+  @media (max-width: 380px) {
+    .navbar-wrapper { padding: 14px 16px; }
+    .navbar { gap: 12px; }
+    .brand { font-size: 18px; }
+    .nav-actions { gap: 10px; }
+    .lang-switch { gap: 7px; }
+    .theme-toggle { width: 32px; }
+    .nav-links { padding: 8px 16px 20px; }
   }
 </style>
