@@ -5,6 +5,7 @@ import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import { LANGS, t, type Lang } from '../../lib/i18n';
+import { getStars } from '../../lib/github';
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -15,6 +16,13 @@ const strings = t(lang);
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/projects/`])) as Record<Lang, string>;
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const starsByRepo = new Map(
+  await Promise.all(
+    projects
+      .filter((p) => p.data.githubRepo)
+      .map(async (p) => [p.data.githubRepo as string, await getStars(p.data.githubRepo as string)] as const)
+  )
+);
 ---
 
 <BaseLayout
@@ -37,9 +45,14 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.order -
         lang={lang}
         title={p.data.title[lang]}
         description={p.data.description[lang]}
+        problem={p.data.problem?.[lang]}
+        solution={p.data.solution?.[lang]}
+        result={p.data.result?.[lang]}
         tags={p.data.tags}
+        status={p.data.status}
         url={p.data.url}
         external={p.data.external}
+        stars={p.data.githubRepo ? starsByRepo.get(p.data.githubRepo) : undefined}
       />
     ))}
   </div>

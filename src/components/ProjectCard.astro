@@ -6,34 +6,90 @@ interface Props {
   lang: Lang;
   title: string;
   description: string;
+  problem?: string;
+  solution?: string;
+  result?: string;
   tags: string[];
+  status: 'active' | 'archived';
   url: string;
   external: boolean;
+  stars?: number | null;
 }
 
-const { lang, title, description, tags, url, external } = Astro.props;
+const { lang, title, description, problem, solution, result, tags, status, url, external, stars } = Astro.props;
 const strings = t(lang);
 const linkLabel = external ? strings.projects.viewGithub : strings.projects.openTool;
+const hasStory = problem && solution && result;
 ---
 
 <div class="project-card">
-  <h2>{title}</h2>
-  <p class="desc">{description}</p>
+  <div class="card-top">
+    <h2>{title}</h2>
+    <span class={`status-badge status-${status}`}>
+      {status === 'active' ? strings.projects.statusActive : strings.projects.statusArchived}
+    </span>
+  </div>
+
+  {hasStory ? (
+    <dl class="story">
+      <div class="story-row">
+        <dt>{strings.projects.problem}</dt>
+        <dd>{problem}</dd>
+      </div>
+      <div class="story-row">
+        <dt>{strings.projects.solution}</dt>
+        <dd>{solution}</dd>
+      </div>
+      <div class="story-row">
+        <dt>{strings.projects.result}</dt>
+        <dd>{result}</dd>
+      </div>
+    </dl>
+  ) : (
+    <p class="desc">{description}</p>
+  )}
+
   <div class="tags">
     {tags.map((tag) => <span class="tag">{tag}</span>)}
   </div>
-  {external
-    ? <a href={url} target="_blank" rel="noopener" class="project-link">{linkLabel}</a>
-    : <a href={url} class="project-link">{linkLabel}</a>}
+
+  <div class="card-bottom">
+    {external
+      ? <a href={url} target="_blank" rel="noopener" class="project-link">{linkLabel}</a>
+      : <a href={url} class="project-link">{linkLabel}</a>}
+    {typeof stars === 'number' && (
+      <span class="stars" title={strings.projects.starsLabel}>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+        {stars}
+      </span>
+    )}
+  </div>
 </div>
 
 <style>
   .project-card{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:32px; display:flex; flex-direction:column; transition:box-shadow .2s, border-color .2s; }
-  .project-card:hover{ border-color:var(--neon-green); box-shadow:var(--glow-md) rgba(61,255,162,0.2); }
-  .project-card h2{ font-weight:700; font-size:21px; margin:0 0 12px; }
+  .project-card:hover{ border-color:var(--neon-green); box-shadow:var(--glow-md) rgba(218,122,94,0.2); }
+
+  .card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .card-top h2{ font-weight:700; font-size:21px; margin:0; }
+
+  .status-badge{ font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; padding:4px 10px; border-radius:999px; white-space:nowrap; flex-shrink:0; }
+  .status-active{ color:var(--accent); background:rgba(218,122,94,0.12); }
+  .status-archived{ color:var(--ink-soft); background:var(--bg-3); }
+
   .desc{ font-size:14px; color:var(--ink-soft); line-height:1.7; flex:1; margin:0 0 20px; }
+
+  .story{ margin:0 0 20px; flex:1; }
+  .story-row{ margin-bottom:12px; }
+  .story-row:last-child{ margin-bottom:0; }
+  .story dt{ font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--neon-cyan); margin-bottom:3px; }
+  .story dd{ font-size:13.5px; color:var(--ink-soft); line-height:1.6; margin:0; }
+
   .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
   .tag{ font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--neon-cyan); background:var(--bg-3); border:1px solid var(--line); padding:5px 10px; border-radius:4px; }
+
+  .card-bottom{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:auto; }
   .project-link{ display:inline-flex; align-items:center; gap:8px; color:var(--neon-green); font-size:13px; font-weight:600; width:fit-content; }
   .project-link:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
+  .stars{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--ink-soft); }
 </style>
