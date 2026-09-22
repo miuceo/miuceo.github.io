@@ -66,6 +66,7 @@ const jsonLd = {
         <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="btn ghost">{strings.hero.ctaTelegram}</a>
       </div>
     </section>
+    <Footer lang={lang} />
   </div>
 
   <div class="content-overlay">
@@ -126,8 +127,6 @@ const jsonLd = {
       </div>
     )}
   </main>
-
-  <Footer lang={lang} />
   </div>
 </BaseLayout>
 
@@ -140,16 +139,18 @@ const jsonLd = {
 
   /* Pinned behind the fixed Nav, filling the viewport it started in — the
      rest of the page (.content-overlay) scrolls up over it, so the hero
-     stays put until it's fully covered. Pure CSS: no scroll listeners, no
-     motion to disable under prefers-reduced-motion, readable with JS off. */
+     (and its footer) stay put until fully covered. Pure CSS: no scroll
+     listeners, no motion to disable under prefers-reduced-motion, readable
+     with JS off. Column layout: hero grows to fill the space above the
+     footer and centers itself within it; the footer keeps its normal
+     height and sits flush at the bottom of the viewport. */
   .hero-pin {
     position: fixed;
     inset: 0;
     height: 100vh;
     height: 100dvh;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     z-index: 1;
     overflow: hidden;
     background: var(--bg);
@@ -165,10 +166,23 @@ const jsonLd = {
   }
 
   .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     max-width: 800px;
+    width: 100%;
     margin: 0 auto;
     padding: 0 40px;
+  }
+  .hero-pin :global(footer) {
+    flex-shrink: 0;
+    max-width: 1240px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 32px;
   }
   .hero h1 { 
     font-size: 52px; 
