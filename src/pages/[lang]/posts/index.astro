@@ -21,7 +21,7 @@ const postsForLang = allPosts
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/posts/`])) as Record<Lang, string>;
 
 const dateFmt = new Intl.DateTimeFormat(lang, {
-  year: 'numeric', month: 'short', day: 'numeric'
+  year: 'numeric', month: 'long', day: 'numeric'
 });
 ---
 
