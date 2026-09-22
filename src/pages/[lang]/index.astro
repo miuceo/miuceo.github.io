@@ -32,7 +32,7 @@ const hasMorePosts = rest.length > 24;
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/`])) as Record<Lang, string>;
 
 const dateFmt = new Intl.DateTimeFormat(lang, {
-  year: 'numeric', month: 'short', day: 'numeric'
+  year: 'numeric', month: 'long', day: 'numeric'
 });
 
 const jsonLd = {
@@ -56,20 +56,29 @@ const jsonLd = {
 >
   <Nav lang={lang} active="posts" langPaths={langPaths} />
 
-  <main class="page-container">
+  <div class="hero-pin">
     <section class="hero">
       <h1>{strings.hero.titlePre} <em>{strings.hero.titleAccent1}</em> {strings.hero.titleMid} <em>{strings.hero.titleAccent2}</em></h1>
       <p class="hero-desc">{strings.hero.desc}</p>
+      <div class="hero-cta">
+        <a href={`/${lang}/projects/`} class="btn">{strings.hero.ctaProjects}</a>
+        <a href={`/${lang}/contact/`} class="btn ghost">{strings.hero.ctaContact}</a>
+        <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="btn ghost">{strings.hero.ctaTelegram}</a>
+      </div>
     </section>
+  </div>
 
+  <div class="content-overlay">
+  <main class="page-container">
     <!-- 1. Eng oxirgi post -->
     <div class="section-label" id="latest-posts">{strings.home.latestPost}</div>
     {latest ? (
       <a href={`/${lang}/posts/${latest.slug}/`} class="featured-post">
         <div class="featured-text">
+          <span class="featured-date">{dateFmt.format(latest.data.createdAt)}</span>
           <h2>{latest.data.title}</h2>
           <p>{latest.data.excerpt}</p>
-          <span class="read-more">{strings.home.continueReading} &rarr;</span>
+          <span class="read-more">{strings.home.continueReading}</span>
         </div>
         {latest.data.coverImage ? (
           <div class="featured-image">
@@ -119,20 +128,47 @@ const jsonLd = {
   </main>
 
   <Footer lang={lang} />
+  </div>
 </BaseLayout>
 
 <style>
   .page-container {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 0 40px;
+    padding: 56px 40px 0;
   }
 
-  .hero { 
-    padding: 120px 0 100px; 
+  /* Pinned behind the fixed Nav, filling the viewport it started in — the
+     rest of the page (.content-overlay) scrolls up over it, so the hero
+     stays put until it's fully covered. Pure CSS: no scroll listeners, no
+     motion to disable under prefers-reduced-motion, readable with JS off. */
+  .hero-pin {
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .content-overlay {
+    position: relative;
+    z-index: 2;
+    background: var(--bg);
+    margin-top: calc(100vh - var(--nav-height));
+    margin-top: calc(100dvh - var(--nav-height));
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -32px 60px rgba(0, 0, 0, 0.35);
+  }
+
+  .hero {
     text-align: center;
     max-width: 800px;
     margin: 0 auto;
+    padding: 0 40px;
   }
   .hero h1 { 
     font-size: 52px; 
@@ -145,12 +181,19 @@ const jsonLd = {
     font-style: italic; 
     color: var(--accent); 
   }
-  .hero-desc { 
-    font-size: 18px; 
-    line-height: 1.6; 
-    color: var(--ink-soft); 
+  .hero-desc {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--ink-soft);
     max-width: 600px;
     margin: 0 auto;
+  }
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 36px;
   }
 
   /* Featured Post (Oxirgi post) */
@@ -175,6 +218,13 @@ const jsonLd = {
     display: flex;
     flex-direction: column;
     justify-content: center;
+  }
+  .featured-date {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
   }
   .featured-text h2 {
     font-size: 32px;
@@ -289,8 +339,8 @@ const jsonLd = {
     .posts-grid { grid-template-columns: 1fr; gap: 24px; } 
   }
   @media (max-width: 640px) {
-    .page-container { padding: 0 20px; }
-    .hero { padding: 80px 0; }
+    .page-container { padding: 40px 20px 0; }
+    .hero { padding: 0 20px; }
     .hero h1 { font-size: 36px; }
     .hero-desc { font-size: 16px; }
     .featured-content h2 { font-size: 28px; }

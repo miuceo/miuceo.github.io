@@ -112,6 +112,12 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 </html>
 
 <style is:global>
+  /* Nav.astro is position:fixed (see its own styles) — every page reserves
+     this much space at the top so fixed content never sits under it. The
+     homepage's pinned hero deliberately ignores this (it needs the full
+     viewport) since position:fixed elements aren't affected by it either. */
+  body{ padding-top:var(--nav-height); }
+
   .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; position:relative; }
 
   .page-header{ padding:80px 0 50px; border-bottom:1px solid var(--line); }

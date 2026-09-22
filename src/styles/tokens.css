@@ -16,10 +16,16 @@
   --neon-green: var(--accent);
   --neon-cyan:  var(--accent);
   --neon-pink:  var(--accent);
+  --glow-sm:  0 0 8px;
+  --glow-md:  0 0 20px;
 
   --font-serif: 'Lora', 'Georgia', 'Times New Roman', serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Nav.astro is position:fixed; every page reserves this much top space
+     (BaseLayout's body padding-top) so fixed content never covers it. */
+  --nav-height: 77px;
 }
 
 [data-theme="light"]{

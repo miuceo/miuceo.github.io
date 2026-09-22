@@ -20,7 +20,10 @@ const strings = t(lang);
     <nav class="nav-links">
       <a href={`/${lang}/#latest-posts`} class={active === 'posts' ? 'active' : ''}>{strings.nav.posts}</a>
       <a href={`/${lang}/projects/`} class={active === 'projects' ? 'active' : ''}>{strings.nav.projects}</a>
-      <a href={`/${lang}/artifacts/`} class={active === 'artifacts' ? 'active' : ''}>{strings.nav.artifacts}</a>
+      <a href={`/${lang}/artifacts/`} class={`nav-artifacts ${active === 'artifacts' ? 'active' : ''}`}>
+        {strings.nav.artifacts}
+        <span class="new-badge">NEW</span>
+      </a>
       <a href={`/${lang}/about/`} class={active === 'about' ? 'active' : ''}>{strings.nav.about}</a>
       <a href={`/${lang}/contact/`} class={active === 'contact' ? 'active' : ''}>{strings.nav.contact}</a>
     </nav>
@@ -45,13 +48,35 @@ const strings = t(lang);
   </div>
 </header>
 
+<script>
+  // Nav is position:fixed (see below), and every page reserves --nav-height
+  // of top space for it. The static fallback in tokens.css is a single
+  // number, but the nav itself isn't: it wraps to two lines under ~768px
+  // (`.nav-links{display:none}` still leaves room for wrap on very narrow
+  // screens) and web-font swap can shift its measured height by a pixel or
+  // two. Measuring the real height keeps every page's spacing exact instead
+  // of chasing breakpoint-specific magic numbers.
+  function setNavHeight() {
+    const nav = document.querySelector('.navbar-wrapper');
+    if (nav instanceof HTMLElement) {
+      document.documentElement.style.setProperty('--nav-height', `${nav.offsetHeight}px`);
+    }
+  }
+  setNavHeight();
+  window.addEventListener('resize', setNavHeight);
+  if (document.fonts) document.fonts.ready.then(setNavHeight);
+</script>
+
 <style>
   .navbar-wrapper {
     width: 100%;
     padding: 20px 40px;
     background: var(--bg);
     border-bottom: 1px solid var(--line);
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 100;
     transition: background-color 0.2s ease, border-color 0.2s ease;
   }
@@ -91,6 +116,45 @@ const strings = t(lang);
   }
   .nav-links a:hover, .nav-links a.active {
     color: var(--ink);
+  }
+
+  /* Contrast button so the newly-added section reads as new, not as one
+     more text link buried in the row. */
+  .nav-artifacts {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #FFF !important;
+    font-size: 14px;
+    font-weight: 600;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+  }
+  .nav-artifacts:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    color: #FFF;
+  }
+  .nav-artifacts.active {
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  }
+  .new-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(35%, -45%);
+    background: var(--danger);
+    color: #FFF;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    padding: 4px 5px;
+    border-radius: 999px;
+    border: 2px solid var(--bg);
   }
   .nav-actions {
     display: flex;
