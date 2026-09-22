@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Nav from '../../../components/Nav.astro';
 import Footer from '../../../components/Footer.astro';
+import PostCard from '../../../components/PostCard.astro';
 import { LANGS, t, type Lang } from '../../../lib/i18n';
 
 export function getStaticPaths() {
@@ -19,16 +20,12 @@ const postsForLang = allPosts
   .sort((a, b) => b.data.createdAt.valueOf() - a.data.createdAt.valueOf());
 
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/posts/`])) as Record<Lang, string>;
-
-const dateFmt = new Intl.DateTimeFormat(lang, {
-  year: 'numeric', month: 'long', day: 'numeric'
-});
 ---
 
 <BaseLayout
   lang={lang}
-  title={`Barcha postlar | ${strings.meta.siteTitle}`}
-  description={strings.meta.siteDescription}
+  title={`${strings.postsPage.title} | ${strings.meta.siteTitle}`}
+  description={strings.postsPage.desc}
   canonicalPath={`/${lang}/posts/`}
   hreflangPaths={langPaths}
 >
@@ -36,22 +33,28 @@ const dateFmt = new Intl.DateTimeFormat(lang, {
 
   <main class="page-container">
     <div class="header">
-      <h1>Barcha postlar</h1>
-      <p>Barcha yozilgan maqolalar xronologik ketma-ketlikda.</p>
+      <h1>{strings.postsPage.title}</h1>
+      <p>{strings.postsPage.desc}</p>
     </div>
 
-    <div class="posts-list">
-      {postsForLang.length === 0 ? (
-        <div class="empty-state">{strings.home.noPosts}</div>
-      ) : (
-        postsForLang.map((p) => (
-          <a href={`/${lang}/posts/${p.slug}/`} class="list-item">
-            <span class="list-title">{p.data.title}</span>
-            <span class="list-date">{dateFmt.format(p.data.createdAt)}</span>
-          </a>
-        ))
-      )}
-    </div>
+    {postsForLang.length === 0 ? (
+      <div class="empty-state">{strings.home.noPosts}</div>
+    ) : (
+      <div class="masonry">
+        {postsForLang.map((p) => (
+          <div class="masonry-item">
+            <PostCard
+              lang={lang}
+              slug={p.slug}
+              title={p.data.title}
+              excerpt={p.data.excerpt ?? ''}
+              createdAt={p.data.createdAt}
+              coverImage={p.data.coverImage}
+            />
+          </div>
+        ))}
+      </div>
+    )}
   </main>
 
   <Footer lang={lang} />
@@ -59,14 +62,14 @@ const dateFmt = new Intl.DateTimeFormat(lang, {
 
 <style>
   .page-container {
-    max-width: 800px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 100px 40px 120px;
   }
   .header {
-    margin-bottom: 60px;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 30px;
+    max-width: 800px;
+    margin: 0 auto 60px;
+    text-align: center;
   }
   .header h1 {
     font-size: 36px;
@@ -79,52 +82,31 @@ const dateFmt = new Intl.DateTimeFormat(lang, {
     margin: 0;
   }
 
-  .posts-list {
-    display: flex;
-    flex-direction: column;
+  /* Pure-CSS masonry: cards flow down each column by source order, so
+     taller cover images don't leave ragged gaps the way a plain grid would. */
+  .masonry {
+    column-count: 3;
+    column-gap: 24px;
   }
-  .list-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 24px 0;
-    border-bottom: 1px solid var(--line-soft);
-    text-decoration: none;
-    transition: background-color 0.2s;
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 24px;
   }
-  .list-item:hover {
-    background-color: var(--bg-2);
-    padding-left: 16px;
-    padding-right: 16px;
-    margin-left: -16px;
-    margin-right: -16px;
-    border-radius: 8px;
-    border-bottom-color: transparent;
-  }
-  .list-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--ink);
-  }
-  .list-item:hover .list-title {
-    color: var(--accent);
-  }
-  .list-date {
-    font-size: 14px;
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
     color: var(--ink-soft);
+    font-style: italic;
+    font-size: 15px;
   }
 
-  .empty-state { 
-    text-align: center; 
-    padding: 60px 20px; 
-    color: var(--ink-soft); 
-    font-style: italic; 
-    font-size: 15px; 
+  @media (max-width: 900px) {
+    .masonry { column-count: 2; }
   }
-
   @media (max-width: 640px) {
     .page-container { padding: 60px 20px; }
     .header h1 { font-size: 28px; }
-    .list-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .masonry { column-count: 1; }
   }
 </style>

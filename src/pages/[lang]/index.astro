@@ -3,8 +3,8 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
-import PostCard from '../../components/PostCard.astro';
 import { LANGS, t, type Lang } from '../../lib/i18n';
+import { resolveLocalized } from '../../lib/artifacts';
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -22,12 +22,16 @@ const postsForLang = allPosts
 // 1. Eng oxirgi bitta post (Alohida katta chiqadi)
 const [latest, ...rest] = postsForLang;
 
-// 2. Keyingi 4 ta post (Grid kartochkalar)
-const gridPosts = rest.slice(0, 4);
+// 2. Undan keyingi 3 ta post — ixcham "So'nggi postlar" ustunida
+const recentPosts = rest.slice(0, 3);
 
-// 3. Qolganlari (List ro'yxat)
-const listPosts = rest.slice(4, 24);
-const hasMorePosts = rest.length > 24;
+// 3. Loyihalar va artifaktlar — har biridan eng so'nggi 3 tasi
+const recentProjects = (await getCollection('projects'))
+  .sort((a, b) => b.data.order - a.data.order)
+  .slice(0, 3);
+const recentArtifacts = (await getCollection('artifacts'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
 
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/`])) as Record<Lang, string>;
 
@@ -54,7 +58,7 @@ const jsonLd = {
   hreflangPaths={langPaths}
   jsonLd={jsonLd}
 >
-  <Nav lang={lang} active="posts" langPaths={langPaths} />
+  <Nav lang={lang} active="none" langPaths={langPaths} />
 
   <div class="hero-pin">
     <section class="hero">
@@ -93,46 +97,61 @@ const jsonLd = {
       <div class="empty-state">{strings.home.noPosts}</div>
     )}
 
-    <!-- 2. Keyingi 4 ta post kartochkada -->
-    {gridPosts.length > 0 && (
-      <>
-        <div class="section-label" id="latest-posts">So'nggi postlar</div>
-        <div class="posts-grid">
-          {gridPosts.map((p) => (
-            <PostCard lang={lang} slug={p.slug} title={p.data.title} excerpt={p.data.excerpt} createdAt={p.data.createdAt} />
-          ))}
+    <!-- 2. Loyihalar / Artifaktlar / So'nggi postlar — uchtasi teng, ixcham ustunlarda,
+         har biri o'z rangi bilan ajralib turadi -->
+    <div class="hub">
+      <div class="hub-col" data-accent="projects">
+        <div class="hub-head">
+          <h2>{strings.projects.title}</h2>
+          <a href={`/${lang}/projects/`} class="hub-more">{strings.home.viewAllProjects}</a>
         </div>
-      </>
-    )}
-
-    <!-- 3. Keyingi postlar ro'yxati -->
-    {listPosts.length > 0 && (
-      <div class="list-section">
-        <div class="section-label">Oldingi postlar</div>
-        <div class="posts-list">
-          {listPosts.map((p) => (
-            <a href={`/${lang}/posts/${p.slug}/`} class="list-item">
-              <span class="list-title">{p.data.title}</span>
-              <span class="list-date">{dateFmt.format(p.data.createdAt)}</span>
+        <div class="hub-list">
+          {recentProjects.map((p) => (
+            <a href={`/${lang}/projects/`} class="hub-item">
+              <span class="hub-item-title">{p.data.title[lang]}</span>
+              <span class="hub-item-desc">{p.data.description[lang]}</span>
             </a>
           ))}
         </div>
       </div>
-    )}
 
-    <!-- Barcha postlarga o'tish tugmasi -->
-    {hasMorePosts && (
-      <div class="view-all-wrapper">
-        <a href={`/${lang}/posts/`} class="btn ghost view-all-btn">Barcha postlarni ko'rish</a>
+      <div class="hub-col" data-accent="artifacts">
+        <div class="hub-head">
+          <h2>{strings.artifacts.title}</h2>
+          <a href={`/${lang}/artifacts/`} class="hub-more">{strings.home.viewAllArtifacts}</a>
+        </div>
+        <div class="hub-list">
+          {recentArtifacts.map((a) => (
+            <a href={`/${lang}/artifacts/${a.id}/`} class="hub-item">
+              <span class="hub-item-title">{resolveLocalized(a.data.title, lang)}</span>
+              <span class="hub-item-desc">{a.data.description ? resolveLocalized(a.data.description, lang) : a.data.model}</span>
+            </a>
+          ))}
+        </div>
       </div>
-    )}
+
+      <div class="hub-col" data-accent="posts">
+        <div class="hub-head">
+          <h2>{strings.home.recentPosts}</h2>
+          <a href={`/${lang}/posts/`} class="hub-more">{strings.home.viewAllPosts}</a>
+        </div>
+        <div class="hub-list">
+          {recentPosts.map((p) => (
+            <a href={`/${lang}/posts/${p.slug}/`} class="hub-item">
+              <span class="hub-item-title">{p.data.title}</span>
+              <span class="hub-item-desc">{dateFmt.format(p.data.createdAt)}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
   </main>
   </div>
 </BaseLayout>
 
 <style>
   .page-container {
-    max-width: 1000px;
+    max-width: 1120px;
     margin: 0 auto;
     padding: 56px 40px 0;
   }
@@ -210,7 +229,7 @@ const jsonLd = {
     margin-top: 36px;
   }
 
-  /* Featured Post (Oxirgi post) */
+  /* Featured Post (Oxirgi post) — ixcham, lekin bosh sahifaning eng keng elementi */
   .featured-post {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -218,8 +237,8 @@ const jsonLd = {
     border: 1px solid var(--line);
     border-radius: 12px;
     overflow: hidden;
-    min-height: 340px;
-    margin-bottom: 100px;
+    min-height: 260px;
+    margin-bottom: 56px;
     text-decoration: none;
     transition: border-color .3s ease, background-color .3s ease;
   }
@@ -228,7 +247,7 @@ const jsonLd = {
     background: var(--bg-2);
   }
   .featured-text {
-    padding: 56px;
+    padding: 36px 44px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -238,20 +257,20 @@ const jsonLd = {
     font-size: 13px;
     font-weight: 500;
     color: var(--ink-soft);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
   .featured-text h2 {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 500;
-    margin: 0 0 16px;
+    margin: 0 0 12px;
     line-height: 1.25;
     color: var(--ink);
     font-family: var(--font-serif);
   }
   .featured-text p {
-    font-size: 15px;
+    font-size: 14.5px;
     color: var(--ink-soft);
-    margin: 0 0 32px;
+    margin: 0 0 20px;
     line-height: 1.6;
   }
   .featured-image {
@@ -285,72 +304,109 @@ const jsonLd = {
     border-bottom: 1px solid var(--line);
   }
 
-  /* Grid (Top 4) */
-  .posts-grid { 
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 32px; 
-    margin-bottom: 100px; 
-  }
-
-  /* List (Next 20) */
-  .list-section {
-    margin-bottom: 80px;
-  }
-  .posts-list {
-    display: flex;
-    flex-direction: column;
-  }
-  .list-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--line-soft);
-    text-decoration: none;
-    transition: background-color 0.2s;
-  }
-  .list-item:hover {
-    background-color: var(--bg-2);
-    padding-left: 12px;
-    padding-right: 12px;
-    margin-left: -12px;
-    margin-right: -12px;
-    border-radius: 8px;
-    border-bottom-color: transparent;
-  }
-  .list-title {
-    font-size: 17px;
-    font-weight: 500;
-    color: var(--ink);
-  }
-  .list-item:hover .list-title {
-    color: var(--accent);
-  }
-  .list-date {
-    font-size: 14px;
-    color: var(--ink-soft);
-  }
-
-  .view-all-wrapper {
-    text-align: center;
+  /* Loyihalar / Artifaktlar / So'nggi postlar — uchta teng, ixcham ustun.
+     Har biri to'liq sahifasiga taomil qiladi, shuning uchun bosh sahifa
+     og'irlashmaydi: faqat 3 ta yengil matnli havola + "hammasini ko'r".
+     Har bir ustun o'z rangi bilan (--hub-c) darhol ajralib turadi. */
+  .hub {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
     margin-bottom: 100px;
   }
+  .hub-col {
+    min-width: 0;
+  }
+  .hub-col[data-accent="projects"]  { --hub-c: var(--accent); }
+  .hub-col[data-accent="artifacts"] { --hub-c: var(--hub-blue); }
+  .hub-col[data-accent="posts"]     { --hub-c: var(--hub-green); }
 
-  .empty-state { 
-    grid-column: 1/-1; 
-    text-align: center; 
-    padding: 60px 20px; 
-    color: var(--ink-soft); 
-    font-style: italic; 
-    font-size: 15px; 
+  .hub-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid color-mix(in srgb, var(--hub-c) 45%, transparent);
+  }
+  .hub-head h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--hub-c);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hub-head h2::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--hub-c);
+    flex-shrink: 0;
+  }
+  .hub-more {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .hub-more:hover {
+    color: var(--hub-c);
+  }
+  .hub-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hub-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 0;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .hub-item:last-child {
+    border-bottom: none;
+  }
+  .hub-item-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+  .hub-item:hover .hub-item-title {
+    color: var(--hub-c);
+  }
+  .hub-item-desc {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
-  @media (max-width: 860px) { 
-    .featured-post { grid-template-columns: 1fr; } 
-    .featured-image { min-height: 280px; order: -1; } 
-    .featured-content { padding: 40px; } 
-    .posts-grid { grid-template-columns: 1fr; gap: 24px; } 
+  .empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-soft);
+    font-style: italic;
+    font-size: 15px;
+  }
+
+  @media (max-width: 860px) {
+    .featured-post { grid-template-columns: 1fr; }
+    .featured-image { min-height: 280px; order: -1; }
+    .featured-content { padding: 40px; }
+    .hub { grid-template-columns: 1fr; gap: 40px; }
   }
   @media (max-width: 640px) {
     .page-container { padding: 40px 20px 0; }
@@ -358,6 +414,5 @@ const jsonLd = {
     .hero h1 { font-size: 36px; }
     .hero-desc { font-size: 16px; }
     .featured-content h2 { font-size: 28px; }
-    .list-item { flex-direction: column; align-items: flex-start; gap: 8px; }
   }
 </style>

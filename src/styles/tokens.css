@@ -19,6 +19,12 @@
   --glow-sm:  0 0 8px;
   --glow-md:  0 0 20px;
 
+  /* Homepage hub only (Loyihalar/Artifaktlar/Postlar) — the rest of the
+     site stayed on the single --accent hue, but the hub needs each of its
+     three columns to read apart at a glance. */
+  --hub-blue:  #6FA8D9;
+  --hub-green: #7CBD72;
+
   --font-serif: 'Lora', 'Georgia', 'Times New Roman', serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -39,10 +45,13 @@
 
   --accent:   #D47050;
   --danger:   #CC3333;
-  
+
   --neon-green: var(--accent);
   --neon-cyan:  var(--accent);
   --neon-pink:  var(--accent);
+
+  --hub-blue:  #3B76AE;
+  --hub-green: #4B8F45;
 }
 
 *{ box-sizing:border-box; }

@@ -26,11 +26,15 @@
   "home": {
     "latestPost": "Latest post",
     "latestPosts": "Latest posts",
+    "recentPosts": "Recent posts",
     "continueReading": "Continue reading →",
     "readPost": "Read post →",
     "noPosts": "No posts yet. Create your first one through the admin panel.",
     "noPostsShort": "No posts yet",
-    "noOtherPosts": "No other posts yet"
+    "noOtherPosts": "No other posts yet",
+    "viewAllProjects": "All projects →",
+    "viewAllArtifacts": "All artifacts →",
+    "viewAllPosts": "All posts →"
   },
   "projects": {
     "title": "Projects",
@@ -97,6 +101,10 @@
     "noStorageNote": "For safety, this artifact runs in an isolated sandbox — it can't reach the main site's data (localStorage, your session), so any built-in save feature may not work.",
     "requiresClaudeBadge": "Only works inside Claude",
     "backToList": "Back to artifacts"
+  },
+  "postsPage": {
+    "title": "All posts",
+    "desc": "Everything I've written, newest first."
   },
   "footer": {
     "copyright": "© 2026 Muhammadjon Ibrohimov"

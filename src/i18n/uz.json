@@ -26,11 +26,15 @@
   "home": {
     "latestPost": "Eng so'nggi post",
     "latestPosts": "Latest posts",
+    "recentPosts": "So'nggi postlar",
     "continueReading": "Davomini o'qish →",
     "readPost": "Postni o'qish →",
     "noPosts": "Hali post yo'q. Admin panel orqali birinchi postingizni yarating.",
     "noPostsShort": "Hali post yo'q",
-    "noOtherPosts": "Boshqa postlar hali yo'q"
+    "noOtherPosts": "Boshqa postlar hali yo'q",
+    "viewAllProjects": "Barcha loyihalar →",
+    "viewAllArtifacts": "Barcha artifaktlar →",
+    "viewAllPosts": "Barcha postlar →"
   },
   "projects": {
     "title": "Loyihalar",
@@ -97,6 +101,10 @@
     "noStorageNote": "Xavfsizlik uchun artifakt alohida sandbox ichida ishlaydi — u asosiy sayt ma'lumotlariga (localStorage, sessiya) kira olmaydi, shuning uchun saqlash funksiyalari ishlamasligi mumkin.",
     "requiresClaudeBadge": "Faqat Claude ichida ishlaydi",
     "backToList": "Artifaktlarga qaytish"
+  },
+  "postsPage": {
+    "title": "Barcha postlar",
+    "desc": "Yozgan barcha maqolalarim — xronologik ketma-ketlikda."
   },
   "footer": {
     "copyright": "© 2026 Muhammadjon Ibrohimov"
