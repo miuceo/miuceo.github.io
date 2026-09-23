@@ -13,5 +13,8 @@
     "@astrojs/sitemap": "^3.2.1",
     "astro": "^5.1.1",
     "marked": "^18.0.9"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0"
   }
 }
