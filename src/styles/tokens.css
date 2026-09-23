@@ -19,6 +19,7 @@
 
   --accent:   #D5001C;
   --danger:   #D5001C;
+  --neuron:   #1D4ED8;   /* Neuron UZ nav button — deliberately not the red accent */
 
   --font-display: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
   --font-body:    'Source Serif 4', 'Georgia', 'Times New Roman', serif;
@@ -40,6 +41,7 @@
   /* #D5001C is too dark to read on #111; this keeps the hue at ~5:1. */
   --accent:   #F0364A;
   --danger:   #F0364A;
+  --neuron:   #2563EB;
 }
 
 *{ box-sizing:border-box; }

@@ -2,7 +2,7 @@
 
 Working instructions for Claude and subagents in this repo.
 
-**Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) before any non-trivial change.** It holds the decision log (D1–D18); §12–§13 are the most recent word wherever they contradict an earlier section. This file is *how to work here*; that file is *what we're building and why*.
+**Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) before any non-trivial change.** It holds the decision log (D1–D19); §12–§13 are the most recent word wherever they contradict an earlier section. This file is *how to work here*; that file is *what we're building and why*.
 
 ---
 
@@ -24,7 +24,7 @@ Violating any of these is a bug, regardless of whether anything breaks visibly.
 
 3. **The LLM never publishes (D6).** It returns text and stops. There must be no code path from model output to GitHub or any social platform without an authenticated human action in between. Prompting is not a security boundary; the absent endpoint is. There is no agent any more (D15) — `agent.ts` holds three fixed tasks (translate, transcribe, summarise), each with one caller and no ability to act.
 
-4. **The primary LLM must be multimodal (D11), with a fallback (D12).** Text-only providers cannot be primary. Providers are **OpenRouter and Groq only** (D13) — not Gemini (author preference), not Claude (no free tier). Provider selection lives behind the single interface in `worker/src/agent.ts`; never call a provider SDK directly from feature code, and never hardcode a model ID — the free roster rotates.
+4. **The primary LLM must be multimodal (D11), with a fallback (D12).** Text-only providers cannot be primary. Providers are **OpenRouter and Groq only** (D13) — not Claude (no free tier) — with one exception: speech-to-text tries **Gemini 3.5 Transcribe** first and falls back to Groq Whisper (D19). Gemini is not used for any text task. Provider selection lives behind the single interface in `worker/src/agent.ts`; never call a provider SDK directly from feature code, and never hardcode a model ID — the free roster rotates.
 
 5. **Voice never bypasses the approval gate (D14, D17).** Dictation goes into a text block in the editor, where the author reads and edits it before publishing — nothing acts on a transcript. If you ever add a path where speech *causes* something, the old rule returns in full: transcribe, show the text, confirm, then act. Never archive raw voice notes; the audio lives only inside the request that transcribes it.
 

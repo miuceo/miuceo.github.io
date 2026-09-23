@@ -319,8 +319,9 @@ function renderGalleryBlock(el: HTMLElement, b: Extract<Block, { type: 'gallery'
    D14's approval gate is satisfied structurally rather than by a confirmation
    prompt — the result lands in the author's own editor, where it sits next to
    everything else they wrote and is read and edited before publishing. The
-   audio itself is never uploaded anywhere but the Worker, which drops it as
-   soon as Whisper has read it. */
+   audio is sent only to the Worker, which drops it as
+   soon as the transcriber has read it (D19: Gemini's free tier may keep
+   its own copy on Google's side). */
 
 /** Long enough for a whole section, short enough to stay inside Groq's 25 MB
  *  per-file limit and its daily audio-seconds allowance. */

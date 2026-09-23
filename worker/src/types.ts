@@ -16,6 +16,8 @@ export interface Env {
   GROQ_TEXT_MODELS: string;
   OPENROUTER_TEXT_MODELS: string;
   GROQ_STT_MODEL: string;
+  // Primary speech-to-text (D19). Empty or unset = Groq only.
+  GEMINI_STT_MODEL?: string;
   OPENROUTER_VISION_MODELS: string;
 
   // Secrets (`wrangler secret put` or optional vars)
@@ -25,6 +27,8 @@ export interface Env {
   TG_BOT_TOKEN: string;
   GROQ_API_KEY: string;
   OPENROUTER_API_KEY: string;
+  // Optional: without it, dictation simply stays on Groq Whisper.
+  GEMINI_API_KEY?: string;
   MCP_SECRET?: string;
 }
 

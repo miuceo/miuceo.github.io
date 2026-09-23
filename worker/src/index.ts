@@ -397,7 +397,8 @@ export default {
          D14's approval gate is satisfied structurally here rather than by a
          confirmation step: the text lands in the author's own editor, where
          they read and edit it before anything is published. Nothing is stored
-         server-side, and the audio is dropped as soon as it is transcribed. */
+         server-side, and the audio is dropped as soon as it is transcribed.
+         (Gemini's free tier may retain it on Google's side — accepted in D19.) */
 
       if (path === '/api/agent/transcribe' && req.method === 'POST') {
         const form = await req.formData();
