@@ -55,13 +55,13 @@ const sections = [
 <nav class="sections" aria-label="Sections">
   <div class="sections-inner">
     {sections.map((s) => (
-      <a href={s.href} class:list={[{ active: active === s.key, 'is-new': 'isNew' in s }]}>
+      <a href={s.href} class:list={[{ active: active === s.key, 'is-new': 'isNew' in s, 'neon neon-orange': s.key === 'artifacts' }]}>
         {s.label}
         {'isNew' in s && <span class="tag-new">{strings.nav.new}</span>}
       </a>
     ))}
     <!-- A brand name, so the same in every language (not an i18n string). -->
-    <a href="/neuron-uz/" class="nav-neuron">Neuron UZ</a>
+    <a href="/neuron-uz/" class="neon neon-blue">Neuron UZ</a>
   </div>
 </nav>
 
@@ -174,26 +174,30 @@ const sections = [
   .sections a:hover { text-decoration-color: currentColor; }
   .sections a.active { text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
   .sections a.is-new { color: var(--accent); }
-  .sections a.nav-neuron {
-    background: var(--neuron);
+  /* Neon buttons: one look, the colour comes from the variant's variables. */
+  .neon-blue { --fill: var(--neuron); --glow: 96, 165, 250; --light: 191, 219, 254; --edge: #93C5FD; --edge-dim: #60A5FA; }
+  .neon-orange { --fill: var(--artifacts); --glow: 251, 146, 60; --light: 254, 215, 170; --edge: #FDBA74; --edge-dim: #FB923C; }
+  .sections a.neon {
+    background: var(--fill);
     color: #FFF;
     padding: 3px 12px 2px;
-    border: 1px solid #93C5FD;
+    border: 1px solid var(--edge);
     border-radius: 2px;
     margin: -3px 0 -2px;
     text-decoration: none;
-    text-shadow: 0 0 6px rgba(191, 219, 254, .9);
+    text-shadow: 0 0 6px rgba(var(--light), .9);
     /* .sections-inner scrolls on x, which clips on y too: the outer glow has ~6px before it's cut, so it fades out inside that. */
-    box-shadow: 0 0 5px var(--neuron), 0 0 12px rgba(96, 165, 250, .8), inset 0 0 8px rgba(191, 219, 254, .5);
+    box-shadow: 0 0 5px var(--fill), 0 0 12px rgba(var(--glow), .8), inset 0 0 8px rgba(var(--light), .5);
     animation: neon-pulse 2.4s ease-in-out infinite;
     transition: filter .2s ease;
   }
-  .sections a.nav-neuron:hover { filter: brightness(1.2); animation-play-state: paused; }
+  .sections a.neon:hover { filter: brightness(1.2); animation-play-state: paused; }
+  .neon .tag-new { border-color: rgba(255, 255, 255, .85); color: #FFF; text-shadow: none; }
   @keyframes neon-pulse {
     50% {
-      text-shadow: 0 0 2px rgba(191, 219, 254, .5);
-      border-color: #60A5FA;
-      box-shadow: 0 0 2px var(--neuron), 0 0 5px rgba(96, 165, 250, .35), inset 0 0 3px rgba(191, 219, 254, .2);
+      text-shadow: 0 0 2px rgba(var(--light), .5);
+      border-color: var(--edge-dim);
+      box-shadow: 0 0 2px var(--fill), 0 0 5px rgba(var(--glow), .35), inset 0 0 3px rgba(var(--light), .2);
     }
   }
 

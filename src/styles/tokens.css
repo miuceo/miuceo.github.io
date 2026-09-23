@@ -20,6 +20,7 @@
   --accent:   #D5001C;
   --danger:   #D5001C;
   --neuron:   #1D4ED8;   /* Neuron UZ nav button — deliberately not the red accent */
+  --artifacts:#C2410C;   /* Artifacts nav button (orange neon) */
 
   --font-display: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
   --font-body:    'Source Serif 4', 'Georgia', 'Times New Roman', serif;
@@ -42,6 +43,7 @@
   --accent:   #F0364A;
   --danger:   #F0364A;
   --neuron:   #2563EB;
+  --artifacts:#EA580C;
 }
 
 *{ box-sizing:border-box; }
