@@ -23,12 +23,10 @@ const hasStory = problem && solution && result;
 ---
 
 <div class="project-card">
-  <div class="card-top">
-    <h2>{title}</h2>
-    <span class={`status-badge status-${status}`}>
-      {status === 'active' ? strings.projects.statusActive : strings.projects.statusArchived}
-    </span>
-  </div>
+  <span class={`status-badge status-${status}`}>
+    {status === 'active' ? strings.projects.statusActive : strings.projects.statusArchived}
+  </span>
+  <h2>{title}</h2>
 
   {hasStory ? (
     <dl class="story">
@@ -49,9 +47,7 @@ const hasStory = problem && solution && result;
     <p class="desc">{description}</p>
   )}
 
-  <div class="tags">
-    {tags.map((tag) => <span class="tag">{tag}</span>)}
-  </div>
+  {tags.length > 0 && <p class="tags">{tags.join(' · ')}</p>}
 
   <div class="card-bottom">
     {external
@@ -67,29 +63,27 @@ const hasStory = problem && solution && result;
 </div>
 
 <style>
-  .project-card{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:32px; display:flex; flex-direction:column; transition:box-shadow .2s, border-color .2s; }
-  .project-card:hover{ border-color:var(--neon-green); box-shadow:var(--glow-md) rgba(218,122,94,0.2); }
+  /* A newspaper column, not a card: heavy top rule, no box. */
+  .project-card{ border-top:2px solid var(--rule); padding:12px 0 28px; display:flex; flex-direction:column; }
 
-  .card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
-  .card-top h2{ font-weight:700; font-size:21px; margin:0; }
+  .status-badge{ font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; }
+  .status-active{ color:var(--accent); }
+  .status-archived{ color:var(--ink-soft); }
+  .project-card h2{ font-size:28px; line-height:1.15; margin:0 0 14px; }
 
-  .status-badge{ font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; padding:4px 10px; border-radius:999px; white-space:nowrap; flex-shrink:0; }
-  .status-active{ color:var(--accent); background:rgba(218,122,94,0.12); }
-  .status-archived{ color:var(--ink-soft); background:var(--bg-3); }
+  .desc{ font-family:var(--font-body); font-size:17px; color:var(--ink-soft); line-height:1.55; flex:1; margin:0 0 18px; }
 
-  .desc{ font-size:14px; color:var(--ink-soft); line-height:1.7; flex:1; margin:0 0 20px; }
+  .story{ margin:0 0 18px; flex:1; }
+  .story-row{ display:grid; grid-template-columns:92px minmax(0,1fr); gap:14px; padding:10px 0; border-top:1px solid var(--line); }
+  .story dt{ font-family:var(--font-sans); font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); padding-top:4px; }
+  .story dd{ font-family:var(--font-body); font-size:16px; color:var(--ink); line-height:1.5; margin:0; }
 
-  .story{ margin:0 0 20px; flex:1; }
-  .story-row{ margin-bottom:12px; }
-  .story-row:last-child{ margin-bottom:0; }
-  .story dt{ font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--neon-cyan); margin-bottom:3px; }
-  .story dd{ font-size:13.5px; color:var(--ink-soft); line-height:1.6; margin:0; }
+  .tags{ font-family:var(--font-sans); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 16px; }
 
-  .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
-  .tag{ font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--neon-cyan); background:var(--bg-3); border:1px solid var(--line); padding:5px 10px; border-radius:4px; }
+  .card-bottom{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:auto; padding-top:12px; border-top:1px solid var(--line); }
+  .project-link{ font-family:var(--font-sans); font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink); }
+  .project-link:hover{ color:var(--accent); }
+  .stars{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-sans); font-size:12px; color:var(--ink-soft); }
 
-  .card-bottom{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:auto; }
-  .project-link{ display:inline-flex; align-items:center; gap:8px; color:var(--neon-green); font-size:13px; font-weight:600; width:fit-content; }
-  .project-link:hover{ text-shadow:var(--glow-sm) var(--neon-green); }
-  .stars{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--ink-soft); }
+  @media (max-width:640px){ .project-card h2{ font-size:24px; } .story-row{ grid-template-columns:1fr; gap:4px; } .story dt{ padding-top:0; } }
 </style>

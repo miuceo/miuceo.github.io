@@ -93,45 +93,40 @@ const models = [...new Set(artifacts.map((a) => a.data.model))].sort();
 </script>
 
 <style>
-  .page-header { padding: 80px 0 50px; }
   .filter-bar {
     display: flex;
-    gap: 12px;
+    gap: 24px;
     flex-wrap: wrap;
-    margin-bottom: 32px;
+    margin: 28px 0 32px;
   }
+  /* Underlined fields, like a form printed on newsprint. */
   .filter-bar input,
   .filter-bar select {
     font-family: var(--font-sans);
     font-size: 14px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    background: var(--bg-2);
+    padding: 10px 2px;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    border-radius: 0;
+    background: transparent;
     color: var(--ink);
   }
   .filter-bar input { flex: 1; min-width: 200px; }
   .filter-bar input::placeholder { color: var(--ink-soft); }
+  .filter-bar input:focus, .filter-bar select:focus { outline: none; border-bottom: 2px solid var(--accent); }
+  .filter-bar select option { background: var(--bg); color: var(--ink); }
 
   .artifacts-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    padding-bottom: 100px;
-  }
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--ink-soft);
-    font-style: italic;
-    font-size: 15px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 36px;
   }
 
   @media (max-width: 900px) {
-    .artifacts-grid { grid-template-columns: repeat(2, 1fr); }
+    .artifacts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 640px) {
-    .artifacts-grid { grid-template-columns: 1fr; }
-    .filter-bar { flex-direction: column; }
+    .artifacts-grid { grid-template-columns: minmax(0, 1fr); }
+    .filter-bar { flex-direction: column; gap: 12px; }
   }
 </style>

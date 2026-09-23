@@ -124,17 +124,20 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 <style is:global>
   .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; position:relative; }
 
-  /* Inner-page header (phase 2 restyles each page; these keep them on-brand meanwhile). */
-  .page-header{ padding:56px 0 32px; border-bottom:1px solid var(--rule); }
-  .page-header h1{ font-weight:900; font-size:44px; letter-spacing:-0.01em; margin:0 0 14px; }
-  .page-header p{ font-family:var(--font-body); font-size:18px; color:var(--ink-soft); max-width:640px; margin:0; line-height:1.6; }
+  /* Inner-page header: a newspaper section front — centred name, italic dek. */
+  .page-header{ text-align:center; padding:44px 0 30px; border-bottom:1px solid var(--rule); }
+  .page-header h1{ font-weight:900; font-size:56px; line-height:1.05; letter-spacing:-0.01em; margin:0 0 14px; }
+  .page-header p{ font-family:var(--font-body); font-style:italic; font-size:19px; color:var(--ink-soft); max-width:640px; margin:0 auto; line-height:1.55; }
 
-  .section-label{ font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink); margin:56px 0 20px; padding-top:8px; border-top:1px solid var(--rule); }
+  .section-label{ font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink); margin:56px 0 20px; padding-top:8px; border-top:2px solid var(--rule); }
+
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); font-family:var(--font-body); font-style:italic; font-size:17px; }
 
   @media (max-width:640px){
     .wrap{ padding:0 16px; }
-    .page-header{ padding:36px 0 24px; }
-    .page-header h1{ font-size:32px; }
+    .page-header{ padding:28px 0 22px; }
+    .page-header h1{ font-size:36px; }
+    .page-header p{ font-size:17px; }
     .section-label{ margin:40px 0 16px; }
   }
 </style>
