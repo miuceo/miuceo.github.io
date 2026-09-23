@@ -60,6 +60,8 @@ const sections = [
         {'isNew' in s && <span class="tag-new">{strings.nav.new}</span>}
       </a>
     ))}
+    <!-- A brand name, so the same in every language (not an i18n string). -->
+    <a href="/neuron-uz/" class="nav-neuron">Neuron UZ</a>
   </div>
 </nav>
 
@@ -172,6 +174,16 @@ const sections = [
   .sections a:hover { text-decoration-color: currentColor; }
   .sections a.active { text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
   .sections a.is-new { color: var(--accent); }
+  .sections a.nav-neuron {
+    background: var(--neuron);
+    color: #FFF;
+    padding: 5px 12px 4px;
+    border-radius: 2px;
+    margin: -5px 0 -4px;
+    text-decoration: none;
+    transition: filter .2s ease;
+  }
+  .sections a.nav-neuron:hover { filter: brightness(1.15); }
 
   @media (max-width: 768px) {
     .dateline-tagline { display: none; }
