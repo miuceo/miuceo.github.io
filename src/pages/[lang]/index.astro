@@ -13,31 +13,57 @@ export function getStaticPaths() {
 const { lang } = Astro.params as { lang: Lang };
 const strings = t(lang);
 
-const allPosts = await getCollection('posts');
-const postsForLang = allPosts
+// The front page is one dated feed of posts and artifacts, laid out like a
+// newspaper purely by position: 1st is the lead story, 2nd–3rd are medium,
+// the rest a compact list. Nothing is hand-picked, so publishing never needs
+// a "featured" flag. Projects have no date — they get a fixed rubric below.
+interface FeedItem {
+  kind: 'post' | 'artifact';
+  href: string;
+  title: string;
+  desc?: string;
+  image?: string;
+  date: Date;
+  model?: string;
+}
+
+const posts: FeedItem[] = (await getCollection('posts'))
   .filter((entry) => entry.slug.endsWith(`/${lang}`))
-  .map((entry) => ({ slug: entry.slug.split('/')[0], data: entry.data }))
-  .sort((a, b) => b.data.createdAt.valueOf() - a.data.createdAt.valueOf());
+  .map((entry) => ({
+    kind: 'post',
+    href: `/${lang}/posts/${entry.slug.split('/')[0]}/`,
+    title: entry.data.title,
+    desc: entry.data.excerpt,
+    image: entry.data.coverImage,
+    date: entry.data.createdAt,
+  }));
 
-// 1. Eng oxirgi bitta post (Alohida katta chiqadi)
-const [latest, ...rest] = postsForLang;
+const artifacts: FeedItem[] = (await getCollection('artifacts')).map((a) => ({
+  kind: 'artifact',
+  href: `/${lang}/artifacts/${a.id}/`,
+  title: resolveLocalized(a.data.title, lang),
+  desc: a.data.description ? resolveLocalized(a.data.description, lang) : undefined,
+  date: a.data.date,
+  model: a.data.model,
+}));
 
-// 2. Undan keyingi 3 ta post — ixcham "So'nggi postlar" ustunida
-const recentPosts = rest.slice(0, 3);
+const feed = [...posts, ...artifacts].sort((a, b) => b.date.valueOf() - a.date.valueOf());
+const [lead, ...others] = feed;
+const secondary = others.slice(0, 2);
+const latest = others.slice(2, 8);
 
-// 3. Loyihalar va artifaktlar — har biridan eng so'nggi 3 tasi
-const recentProjects = (await getCollection('projects'))
+const projects = (await getCollection('projects'))
   .sort((a, b) => b.data.order - a.data.order)
-  .slice(0, 3);
-const recentArtifacts = (await getCollection('artifacts'))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .slice(0, 3);
 
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/`])) as Record<Lang, string>;
 
-const dateFmt = new Intl.DateTimeFormat(lang, {
-  year: 'numeric', month: 'long', day: 'numeric'
-});
+const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric' });
+
+const kicker = (item: FeedItem) =>
+  item.kind === 'post'
+    ? strings.home.kickerPost
+    : `${strings.home.kickerArtifact}${item.model ? ` · ${item.model}` : ''}`;
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -58,9 +84,9 @@ const jsonLd = {
   hreflangPaths={langPaths}
   jsonLd={jsonLd}
 >
-  <Nav lang={lang} active="none" langPaths={langPaths} />
+  <Nav lang={lang} active="none" langPaths={langPaths} front />
 
-  <div class="hero-pin">
+  <main class="front-page">
     <section class="hero">
       <h1>{strings.hero.titlePre} <em>{strings.hero.titleAccent1}</em> {strings.hero.titleMid} <em>{strings.hero.titleAccent2}</em></h1>
       <p class="hero-desc">{strings.hero.desc}</p>
@@ -70,361 +96,234 @@ const jsonLd = {
         <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="btn ghost">{strings.hero.ctaTelegram}</a>
       </div>
     </section>
-    <Footer lang={lang} />
-  </div>
 
-  <div class="content-overlay">
-  <main class="page-container">
-    <!-- 1. Eng oxirgi post -->
-    <div class="section-label" id="latest-posts">{strings.home.latestPost}</div>
-    {latest ? (
-      <a href={`/${lang}/posts/${latest.slug}/`} class="featured-post">
-        <div class="featured-text">
-          <span class="featured-date">{dateFmt.format(latest.data.createdAt)}</span>
-          <h2>{latest.data.title}</h2>
-          <p>{latest.data.excerpt}</p>
-          <span class="read-more">{strings.home.continueReading}</span>
+    {lead ? (
+      <div class:list={['front-grid', { 'text-lead': !lead.image }]}>
+        <a href={lead.href} class:list={['story lead', { 'no-image': !lead.image }]}>
+          <span class:list={['kicker', { red: lead.kind === 'artifact' }]}>{kicker(lead)}</span>
+          <h2><span class="hl">{lead.title}</span></h2>
+          {lead.image && (
+            <figure class="story-img"><img src={lead.image} alt="" loading="eager" /></figure>
+          )}
+          {lead.desc && <p class="story-desc">{lead.desc}</p>}
+          <span class="story-meta">{dateFmt.format(lead.date)}</span>
+        </a>
+
+        <div class="col-secondary">
+          {secondary.map((item) => (
+            <a href={item.href} class="story medium">
+              {item.image && (
+                <figure class="story-img"><img src={item.image} alt="" loading="lazy" /></figure>
+              )}
+              <span class:list={['kicker', { red: item.kind === 'artifact' }]}>{kicker(item)}</span>
+              <h3><span class="hl">{item.title}</span></h3>
+              {item.desc && <p class="story-desc">{item.desc}</p>}
+              <span class="story-meta">{dateFmt.format(item.date)}</span>
+            </a>
+          ))}
         </div>
-        {latest.data.coverImage ? (
-          <div class="featured-image">
-            <img src={latest.data.coverImage} alt={latest.data.title} />
-          </div>
-        ) : (
-          <div class="featured-image placeholder"></div>
-        )}
-      </a>
+
+        <aside class="col-side">
+          {latest.length > 0 && (
+            <section class="latest">
+              <h2 class="rubric">{strings.home.latest}</h2>
+              <ol>
+                {latest.map((item) => (
+                  <li>
+                    <a href={item.href}>
+                      <span class="latest-title hl">{item.title}</span>
+                      <span class:list={['latest-meta', { red: item.kind === 'artifact' }]}>
+                        {item.kind === 'artifact' ? strings.home.kickerArtifact : strings.home.kickerPost} · {dateFmt.format(item.date)}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+        </aside>
+      </div>
     ) : (
       <div class="empty-state">{strings.home.noPosts}</div>
     )}
 
-    <!-- 2. Loyihalar / Artifaktlar / So'nggi postlar — uchtasi teng, ixcham ustunlarda,
-         har biri o'z rangi bilan ajralib turadi -->
-    <div class="hub">
-      <div class="hub-col" data-accent="projects">
-        <div class="hub-head">
-          <h2>{strings.projects.title}</h2>
-          <a href={`/${lang}/projects/`} class="hub-more">{strings.home.viewAllProjects}</a>
+    {projects.length > 0 && (
+      <section class="projects-rubric">
+        <div class="rubric-head">
+          <h2 class="rubric">{strings.projects.title}</h2>
+          <a href={`/${lang}/projects/`} class="rubric-more">{strings.home.viewAllProjects}</a>
         </div>
-        <div class="hub-list">
-          {recentProjects.map((p) => (
-            <a href={`/${lang}/projects/`} class="hub-item">
-              <span class="hub-item-title">{p.data.title[lang]}</span>
-              <span class="hub-item-desc">{p.data.description[lang]}</span>
+        <div class="projects-row">
+          {projects.map((p) => (
+            <a href={`/${lang}/projects/`} class="project">
+              <h3><span class="hl">{p.data.title[lang]}</span></h3>
+              <p>{p.data.description[lang]}</p>
+              {p.data.tags.length > 0 && <span class="project-tags">{p.data.tags.slice(0, 4).join(' · ')}</span>}
             </a>
           ))}
         </div>
-      </div>
-
-      <div class="hub-col" data-accent="artifacts">
-        <div class="hub-head">
-          <h2>{strings.artifacts.title}</h2>
-          <a href={`/${lang}/artifacts/`} class="hub-more">{strings.home.viewAllArtifacts}</a>
-        </div>
-        <div class="hub-list">
-          {recentArtifacts.map((a) => (
-            <a href={`/${lang}/artifacts/${a.id}/`} class="hub-item">
-              <span class="hub-item-title">{resolveLocalized(a.data.title, lang)}</span>
-              <span class="hub-item-desc">{a.data.description ? resolveLocalized(a.data.description, lang) : a.data.model}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      <div class="hub-col" data-accent="posts">
-        <div class="hub-head">
-          <h2>{strings.home.recentPosts}</h2>
-          <a href={`/${lang}/posts/`} class="hub-more">{strings.home.viewAllPosts}</a>
-        </div>
-        <div class="hub-list">
-          {recentPosts.map((p) => (
-            <a href={`/${lang}/posts/${p.slug}/`} class="hub-item">
-              <span class="hub-item-title">{p.data.title}</span>
-              <span class="hub-item-desc">{dateFmt.format(p.data.createdAt)}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-    </div>
+      </section>
+    )}
   </main>
-  </div>
+
+  <Footer lang={lang} />
 </BaseLayout>
 
 <style>
-  .page-container {
+  .front-page { padding-top: 28px; }
+
+  /* The hero stays as the front page's banner headline — same words as
+     before, set like a newspaper's top story across the full width. */
+  .hero {
+    text-align: center;
+    padding: 44px 0 52px;
+    margin-bottom: 32px;
+    border-bottom: 3px double var(--rule);
+  }
+  .hero h1 {
+    font-weight: 900;
+    font-size: clamp(36px, 5.6vw, 72px);
+    line-height: 1.06;
+    letter-spacing: -0.015em;
     max-width: 1120px;
     margin: 0 auto;
-    padding: 56px 40px 0;
+    text-wrap: balance;
   }
-
-  /* Pinned behind the fixed Nav, filling the viewport it started in — the
-     rest of the page (.content-overlay) scrolls up over it, so the hero
-     (and its footer) stay put until fully covered. Pure CSS: no scroll
-     listeners, no motion to disable under prefers-reduced-motion, readable
-     with JS off. Column layout: hero grows to fill the space above the
-     footer and centers itself within it; the footer keeps its normal
-     height and sits flush at the bottom of the viewport. */
-  .hero-pin {
-    position: fixed;
-    inset: 0;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    z-index: 1;
-    overflow: hidden;
-    background: var(--bg);
-  }
-  .content-overlay {
-    position: relative;
-    z-index: 2;
-    background: var(--bg);
-    margin-top: calc(100vh - var(--nav-height));
-    margin-top: calc(100dvh - var(--nav-height));
-    border-radius: 28px 28px 0 0;
-    box-shadow: 0 -32px 60px rgba(0, 0, 0, 0.35);
-  }
-
-  .hero {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    max-width: 800px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 0 40px;
-  }
-  .hero-pin :global(footer) {
-    flex-shrink: 0;
-    max-width: 1240px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 20px 32px;
-  }
-  .hero h1 { 
-    font-size: 52px; 
-    line-height: 1.15; 
-    color: var(--ink);
-    margin: 0 0 24px; 
-  }
-  .hero h1 em { 
-    font-size: inherit;
-    font-style: italic; 
-    color: var(--accent); 
-  }
+  .hero h1 em { font-style: italic; font-weight: 700; color: var(--accent); }
   .hero-desc {
-    font-size: 18px;
-    line-height: 1.6;
+    font-family: var(--font-body);
+    font-size: 20px;
+    line-height: 1.55;
     color: var(--ink-soft);
-    max-width: 600px;
-    margin: 0 auto;
+    max-width: 680px;
+    margin: 22px auto 0;
   }
-  .hero-cta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 36px;
-  }
+  .hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
 
-  /* Featured Post (Oxirgi post) — ixcham, lekin bosh sahifaning eng keng elementi */
-  .featured-post {
+  /* Three newspaper columns separated by hairline rules. */
+  .front-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-    min-height: 260px;
-    margin-bottom: 56px;
-    text-decoration: none;
-    transition: border-color .3s ease, background-color .3s ease;
+    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0;
   }
-  .featured-post:hover {
-    border-color: var(--ink-soft);
-    background: var(--bg-2);
-  }
-  .featured-text {
-    padding: 36px 44px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .featured-date {
-    display: block;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--ink-soft);
-    margin-bottom: 10px;
-  }
-  .featured-text h2 {
-    font-size: 26px;
-    font-weight: 500;
-    margin: 0 0 12px;
-    line-height: 1.25;
-    color: var(--ink);
-    font-family: var(--font-serif);
-  }
-  .featured-text p {
-    font-size: 14.5px;
-    color: var(--ink-soft);
-    margin: 0 0 20px;
-    line-height: 1.6;
-  }
-  .featured-image {
-    background: var(--bg-3);
-    width: 100%;
-    height: 100%;
-  }
-  .featured-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .featured-image.placeholder {
-    background: var(--bg-2);
-  }
-  .read-more {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--accent);
-  }
+  .front-grid > * { padding: 0 24px; }
+  .front-grid > *:first-child { padding-left: 0; }
+  .front-grid > *:last-child { padding-right: 0; }
+  .front-grid > * + * { border-left: 1px solid var(--line); }
 
-  .section-label {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .story { display: flex; flex-direction: column; gap: 8px; color: var(--ink); }
+  .story h2, .story h3 { line-height: 1.12; }
+  .lead h2 { font-size: 40px; font-weight: 700; letter-spacing: -0.01em; }
+  .lead.no-image h2 { font-size: 50px; }
+  .medium h3 { font-size: 21px; }
+
+  .story-img { margin: 6px 0 4px; overflow: hidden; background: var(--bg-3); }
+  .story-img img {
+    display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover;
+    transition: transform .8s ease;
+  }
+  .medium .story-img { margin: 0 0 4px; }
+  .story:hover .story-img img { transform: scale(1.02); }
+
+  .story-desc {
+    font-family: var(--font-body);
     color: var(--ink-soft);
-    margin-bottom: 32px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  /* Loyihalar / Artifaktlar / So'nggi postlar — uchta teng, ixcham ustun.
-     Har biri to'liq sahifasiga taomil qiladi, shuning uchun bosh sahifa
-     og'irlashmaydi: faqat 3 ta yengil matnli havola + "hammasini ko'r".
-     Har bir ustun o'z rangi bilan (--hub-c) darhol ajralib turadi. */
-  .hub {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
-    margin-bottom: 100px;
-  }
-  .hub-col {
-    min-width: 0;
-  }
-  .hub-col[data-accent="projects"]  { --hub-c: var(--accent); }
-  .hub-col[data-accent="artifacts"] { --hub-c: var(--hub-blue); }
-  .hub-col[data-accent="posts"]     { --hub-c: var(--hub-green); }
-
-  .hub-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 18px;
-    padding-bottom: 14px;
-    border-bottom: 2px solid color-mix(in srgb, var(--hub-c) 45%, transparent);
-  }
-  .hub-head h2 {
-    font-size: 15px;
-    font-weight: 600;
     margin: 0;
-    color: var(--hub-c);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .hub-head h2::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--hub-c);
-    flex-shrink: 0;
-  }
-  .hub-more {
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--ink-soft);
-    white-space: nowrap;
-    transition: color 0.2s;
-  }
-  .hub-more:hover {
-    color: var(--hub-c);
-  }
-  .hub-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .hub-item {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 10px 0;
-    text-decoration: none;
-    border-bottom: 1px solid var(--line-soft);
-  }
-  .hub-item:last-child {
-    border-bottom: none;
-  }
-  .hub-item-title {
-    font-size: 14.5px;
-    font-weight: 600;
-    color: var(--ink);
-    line-height: 1.4;
-    transition: color 0.2s;
-  }
-  .hub-item:hover .hub-item-title {
-    color: var(--hub-c);
-  }
-  .hub-item-desc {
-    font-size: 13px;
-    color: var(--ink-soft);
+    font-size: 15px;
     line-height: 1.5;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-
-  .empty-state {
-    grid-column: 1/-1;
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--ink-soft);
-    font-style: italic;
-    font-size: 15px;
+  .lead .story-desc { font-size: 18px; color: var(--ink); -webkit-line-clamp: 5; }
+  .lead.no-image .story-desc { font-size: 20px; }
+  .story-meta {
+    font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-soft);
   }
 
-  @media (max-width: 860px) {
-    .featured-post { grid-template-columns: 1fr; }
-    .featured-image { min-height: 280px; order: -1; }
-    .hub { grid-template-columns: 1fr; gap: 40px; }
+  .col-secondary { display: flex; flex-direction: column; }
+  .col-secondary .story + .story { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+  /* Section heads: small tracked caps on a heavy rule. */
+  .rubric {
+    font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
+    padding-top: 8px; border-top: 2px solid var(--rule); margin: 0 0 4px;
+  }
+
+  .latest ol { list-style: none; margin: 0; padding: 0; }
+  .latest li + li { border-top: 1px solid var(--line); }
+  .latest a { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; }
+  .latest-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.25; color: var(--ink); }
+  .latest-meta {
+    font-family: var(--font-sans); font-size: 10.5px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .latest-meta.red { color: var(--accent); }
+
+
+  .projects-rubric { margin-top: 48px; border-top: 3px double var(--rule); padding-top: 4px; }
+  .rubric-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .rubric-head .rubric { border-top: none; }
+  .rubric-more {
+    font-family: var(--font-sans); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .rubric-more:hover { color: var(--accent); }
+  .projects-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
+  .project { padding: 0 24px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); }
+  .project:first-child { padding-left: 0; }
+  .project:last-child { padding-right: 0; }
+  .project + .project { border-left: 1px solid var(--line); }
+  .project h3 { font-size: 20px; line-height: 1.2; }
+  .project p { font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+  .project-tags {
+    font-family: var(--font-sans); font-size: 10.5px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent);
+  }
+
+  /* A lead with no picture is short, so the two medium stories move up under
+     it as a row instead of leaving a tall empty column beside them. */
+  .front-grid.text-lead { grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); }
+  .text-lead > .lead { grid-column: 1; grid-row: 1; padding: 0 24px 24px 0; border-bottom: 1px solid var(--line); }
+  .text-lead > .col-secondary {
+    grid-column: 1; grid-row: 2; flex-direction: row; align-items: flex-start;
+    border-left: none; padding: 24px 24px 0 0;
+  }
+  .text-lead > .col-secondary .story { flex: 1 1 0; min-width: 0; }
+  .text-lead > .col-secondary .story + .story { margin: 0 0 0 24px; padding: 0 0 0 24px; border-top: none; border-left: 1px solid var(--line); }
+  .text-lead > .col-side { grid-column: 2; grid-row: 1 / 3; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); font-family: var(--font-body); font-style: italic; }
+
+  /* Tablet: lead spans the top, the other two columns sit side by side. */
+  @media (max-width: 1000px) {
+    .front-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .front-grid > .lead { grid-column: 1 / -1; padding: 0 0 24px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+    .front-grid > .col-secondary { padding-left: 0; border-left: none; }
+    .front-grid.text-lead { grid-template-columns: minmax(0, 1fr); }
+    .text-lead > .lead, .text-lead > .col-secondary, .text-lead > .col-side { grid-column: 1; grid-row: auto; padding-right: 0; }
+    .text-lead > .col-side { border-left: none; padding-left: 0; margin-top: 28px; }
+    .text-lead > .col-secondary { padding-top: 0; }
   }
   @media (max-width: 640px) {
-    .page-container { padding: 40px 0 0; }
-    /* The fixed nav covers the top of the pinned hero; on a phone the hero
-       nearly fills the screen, so centre it in the space below the nav or
-       the heading slides under it. */
-    .hero-pin { padding-top: var(--nav-height); }
-    .hero { padding: 0 20px; }
-    .hero-pin :global(footer) { padding: 16px 20px; }
-    .hero h1 { font-size: 36px; }
-    .hero-desc { font-size: 16px; }
-    .featured-image { min-height: 220px; }
-    .featured-text { padding: 24px 22px 26px; }
-    .featured-text h2 { font-size: 23px; }
-  }
-  /* Small or short phones (iPhone SE, Android with browser chrome showing) */
-  @media (max-width: 640px) and (max-height: 700px), (max-width: 380px) {
-    .hero h1 { font-size: 30px; margin-bottom: 16px; }
-    .hero-desc { font-size: 15px; line-height: 1.55; }
-    .hero-cta { margin-top: 24px; gap: 10px; }
+    .front-page { padding-top: 20px; }
+    .hero { padding: 24px 0 32px; margin-bottom: 24px; }
+    .hero-desc { font-size: 17px; margin-top: 16px; }
+    .hero-cta { margin-top: 22px; }
+    .front-grid { grid-template-columns: minmax(0, 1fr); }
+    .front-grid > * { padding: 0; border-left: none !important; }
+    .front-grid > .col-side { margin-top: 28px; }
+    .text-lead > .col-secondary { flex-direction: column; }
+    .text-lead > .col-secondary .story + .story { margin: 20px 0 0; padding: 20px 0 0; border-left: none; border-top: 1px solid var(--line); }
+    .lead h2 { font-size: 30px; }
+    .lead.no-image h2 { font-size: 34px; }
+    .lead .story-desc { font-size: 17px; }
+    .projects-row { grid-template-columns: minmax(0, 1fr); }
+    .project { padding: 0 !important; border-left: none !important; }
+    .project + .project { margin-top: 18px; padding-top: 18px !important; border-top: 1px solid var(--line); }
   }
 </style>

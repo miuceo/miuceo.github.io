@@ -1,4 +1,8 @@
 {
+  "masthead": {
+    "name": "The Muhammadjon Journal",
+    "tagline": "Sun'iy intellekt va muhandislik haqida"
+  },
   "meta": {
     "siteTitle": "miuceo — Muhammadjon Ibrohimov",
     "siteDescription": "Muhammadjon Ibrohimovning shaxsiy sayti — postlar, loyihalar va o'ylar."
@@ -10,7 +14,8 @@
     "about": "Men haqimda",
     "contact": "Bog'lanish",
     "artifacts": "Artifaktlar",
-    "admin": "Admin panel"
+    "admin": "Admin panel",
+    "new": "Yangi"
   },
   "hero": {
     "prompt": "whoami",
@@ -34,7 +39,10 @@
     "noOtherPosts": "Boshqa postlar hali yo'q",
     "viewAllProjects": "Barcha loyihalar →",
     "viewAllArtifacts": "Barcha artifaktlar →",
-    "viewAllPosts": "Barcha postlar →"
+    "viewAllPosts": "Barcha postlar →",
+    "kickerPost": "Post",
+    "kickerArtifact": "Artifakt",
+    "latest": "So'nggi yozuvlar"
   },
   "projects": {
     "title": "Loyihalar",

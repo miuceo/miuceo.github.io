@@ -7,7 +7,45 @@ const { lang } = Astro.props;
 const strings = t(lang);
 ---
 
-<footer>
-  <span>{strings.footer.copyright}</span>
-  <span>muhammadjon.me</span>
+<footer class="site-footer">
+  <a href={`/${lang}/`} class="footer-mark">{strings.masthead.name}</a>
+  <div class="footer-meta">
+    <span>{strings.footer.copyright}</span>
+    <span class="footer-links">
+      <a href={`/${lang}/rss.xml`}>RSS</a>
+      <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener">Telegram</a>
+      <a href="https://github.com/miuceo" target="_blank" rel="noopener">GitHub</a>
+    </span>
+  </div>
 </footer>
+
+<style>
+  .site-footer {
+    margin-top: 72px;
+    border-top: 3px double var(--rule);
+    padding: 22px 0 32px;
+    text-align: center;
+  }
+  .footer-mark {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .footer-meta {
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .footer-links { display: flex; gap: 16px; }
+  .footer-links a:hover { color: var(--ink); }
+  @media (max-width: 640px) {
+    .footer-meta { flex-direction: column; align-items: center; }
+  }
+</style>

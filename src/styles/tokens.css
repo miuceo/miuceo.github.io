@@ -1,98 +1,103 @@
-/* Shared design tokens — Anthropic (Claude) Exact Colors & macOS Premium Structure */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+/* Shared design tokens — "The Muhammadjon Journal": a New York Times-style
+   editorial base with Porsche-style precision (tracked sans labels, one red
+   accent). Light is the "day edition", dark the "night edition"; BaseLayout
+   picks one from the visitor's OS setting until they choose.
+
+   All three families cover Cyrillic, so /ru/ renders in the same type as
+   /uz/ and /en/ (Archivo and Newsreader were rejected for lacking it). */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap');
 
 :root{
-  --bg:       #1E1D1B;
-  --bg-2:     #262524;
-  --bg-3:     #31302F;
-  --ink:      #E8E6E1;
-  --ink-soft: #9C9A96;
-  --line:     rgba(232,230,225,0.1);
-  --line-soft:rgba(232,230,225,0.05);
+  --bg:       #FFFFFF;
+  --bg-2:     #F7F7F5;
+  --bg-3:     #EDECE8;
+  --ink:      #121212;
+  --ink-soft: #5A5A5A;
+  --line:     #E2E2E2;
+  --line-soft:#EFEFEF;
+  --rule:     #121212;   /* the strong newspaper rules (masthead, section heads) */
 
-  --accent:   #DA7A5E;
-  --danger:   #E04F4F;
+  --accent:   #D5001C;
+  --danger:   #D5001C;
 
+  /* Legacy aliases — the post-builder island and a few components still read
+     these. They all resolve to the single accent now. */
   --neon-green: var(--accent);
   --neon-cyan:  var(--accent);
   --neon-pink:  var(--accent);
-  --glow-sm:  0 0 8px;
-  --glow-md:  0 0 20px;
+  --glow-sm:  0 0 0;
+  --glow-md:  0 0 0;
 
-  /* Homepage hub only (Loyihalar/Artifaktlar/Postlar) — the rest of the
-     site stayed on the single --accent hue, but the hub needs each of its
-     three columns to read apart at a glance. */
-  --hub-blue:  #6FA8D9;
-  --hub-green: #7CBD72;
-
-  --font-serif: 'Lora', 'Georgia', 'Times New Roman', serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-display: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  --font-body:    'Source Serif 4', 'Georgia', 'Times New Roman', serif;
+  --font-sans:    'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-serif:   var(--font-display);
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Nav.astro is position:fixed; every page reserves this much top space
-     (BaseLayout's body padding-top) so fixed content never covers it. */
-  --nav-height: 77px;
+  --nav-height: 0px;
 }
 
-[data-theme="light"]{
-  --bg:       #F3F1EC;
-  --bg-2:     #FFFFFF;
-  --bg-3:     #EAE7DF;
-  --ink:      #1D1C1B;
-  --ink-soft: #716F6B;
-  --line:     rgba(29,28,27,0.1);
-  --line-soft:rgba(29,28,27,0.05);
+[data-theme="dark"]{
+  --bg:       #111111;
+  --bg-2:     #1A1A1A;
+  --bg-3:     #242424;
+  --ink:      #ECECEC;
+  --ink-soft: #A3A3A3;
+  --line:     #2E2E2E;
+  --line-soft:#222222;
+  --rule:     #ECECEC;
 
-  --accent:   #D47050;
-  --danger:   #CC3333;
-
-  --neon-green: var(--accent);
-  --neon-cyan:  var(--accent);
-  --neon-pink:  var(--accent);
-
-  --hub-blue:  #3B76AE;
-  --hub-green: #4B8F45;
+  /* #D5001C is too dark to read on #111; this keeps the hue at ~5:1. */
+  --accent:   #F0364A;
+  --danger:   #F0364A;
 }
 
 *{ box-sizing:border-box; }
-html{ color-scheme:dark; }
-[data-theme="light"]{ color-scheme:light; }
+html{ color-scheme:light; }
+[data-theme="dark"]{ color-scheme:dark; }
 
 body{
   margin:0; background-color:var(--bg); color:var(--ink);
   font-family:var(--font-sans); line-height:1.6;
-  transition:background-color .2s ease, color .2s ease;
+  transition:background-color .25s ease, color .25s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-a{ color:inherit; text-decoration:none; transition: color .2s; }
+a{ color:inherit; text-decoration:none; }
 ::selection{ background:var(--accent); color:#FFF; }
 
-h1,h2,h3,h4{ font-family:var(--font-serif); font-weight:500; letter-spacing:-0.01em; margin:0; }
+h1,h2,h3,h4{ font-family:var(--font-display); font-weight:700; letter-spacing:-0.005em; margin:0; }
+
+/* The one motion idiom on the site: a headline underlines on hover. */
+.hl{ text-decoration:underline; text-decoration-color:transparent; text-underline-offset:0.14em; text-decoration-thickness:1px; transition:text-decoration-color .2s ease; }
+a:hover .hl, a.hl:hover{ text-decoration-color:currentColor; }
+
+/* Small tracked caps used for kickers, datelines and section labels. */
+.kicker{ font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); }
+.kicker.red{ color:var(--accent); }
+.tag-new{ display:inline-block; font-family:var(--font-sans); font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; line-height:1; padding:3px 5px 2px; border:1px solid var(--accent); color:var(--accent); vertical-align:2px; }
 
 .theme-toggle{
   background:transparent; border:none; border-radius:50%;
-  width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
   font-size:16px; cursor:pointer; color:var(--ink-soft);
   transition:background .2s, color .2s;
 }
 .theme-toggle:hover{ background:var(--bg-3); color:var(--ink); }
 
-/* Theme toggle icon logic */
 html .sun-icon { display: block; }
 html .moon-icon { display: none; }
 html[data-theme="light"] .sun-icon { display: none; }
 html[data-theme="light"] .moon-icon { display: block; }
 
 .btn{
-  font-family:var(--font-sans); font-size:14px; font-weight:500; padding:10px 20px;
-  border-radius:8px; border:1px solid transparent; background:var(--accent);
-  color:#FFF; cursor:pointer; transition:background .2s, transform .1s, opacity .2s;
+  font-family:var(--font-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+  padding:11px 20px; border-radius:2px; border:1px solid var(--ink); background:var(--ink);
+  color:var(--bg); cursor:pointer; display:inline-block; transition:background .2s, color .2s, border-color .2s;
 }
-.btn:hover{ opacity:0.9; transform:translateY(-1px); }
-.btn:active{ transform:translateY(0); }
-.btn.ghost{ border-color:var(--line); background:transparent; color:var(--ink); }
-.btn.ghost:hover{ background:var(--bg-2); border-color:var(--ink-soft); }
+.btn:hover{ background:var(--accent); border-color:var(--accent); color:#FFF; }
+.btn.ghost{ background:transparent; color:var(--ink); border-color:var(--ink); }
+.btn.ghost:hover{ background:var(--ink); color:var(--bg); }
 
 code, pre { font-family:var(--mono); font-size: 0.9em; }
 

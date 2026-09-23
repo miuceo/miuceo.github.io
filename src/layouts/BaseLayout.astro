@@ -32,7 +32,7 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 ---
 
 <!DOCTYPE html>
-<html lang={lang} data-theme="dark">
+<html lang={lang} data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -63,12 +63,15 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <script is:inline>
   (function(){
-    var saved = localStorage.getItem('miuceo_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
+    // A saved choice wins; otherwise follow the OS (day/night edition).
+    var saved = null;
+    try { saved = localStorage.getItem('miuceo_theme'); } catch (e) {}
+    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', saved || (dark ? 'dark' : 'light'));
 
     // Remember the language actually being read, so "/" honours it next visit
     // instead of re-deciding from Accept-Language. This is what makes the
@@ -94,14 +97,21 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
       document.documentElement.setAttribute('data-theme', theme);
     }
     function init(){
-      applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
       var btn = document.getElementById('themeToggle');
       if(btn){
         btn.addEventListener('click', function(){
-          var current = document.documentElement.getAttribute('data-theme') || 'dark';
+          var current = document.documentElement.getAttribute('data-theme') || 'light';
           var next = current === 'light' ? 'dark' : 'light';
-          localStorage.setItem('miuceo_theme', next);
+          try { localStorage.setItem('miuceo_theme', next); } catch (e) {}
           applyTheme(next);
+        });
+      }
+      // Until the visitor picks one, keep tracking the OS setting live.
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e){
+          var saved = null;
+          try { saved = localStorage.getItem('miuceo_theme'); } catch (err) {}
+          if (!saved) applyTheme(e.matches ? 'dark' : 'light');
         });
       }
     }
@@ -112,28 +122,19 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 </html>
 
 <style is:global>
-  /* Nav.astro is position:fixed (see its own styles) — every page reserves
-     this much space at the top so fixed content never sits under it. The
-     homepage's pinned hero deliberately ignores this (it needs the full
-     viewport) since position:fixed elements aren't affected by it either. */
-  body{ padding-top:var(--nav-height); }
-
   .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; position:relative; }
 
-  .page-header{ padding:80px 0 50px; border-bottom:1px solid var(--line); }
-  .page-header h1{ font-weight:800; font-size:40px; letter-spacing:-0.01em; margin:0 0 16px; }
-  .page-header p{ font-size:16px; color:var(--ink-soft); max-width:600px; margin:0; line-height:1.7; }
+  /* Inner-page header (phase 2 restyles each page; these keep them on-brand meanwhile). */
+  .page-header{ padding:56px 0 32px; border-bottom:1px solid var(--rule); }
+  .page-header h1{ font-weight:900; font-size:44px; letter-spacing:-0.01em; margin:0 0 14px; }
+  .page-header p{ font-family:var(--font-body); font-size:18px; color:var(--ink-soft); max-width:640px; margin:0; line-height:1.6; }
 
-  .section-label{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); margin:64px 0 20px; }
-  .section-label::before{ content:'// '; opacity:0.6; }
-
-  footer{ border-top:1px solid var(--line); padding:32px 0; font-size:13px; color:var(--ink-soft); display:flex; justify-content:space-between; }
+  .section-label{ font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink); margin:56px 0 20px; padding-top:8px; border-top:1px solid var(--rule); }
 
   @media (max-width:640px){
-    .wrap{ padding:0 18px; }
-    .page-header{ padding:40px 0 30px; }
-    .page-header h1{ font-size:28px; }
+    .wrap{ padding:0 16px; }
+    .page-header{ padding:36px 0 24px; }
+    .page-header h1{ font-size:32px; }
     .section-label{ margin:40px 0 16px; }
-    footer{ flex-direction:column; gap:8px; text-align:center; padding:24px 0; }
   }
 </style>

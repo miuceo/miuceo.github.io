@@ -26,6 +26,8 @@ const hreflangPaths = Object.fromEntries(
 
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, hreflangPaths[l] ?? `/${l}/`])) as Record<Lang, string>;
 
+const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric' });
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -52,7 +54,15 @@ const jsonLd = {
   <Nav lang={lang} active="posts" langPaths={langPaths} />
 
   <article class="post">
-    <h1>{entry.data.title}</h1>
+    <header class="post-head">
+      <a href={`/${lang}/posts/`} class="kicker red">{strings.nav.posts}</a>
+      <h1>{entry.data.title}</h1>
+      {entry.data.excerpt && <p class="post-dek">{entry.data.excerpt}</p>}
+      <div class="byline">
+        <span class="byline-name">Muhammadjon Ibrohimov</span>
+        <time datetime={entry.data.createdAt.toISOString()}>{dateFmt.format(entry.data.createdAt)}</time>
+      </div>
+    </header>
     <div class="post-body">
       <Content />
     </div>
@@ -62,18 +72,35 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
-  .post{ padding:60px 0 100px; max-width:760px; margin:0 auto; }
-  .post h1{ font-size:36px; font-weight:800; line-height:1.2; margin:0 0 32px; }
-  .post-body{ font-size:16px; line-height:1.8; color:var(--ink); }
-  .post-body :global(p){ margin:0 0 22px; }
-  .post-body :global(img){ max-width:100%; border-radius:8px; margin:8px 0 28px; display:block; }
-  .post-body :global(a){ color:var(--neon-green); text-decoration:underline; }
-  .post-body :global(h2){ font-size:24px; margin:40px 0 16px; }
-  .post-body :global(h3){ font-size:19px; margin:32px 0 14px; }
-  .post-body :global(code){ background:var(--bg-2); border:1px solid var(--line); border-radius:4px; padding:2px 6px; font-size:0.9em; }
-  .post-body :global(pre){ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:18px; overflow-x:auto; }
+  .post{ padding:48px 0 40px; max-width:720px; margin:0 auto; }
+  .post-head{ margin-bottom:36px; }
+  .post-head .kicker{ display:inline-block; margin-bottom:14px; }
+  .post h1{ font-size:48px; font-weight:700; line-height:1.1; letter-spacing:-0.01em; margin:0 0 16px; text-wrap:balance; }
+  .post-dek{ font-family:var(--font-body); font-size:21px; line-height:1.45; color:var(--ink-soft); margin:0 0 22px; }
+  .byline{ display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; padding:12px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); font-family:var(--font-sans); font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); }
+  .byline-name{ color:var(--ink); font-weight:700; }
+
+  .post-body{ font-family:var(--font-body); font-size:19px; line-height:1.7; color:var(--ink); }
+  .post-body :global(p){ margin:0 0 24px; }
+  /* Drop cap on the opening paragraph — the one ornament a newspaper allows itself. */
+  .post-body > :global(p:first-of-type::first-letter){ font-family:var(--font-display); font-weight:900; float:left; font-size:4.1em; line-height:0.82; margin:0.06em 0.1em 0 0; }
+  .post-body :global(img){ max-width:100%; margin:8px 0 30px; display:block; }
+  .post-body :global(a){ color:inherit; text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:0.18em; }
+  .post-body :global(a:hover){ color:var(--accent); }
+  .post-body :global(h2){ font-size:28px; margin:44px 0 16px; line-height:1.2; }
+  .post-body :global(h3){ font-size:22px; margin:34px 0 14px; line-height:1.25; }
+  .post-body :global(blockquote){ margin:32px 0; padding:0 0 0 20px; border-left:3px solid var(--accent); font-style:italic; color:var(--ink-soft); }
+  .post-body :global(ul), .post-body :global(ol){ padding-left:1.3em; margin:0 0 24px; }
+  .post-body :global(li){ margin-bottom:8px; }
+  .post-body :global(hr){ border:none; text-align:center; margin:40px 0; }
+  .post-body :global(hr)::after{ content:'* * *'; letter-spacing:0.6em; color:var(--ink-soft); }
+  .post-body :global(code){ background:var(--bg-2); border:1px solid var(--line); border-radius:2px; padding:1px 5px; font-size:0.82em; }
+  .post-body :global(pre){ background:var(--bg-2); border:1px solid var(--line); border-radius:2px; padding:18px; overflow-x:auto; font-size:15px; line-height:1.55; }
+  .post-body :global(pre code){ border:none; padding:0; background:none; }
   @media (max-width:640px){
-    .post{ padding:32px 0 60px; }
-    .post h1{ font-size:26px; }
+    .post{ padding:28px 0 24px; }
+    .post h1{ font-size:32px; }
+    .post-dek{ font-size:18px; }
+    .post-body{ font-size:18px; }
   }
 </style>

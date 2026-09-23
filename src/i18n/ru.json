@@ -1,4 +1,8 @@
 {
+  "masthead": {
+    "name": "The Muhammadjon Journal",
+    "tagline": "Об искусственном интеллекте и инженерии"
+  },
   "meta": {
     "siteTitle": "miuceo — Мухаммаджон Иброхимов",
     "siteDescription": "Личный сайт Мухаммаджона Иброхимова — посты, проекты и мысли."
@@ -10,7 +14,8 @@
     "about": "Обо мне",
     "contact": "Контакты",
     "artifacts": "Артефакты",
-    "admin": "Админ-панель"
+    "admin": "Админ-панель",
+    "new": "Новое"
   },
   "hero": {
     "prompt": "whoami",
@@ -34,7 +39,10 @@
     "noOtherPosts": "Других постов пока нет",
     "viewAllProjects": "Все проекты →",
     "viewAllArtifacts": "Все артефакты →",
-    "viewAllPosts": "Все посты →"
+    "viewAllPosts": "Все посты →",
+    "kickerPost": "Пост",
+    "kickerArtifact": "Артефакт",
+    "latest": "Последнее"
   },
   "projects": {
     "title": "Проекты",

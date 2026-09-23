@@ -1,4 +1,8 @@
 {
+  "masthead": {
+    "name": "The Muhammadjon Journal",
+    "tagline": "On artificial intelligence and engineering"
+  },
   "meta": {
     "siteTitle": "miuceo — Muhammadjon Ibrohimov",
     "siteDescription": "Muhammadjon Ibrohimov's personal site — posts, projects, and thoughts."
@@ -10,7 +14,8 @@
     "about": "About",
     "contact": "Contact",
     "artifacts": "Artifacts",
-    "admin": "Admin panel"
+    "admin": "Admin panel",
+    "new": "New"
   },
   "hero": {
     "prompt": "whoami",
@@ -34,7 +39,10 @@
     "noOtherPosts": "No other posts yet",
     "viewAllProjects": "All projects →",
     "viewAllArtifacts": "All artifacts →",
-    "viewAllPosts": "All posts →"
+    "viewAllPosts": "All posts →",
+    "kickerPost": "Post",
+    "kickerArtifact": "Artifact",
+    "latest": "Latest"
   },
   "projects": {
     "title": "Projects",

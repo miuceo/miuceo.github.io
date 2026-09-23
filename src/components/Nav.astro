@@ -7,31 +7,30 @@ interface Props {
   active: 'posts' | 'projects' | 'about' | 'contact' | 'artifacts' | 'none';
   /** slug of the equivalent page in each language, e.g. { uz: '/uz/', en: '/en/', ru: '/ru/' } */
   langPaths: Record<Lang, string>;
+  /** Front page gets the full-size masthead; inner pages a smaller one. */
+  front?: boolean;
 }
 
-const { lang, active, langPaths } = Astro.props;
+const { lang, active, langPaths, front = false } = Astro.props;
 const strings = t(lang);
+
+const sections = [
+  { key: 'posts', href: `/${lang}/posts/`, label: strings.nav.posts },
+  { key: 'projects', href: `/${lang}/projects/`, label: strings.nav.projects },
+  { key: 'artifacts', href: `/${lang}/artifacts/`, label: strings.nav.artifacts, isNew: true },
+  { key: 'about', href: `/${lang}/about/`, label: strings.nav.about },
+  { key: 'contact', href: `/${lang}/contact/`, label: strings.nav.contact },
+] as const;
 ---
 
-<header class="navbar-wrapper">
-  <div class="navbar">
-    <a href={`/${lang}/`} class="brand">Muhammadjon.</a>
-    
-    <nav class="nav-links" id="navLinks">
-      <a href={`/${lang}/posts/`} class={active === 'posts' ? 'active' : ''}>{strings.nav.posts}</a>
-      <a href={`/${lang}/projects/`} class={active === 'projects' ? 'active' : ''}>{strings.nav.projects}</a>
-      <a href={`/${lang}/artifacts/`} class={`nav-artifacts ${active === 'artifacts' ? 'active' : ''}`}>
-        {strings.nav.artifacts}
-        <span class="new-badge">NEW</span>
-      </a>
-      <a href={`/${lang}/about/`} class={active === 'about' ? 'active' : ''}>{strings.nav.about}</a>
-      <a href={`/${lang}/contact/`} class={active === 'contact' ? 'active' : ''}>{strings.nav.contact}</a>
-      <a href="/login.html" class="nav-admin-mobile">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-        {strings.nav.admin}
-      </a>
-    </nav>
-
+<header class:list={['masthead-block', { front }]}>
+  <div class="dateline">
+    <span class="dateline-left">
+      <!-- Filled in the browser: the site is static, so a build-time date
+           would be stale by tomorrow. Empty (not wrong) with JS off. -->
+      <span class="today" id="mhToday" data-lang={lang}></span>
+      <span class="dateline-tagline">{strings.masthead.tagline}</span>
+    </span>
     <div class="nav-actions">
       <div class="lang-switch">
         {LANGS.map((l) => (
@@ -39,262 +38,150 @@ const strings = t(lang);
         ))}
       </div>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">
-        <!-- Sun icon (for dark mode -> to switch to light) -->
         <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-        <!-- Moon icon (for light mode -> to switch to dark) -->
         <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       </button>
-      <a href="/login.html" class="nav-admin" title={strings.nav.admin}>
-        <!-- Admin/Dashboard Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <a href="/login.html" class="nav-admin" title={strings.nav.admin} aria-label={strings.nav.admin}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
       </a>
-      <!-- Mobile only: .nav-links is hidden under 768px, this opens it as a
-           dropdown panel below the bar. -->
-      <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false" aria-controls="navLinks">
-        <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
-        <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
-      </button>
     </div>
   </div>
+
+  <a href={`/${lang}/`} class="masthead">{strings.masthead.name}</a>
 </header>
 
-<script>
-  // Nav is position:fixed (see below), and every page reserves --nav-height
-  // of top space for it. The static fallback in tokens.css is a single
-  // number, but the nav itself isn't: its padding shrinks under 768px and
-  // web-font swap can shift its measured height by a pixel or two.
-  // Measuring the real height keeps every page's spacing exact instead of
-  // chasing breakpoint-specific magic numbers.
-  function setNavHeight() {
-    const nav = document.querySelector('.navbar-wrapper');
-    if (nav instanceof HTMLElement) {
-      document.documentElement.style.setProperty('--nav-height', `${nav.offsetHeight}px`);
-    }
-  }
-  setNavHeight();
-  window.addEventListener('resize', setNavHeight);
-  if (document.fonts) document.fonts.ready.then(setNavHeight);
+<!-- Sibling of the header (not inside it) so position:sticky can stick for
+     the whole page rather than only within the header's own box. -->
+<nav class="sections" aria-label="Sections">
+  <div class="sections-inner">
+    {sections.map((s) => (
+      <a href={s.href} class:list={[{ active: active === s.key, 'is-new': 'isNew' in s }]}>
+        {s.label}
+        {'isNew' in s && <span class="tag-new">{strings.nav.new}</span>}
+      </a>
+    ))}
+  </div>
+</nav>
 
-  // Mobile menu. The panel is absolutely positioned under the bar, so
-  // opening it doesn't change the nav's height (--nav-height stays exact).
-  const header = document.querySelector('.navbar-wrapper');
-  const toggle = document.getElementById('navToggle');
-  if (header && toggle) {
-    const setOpen = (open: boolean) => {
-      header.classList.toggle('menu-open', open);
-      toggle.setAttribute('aria-expanded', String(open));
-    };
-    toggle.addEventListener('click', () => setOpen(!header.classList.contains('menu-open')));
-    document.addEventListener('click', (e) => {
-      if (!header.contains(e.target as Node)) setOpen(false);
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') setOpen(false);
-    });
-    window.matchMedia('(min-width: 769px)').addEventListener('change', (e) => {
-      if (e.matches) setOpen(false);
-    });
+<script>
+  // Many browsers ship no Uzbek month names (Intl renders "M09"), so uz is
+  // spelled out by hand; en/ru are reliable everywhere.
+  const UZ_MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
+  const UZ_DAYS = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+
+  const el = document.getElementById('mhToday');
+  if (el) {
+    const lang = el.dataset.lang || 'uz';
+    const long = window.matchMedia('(min-width: 641px)').matches;
+    const now = new Date();
+    if (lang === 'uz') {
+      const date = `${now.getDate()}-${UZ_MONTHS[now.getMonth()]}, ${now.getFullYear()}`;
+      el.textContent = long ? `${UZ_DAYS[now.getDay()]}, ${date}` : date;
+    } else try {
+      el.textContent = new Intl.DateTimeFormat(lang, long
+        ? { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+        : { year: 'numeric', month: 'long', day: 'numeric' }).format(now);
+    } catch {
+      /* Unsupported locale: leave the slot empty rather than show a wrong language. */
+    }
   }
 </script>
 
 <style>
-  .navbar-wrapper {
-    width: 100%;
-    padding: 20px 40px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--line);
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+  .masthead-block {
+    padding-top: 14px;
+    text-align: center;
   }
-  .navbar {
-    max-width: 1000px;
-    margin: 0 auto;
+  .dateline {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: nowrap; /* Bitta qatorda saqlash uchun */
-    gap: 20px;
-  }
-  .brand {
-    font-family: var(--font-serif);
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--ink);
-    letter-spacing: -0.02em;
-    flex-shrink: 0;
-    transition: color 0.2s ease;
-  }
-  .brand:hover {
-    color: var(--accent);
-  }
-  .nav-links {
-    display: flex;
-    gap: 32px;
-    align-items: center;
-    flex-shrink: 1;
-    white-space: nowrap;
-  }
-  .nav-links a {
-    font-size: 14px;
+    gap: 16px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--ink-soft);
-    font-weight: 500;
-    transition: color 0.2s ease;
+    text-align: left;
   }
-  .nav-links a:hover, .nav-links a.active {
+  .dateline-left { display: flex; gap: 14px; align-items: center; min-width: 0; }
+  .today { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .today:empty { display: none; }
+  .today:not(:empty) + .dateline-tagline::before { content: '·'; margin-right: 14px; color: var(--ink-soft); }
+  .dateline-tagline { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .masthead {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 900;
+    /* ~12em wide, so 7.4vw always fits the column; balance is the safety net. */
+    font-size: clamp(24px, 7.4vw, 44px);
+    line-height: 1.05;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
     color: var(--ink);
+    margin: 14px 0 16px;
+  }
+  .front .masthead {
+    font-size: clamp(24px, 6.4vw, 88px);
+    margin: 18px 0 22px;
   }
 
-  /* Contrast button so the newly-added section reads as new, not as one
-     more text link buried in the row. */
-  .nav-artifacts {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    height: 36px;
-    padding: 0 16px;
-    border-radius: 8px;
-    background: var(--accent);
-    color: #FFF !important;
-    font-size: 14px;
-    font-weight: 600;
-    transition: opacity 0.2s ease, transform 0.1s ease;
-  }
-  .nav-artifacts:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-    color: #FFF;
-  }
-  .nav-artifacts.active {
-    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-  }
-  .new-badge {
-    position: absolute;
+  .nav-actions { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .lang-switch { display: flex; gap: 10px; }
+  .lang-switch a { font-weight: 600; color: var(--ink-soft); }
+  .lang-switch a:hover { color: var(--ink); }
+  .lang-switch a.active { color: var(--accent); }
+  .nav-admin { color: var(--ink-soft); display: flex; }
+  .nav-admin:hover { color: var(--ink); }
+
+  .sections {
+    position: sticky;
     top: 0;
-    right: 0;
-    transform: translate(35%, -45%);
-    background: var(--danger);
-    color: #FFF;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    line-height: 1;
-    padding: 4px 5px;
-    border-radius: 999px;
-    border: 2px solid var(--bg);
+    z-index: 100;
+    background: var(--bg);
+    border-top: 1px solid var(--rule);
+    border-bottom: 3px double var(--rule);
+    transition: background-color .25s ease;
   }
-  .nav-actions {
+  .sections-inner {
     display: flex;
-    align-items: center;
-    gap: 24px;
-    flex-shrink: 0;
+    justify-content: center;
+    gap: 34px;
+    padding: 10px 0 9px;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
-  .lang-switch {
-    display: flex;
-    gap: 12px;
-  }
-  .lang-switch a {
+  .sections-inner::-webkit-scrollbar { display: none; }
+  .sections a {
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 600;
-    color: var(--ink-soft);
-    transition: color 0.2s;
-  }
-  .lang-switch a:hover {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--ink);
-  }
-  .lang-switch a.active {
-    color: var(--accent);
-  }
-  
-  .nav-admin {
-    color: var(--ink-soft);
-    display: flex;
+    white-space: nowrap;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    transition: color 0.2s;
+    gap: 7px;
+    text-underline-offset: 6px;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color .2s ease;
   }
-  .nav-admin:hover {
-    color: var(--ink);
-  }
-
-  .nav-toggle {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    margin-right: -8px;
-    padding: 0;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--ink);
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .nav-toggle:hover { background: var(--bg-3); }
-  .nav-toggle .close-icon { display: none; }
-  .menu-open .nav-toggle .menu-icon { display: none; }
-  .menu-open .nav-toggle .close-icon { display: block; }
-  .nav-admin-mobile { display: none; }
+  .sections a:hover { text-decoration-color: currentColor; }
+  .sections a.active { text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+  .sections a.is-new { color: var(--accent); }
 
   @media (max-width: 768px) {
-    .navbar-wrapper { padding: 14px 20px; }
-    .nav-actions { gap: 14px; }
-    .nav-actions .nav-admin { display: none; }
-    .nav-toggle { display: flex; }
-
-    /* Dropdown panel under the bar — same background and hairline border
-       as the bar itself, so it reads as the nav unfolding. */
-    .nav-links {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0;
-      padding: 8px 20px 20px;
-      background: var(--bg);
-      border-bottom: 1px solid var(--line);
-      box-shadow: 0 24px 40px rgba(0, 0, 0, 0.3);
-      max-height: calc(100dvh - 100%);
-      overflow-y: auto;
-    }
-    .menu-open .nav-links { display: flex; }
-    .nav-links a {
-      padding: 14px 2px;
-      font-size: 16px;
-      border-bottom: 1px solid var(--line-soft);
-    }
-    .nav-links a.nav-artifacts {
-      order: -1;
-      height: 46px;
-      margin: 8px 0 6px;
-      padding: 0 16px;
-      font-size: 15px;
-      border-bottom: none;
-      align-self: flex-start;
-    }
-    .nav-links a.nav-admin-mobile {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      border-bottom: none;
-    }
+    .dateline-tagline { display: none; }
+    .today:not(:empty) + .dateline-tagline::before { content: none; }
+    .masthead, .front .masthead { margin: 12px 0 14px; }
+    /* Sections become a swipeable strip — NYT-app style — instead of wrapping. */
+    .sections-inner { justify-content: flex-start; gap: 24px; padding: 10px 2px 9px; }
   }
   @media (max-width: 380px) {
-    .navbar-wrapper { padding: 14px 16px; }
-    .navbar { gap: 12px; }
-    .brand { font-size: 18px; }
     .nav-actions { gap: 10px; }
     .lang-switch { gap: 7px; }
-    .theme-toggle { width: 32px; }
-    .nav-links { padding: 8px 16px 20px; }
   }
 </style>
