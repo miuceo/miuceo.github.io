@@ -2,11 +2,12 @@
 
 **Status:** Phases 0–4 live. Phase 5 partly built, partly removed — see §12.
 **Author:** Muhammadjon Ibrohimov, with Claude
-**Date:** 2026-08-09, last revised 2026-08-21
+**Date:** 2026-08-09, last revised 2026-09-23
 
-**The decision log is D1–D17.** D1–D14 are referenced inline throughout;
-D15–D17 (§12) removed the Telegram bot and the agent loop, and are the most
-recent word wherever they contradict an earlier section.
+**The decision log is D1–D18.** D1–D14 are referenced inline throughout;
+D15–D17 (§12) removed the Telegram bot and the agent loop; D18 (§13) is the
+"Muhammadjon Journal" redesign. §12–§13 are the most recent word wherever they
+contradict an earlier section.
 
 ---
 
@@ -219,31 +220,31 @@ Routes: `/uz/...`, `/en/...`, `/ru/...`. Uzbek is the default; `/` redirects by 
 
 ## 7. Design system & the dynamic UI
 
-**This section describes what actually shipped, not the original D9 plan.** The original design (below, for the record) called for four zoned directions — warm paper base, scroll-driven motion, liquid glass sparingly, tactile brutalism on the projects grid. Mid-Phase-3 the author pivoted the whole site to a single unified terminal aesthetic instead, applied directly to v1 HTML pages. That is what is live today, so it is now the source of truth. Astro work should build *this* system, not the zoned one.
+**This section describes what actually shipped.** The site has had three looks: the zoned D9 plan (§7.2, never built), a neon terminal aesthetic, then a warm Claude-inspired one. Since 2026-09-23 it is **The Muhammadjon Journal** (D18, §13) — a newspaper identity. Build *this* system; the earlier ones are history.
 
 ### 7.1 What's live
 
-One visual language, everywhere — no zoning:
+One visual language on every public page:
 
 | Element | Treatment |
 |---|---|
-| Typography | JetBrains Mono (`--mono`) for everything, including headings — no serif/sans split |
-| Palette (dark, default) | Near-black terminal (`--bg:#0B0E0D`), neon green/cyan/pink accents (`--neon-green:#3DFFA2`, `--neon-cyan:#38E8FF`, `--neon-pink:#FF3EC9`) |
-| Palette (light) | Same tokens, inverted to paper-and-ink with the neons darkened for contrast (`[data-theme="light"]` in `assets/theme.css`) |
-| Background texture | Faint 28px grid of hairlines (`--line-soft`) behind every page |
-| Emphasis | Text-shadow glow (`.glow`, `.glow-cyan`) and glowing borders on hover, not depth/blur — no liquid-glass translucency anywhere |
-| Homepage hero | A `.code-window` with a tabbed, typewriter-animated code snippet cycling through JS/Python/Go/Java/Rust, framed as a `whoami` terminal prompt |
-| Cards & grids (e.g. `projects.html`) | Rounded 4–8px corners, 1px `--line` borders, neon-glow on hover — same language as buttons and nav, not a separate brutalist zone |
-| Buttons | `.btn` outline-fills to neon-green with glow on hover; `.btn.ghost` and `.btn.danger` variants |
+| Direction | New York Times base (masthead, rules, columns, serif reading) with Porsche precision (tracked caps labels, one red accent, square corners) |
+| Masthead | "The Muhammadjon Journal" in Playfair Display 900 — the brand mark. Never translated; same in uz/en/ru |
+| Type | Playfair Display for headlines, Libre Franklin for nav/labels/buttons, Source Serif 4 for reading text. All three cover Cyrillic — a font without it does not go in (Archivo and Newsreader were rejected for this) |
+| Palette | Day edition (default light): `#FFFFFF` paper, `#121212` ink, `#D5001C` accent. Night edition (dark): `#111111`, `#ECECEC`, `#F0364A` (the red lifted for contrast). Tokens in `src/styles/tokens.css` |
+| Theme | Follows the OS `prefers-color-scheme` until the visitor toggles; the choice is stored in `localStorage` (`miuceo_theme`) |
+| Structure | Hairline column rules, heavy 2px rules over section heads, 3px double rules under the section bar and over the footer |
+| Navigation | Dateline (client-side date, uz spelled by hand — many browsers lack Uzbek month names) → masthead → sticky section bar. On phones the bar is a swipeable strip, not a hamburger. Artifacts are red with a "Yangi" tag |
+| Front page | Hero headline, then one dated feed of posts + artifacts laid out purely by position: 1 = lead, 2–3 = medium, 4+ = "latest" list. A lead with no image pulls the medium stories up under it. Projects have no date, so they are a fixed rubric below the feed. Nothing is hand-picked — there is no `featured` flag |
+| Images | Only where the content has one; a post without a cover is a text story, never an empty box |
 
-**Design tokens live in exactly one place** — `assets/theme.css` — replacing v1's seven-file duplication. Theme toggle logic is centralized in `assets/theme.js`, driven by a `data-theme` attribute and persisted to `localStorage`. This consolidation happened directly on v1 HTML, ahead of the Astro migration, and should carry forward unchanged into `src/styles/tokens.css`.
-
-**Not carried over from the original plan:** adaptive homepage ordering by referrer, scroll-driven `animation-timeline` reveals, kinetic variable-font type, and zoned liquid-glass/brutalism. None of these are built. If the author wants them, they should be scoped as new work against the terminal system above, not resurrected from the D9 zoning.
+**Admin surfaces are not on this system yet.** `/post-builder/` inherits the tokens (so it picked up the colours and fonts) but not the layout; `login.html` and `admin.html` still load v1's `public/assets/theme.css`. The legacy `--neon-*` and `--glow-*` tokens survive only as aliases for the post-builder and go when it is restyled.
 
 **Motion rules — still non-negotiable if/when motion is added:**
 
+- The Journal is deliberately still: a headline underlines on hover, an image scales ~2% on hover, and the theme cross-fades. No pinned hero, no lift-on-hover cards, no glow.
 - CSS scroll-driven animations (`animation-timeline`), not JavaScript scroll listeners.
-- `prefers-reduced-motion: reduce` disables all non-essential motion — already respected in `assets/theme.css`.
+- `prefers-reduced-motion: reduce` disables all non-essential motion — respected in `src/styles/tokens.css`.
 - Motion never gates content. Everything readable with JS off.
 
 ### 7.2 Original plan (superseded, kept for history)
@@ -501,5 +502,20 @@ Dictation now happens into a text block: record, transcribe with `uz` pinned, pu
 - **New posts have no `/posts/<slug>.html` permalink.** Already-published pages stay where they are and their links keep working; new posts are shared as `/uz/posts/<slug>/`, which is what the channel message links to.
 - **`/rss.xml` is generated by the Astro build now** (`src/pages/rss.xml.ts`), not written by a client, so it cannot drift from what the site publishes. One-time cost: item guids moved to the new permalink shape, so existing subscribers saw the back catalogue once. Preferable to a feed of 404s.
 - **Deleting a post now removes all three language files.** It removed only `uz.md` before, which left `/en/posts/<slug>/` live and unreachable after the post was "deleted".
+
+---
+
+## 13. The 2026-09-23 redesign — D18
+
+**D18 — The site becomes "The Muhammadjon Journal", a newspaper identity.**
+
+The Claude-inspired look read as Anthropic's brand rather than the author's. He wanted a personal brand, chose New York Times + Porsche from a survey of ~40 brand directions, and made the calls below in a structured interview. The backend was out of scope throughout: no Worker, auth, publishing or content-schema change.
+
+- **NYT is the base, Porsche the accent.** The author picked the newspaper-first variant over a Porsche-first one knowing a newspaper front page looks abandoned when it rarely changes. That risk is handled by the feed: posts *and* artifacts share it, so either kind of publishing refreshes the front page.
+- **Position decides size, not the author.** A per-post "featured" flag would have needed a new field in the post-builder and the content schema — a backend change. The newest item leads, always.
+- **Projects are a rubric, not feed items.** They carry `order`, not a date, so they cannot be interleaved chronologically without a schema change.
+- **Light by default, following the OS.** Both editions are first-class; neither is an inverted afterthought.
+- **The hero stayed.** An early draft replaced it with the feed alone; the author asked for it back. Its words are unchanged — only the setting is.
+- **Admin pages come last**, after the public site, so the only publishing path is never mid-restyle.
 
 ---

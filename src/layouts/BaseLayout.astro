@@ -41,7 +41,7 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 <link rel="canonical" href={canonicalUrl}>
 {noindex && <meta name="robots" content="noindex">}
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="alternate" type="application/rss+xml" title="miuceo — RSS" href={`/${lang}/rss.xml`}>
+<link rel="alternate" type="application/rss+xml" title="The Muhammadjon Journal — RSS" href={`/${lang}/rss.xml`}>
 
 {Object.entries(hreflangPaths).map(([hrefLang, path]) => (
   <link rel="alternate" hreflang={hrefLang} href={new URL(path, site).toString()} />
@@ -52,7 +52,7 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 <meta property="og:title" content={title}>
 <meta property="og:description" content={description}>
 <meta property="og:url" content={canonicalUrl}>
-<meta property="og:site_name" content="miuceo">
+<meta property="og:site_name" content="The Muhammadjon Journal">
 <meta property="og:locale" content={localeMap[lang]}>
 {ogImage && <meta property="og:image" content={ogImage}>}
 <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'}>

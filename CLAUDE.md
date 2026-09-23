@@ -2,7 +2,7 @@
 
 Working instructions for Claude and subagents in this repo.
 
-**Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) before any non-trivial change.** It holds the decision log (D1–D17); §12 is the most recent word wherever it contradicts an earlier section. This file is *how to work here*; that file is *what we're building and why*.
+**Read [`ARCHITECTURE.md`](./ARCHITECTURE.md) before any non-trivial change.** It holds the decision log (D1–D18); §12–§13 are the most recent word wherever they contradict an earlier section. This file is *how to work here*; that file is *what we're building and why*.
 
 ---
 
