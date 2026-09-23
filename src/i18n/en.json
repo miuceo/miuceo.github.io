@@ -114,6 +114,10 @@
     "title": "All posts",
     "desc": "Everything I've written, newest first."
   },
+  "gallery": {
+    "prev": "Previous image",
+    "next": "Next image"
+  },
   "footer": {
     "copyright": "© 2026 Muhammadjon Ibrohimov"
   },

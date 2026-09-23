@@ -1,12 +1,20 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import rehypeSanitize from 'rehype-sanitize';
+import rehypeJournal from './src/lib/rehype-journal.mjs';
 
 export default defineConfig({
   site: 'https://muhammadjon.me',
   output: 'static',
   trailingSlash: 'always',
   prefetch: true,
+  markdown: {
+    // Post bodies include LLM-translated Markdown, so raw HTML in it must not
+    // reach the page (CLAUDE.md rule 8). Sanitize first, then lay out — the
+    // layout plugin only wraps nodes that already passed.
+    rehypePlugins: [rehypeSanitize, rehypeJournal],
+  },
   devToolbar: {
     enabled: false
   },

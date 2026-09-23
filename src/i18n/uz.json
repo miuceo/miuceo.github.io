@@ -114,6 +114,10 @@
     "title": "Barcha postlar",
     "desc": "Yozgan barcha maqolalarim — xronologik ketma-ketlikda."
   },
+  "gallery": {
+    "prev": "Oldingi rasm",
+    "next": "Keyingi rasm"
+  },
   "footer": {
     "copyright": "© 2026 Muhammadjon Ibrohimov"
   },

@@ -3,13 +3,18 @@
 // Worker API, same v1+v2 dual-write — just running inside the Astro site
 // instead of a standalone v1 HTML file. See ARCHITECTURE.md §9 Phase 4.
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 const WORKER_URL = 'https://miuceo-worker.ibrokhimovmiu.workers.dev';
 const SITE_URL = 'https://muhammadjon.me';
 
+type GalleryImage = { url: string; alt?: string };
 type Block =
   | { id: string; type: 'text'; content: string }
-  | { id: string; type: 'media'; url: string; mediaType: 'image' | 'youtube' | null; alt?: string };
+  | { id: string; type: 'media'; url: string; mediaType: 'image' | 'youtube' | null; alt?: string }
+  // Serialised as consecutive image lines in ONE paragraph; the site's
+  // rehype-journal plugin turns exactly that shape into a slider.
+  | { id: string; type: 'gallery'; images: GalleryImage[] };
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -53,6 +58,10 @@ function addMediaBlock() {
   blocks.push({ id: uid(), type: 'media', url: '', mediaType: null });
   render();
 }
+function addGalleryBlock() {
+  blocks.push({ id: uid(), type: 'gallery', images: [{ url: '' }, { url: '' }] });
+  render();
+}
 function removeBlock(id: string) {
   blocks = blocks.filter((b) => b.id !== id);
   render();
@@ -75,7 +84,7 @@ function getYoutubeId(url: string): string | null {
 }
 function mdToHtml(text: string): string {
   if (!text) return '';
-  return marked.parse(text, { async: false }) as string;
+  return DOMPurify.sanitize(marked.parse(text, { async: false }) as string);
 }
 function plainTextFromBlocks(): string {
   return blocks
@@ -97,10 +106,14 @@ function getExcerpt(): string {
   return sentences.slice(0, 2).join(' ').slice(0, 240);
 }
 function getCoverImage(): string | null {
-  const m = blocks.find((b) => b.type === 'media' && detectMediaType(b.url) === 'image' && b.url) as
-    | Extract<Block, { type: 'media' }>
-    | undefined;
-  return m ? m.url : null;
+  for (const b of blocks) {
+    if (b.type === 'media' && b.url && detectMediaType(b.url) === 'image') return b.url;
+    if (b.type === 'gallery') {
+      const first = b.images.find((i) => i.url.trim());
+      if (first) return first.url.trim();
+    }
+  }
+  return null;
 }
 function slugify(title: string): string {
   const slug = title
@@ -148,6 +161,8 @@ function renderEditor() {
         el.querySelector('button.mic-btn') as HTMLButtonElement,
         b as Extract<Block, { type: 'text' }>
       );
+    } else if (b.type === 'gallery') {
+      renderGalleryBlock(el, b);
     } else {
       const mtype = detectMediaType(b.url);
       let previewHtml = '<div class="media-empty">Link kiriting</div>';
@@ -157,7 +172,7 @@ function renderEditor() {
           ? `<div><iframe src="https://www.youtube.com/embed/${yid}" allowfullscreen></iframe><div class="media-hint" style="margin-top:6px; margin-bottom:0;">Embed ishlamasa, video egasi joylashtirishni o'chirgan — <a href="https://www.youtube.com/watch?v=${yid}" target="_blank" rel="noopener">YouTube'da ochish</a> doim ishlaydi.</div></div>`
           : `<div class="media-empty">YouTube linkini tekshiring</div>`;
       } else if (mtype === 'image' && b.url) {
-        previewHtml = `<img src="${b.url}" onerror="this.parentElement.innerHTML='Rasm yuklanmadi, linkni tekshiring'">`;
+        previewHtml = `<img src="${escapeHtml(b.url)}" onerror="this.parentElement.innerHTML='Rasm yuklanmadi, linkni tekshiring'">`;
       }
       el.innerHTML = `
         <div class="block-head">
@@ -230,6 +245,69 @@ function renderEditor() {
       });
     });
     container.appendChild(el);
+  });
+}
+
+/** One row per picture: URL + caption, reorderable, at least two rows. */
+function renderGalleryBlock(el: HTMLElement, b: Extract<Block, { type: 'gallery' }>) {
+  const rows = b.images
+    .map(
+      (img, i) => `
+        <div class="gallery-row" data-i="${i}">
+          <span class="gallery-num">${i + 1}</span>
+          <div class="gallery-fields">
+            <input type="text" class="media-url g-url" placeholder="https://.../rasm.jpg" value="${escapeHtml(img.url)}">
+            <input type="text" class="media-alt g-alt" placeholder="Rasm ostidagi izoh (ixtiyoriy)" value="${escapeHtml(img.alt || '')}">
+          </div>
+          ${img.url.trim() ? `<img class="gallery-thumb" src="${escapeHtml(img.url.trim())}" alt="">` : '<span class="gallery-thumb empty"></span>'}
+          <div class="gallery-row-actions">
+            <button class="btn ghost icon" type="button" data-g="up" title="Yuqoriga">↑</button>
+            <button class="btn ghost icon" type="button" data-g="down" title="Pastga">↓</button>
+            <button class="btn ghost icon" type="button" data-g="del" title="Olib tashlash">✕</button>
+          </div>
+        </div>`
+    )
+    .join('');
+  el.innerHTML = `
+    <div class="block-head">
+      <span class="block-type">Galereya · ${b.images.length} rasm</span>
+      <div class="block-actions">
+        <button class="btn ghost icon" data-act="up">↑</button>
+        <button class="btn ghost icon" data-act="down">↓</button>
+        <button class="btn ghost icon" data-act="del">✕</button>
+      </div>
+    </div>
+    <div class="media-hint">Saytda slayder bo'lib chiqadi. Har bir qatorga bitta rasm havolasi.</div>
+    <div class="gallery-rows">${rows}</div>
+    <button class="btn ghost small" type="button" data-g="add">+ Rasm qo'shish</button>
+  `;
+
+  el.querySelectorAll<HTMLElement>('.gallery-row').forEach((row) => {
+    const i = Number(row.dataset.i);
+    row.querySelector<HTMLInputElement>('.g-url')!.addEventListener('change', (e) => {
+      b.images[i].url = (e.target as HTMLInputElement).value;
+      renderEditor();
+      renderPreview();
+    });
+    row.querySelector<HTMLInputElement>('.g-alt')!.addEventListener('input', (e) => {
+      b.images[i].alt = (e.target as HTMLInputElement).value;
+      renderPreview();
+    });
+    row.querySelectorAll<HTMLButtonElement>('[data-g]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.g;
+        const j = act === 'up' ? i - 1 : act === 'down' ? i + 1 : -1;
+        if (j >= 0 && j < b.images.length) [b.images[i], b.images[j]] = [b.images[j], b.images[i]];
+        // A one-picture gallery is just a picture — keep at least two rows.
+        if (act === 'del' && b.images.length > 2) b.images.splice(i, 1);
+        renderEditor();
+        renderPreview();
+      });
+    });
+  });
+  el.querySelector<HTMLButtonElement>('[data-g="add"]')!.addEventListener('click', () => {
+    b.images.push({ url: '' });
+    renderEditor();
   });
 }
 
@@ -439,6 +517,13 @@ function renderPreview() {
       } else {
         html += `<div class="preview-block"><img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.alt || '')}"></div>`;
       }
+    } else if (b.type === 'gallery') {
+      const imgs = b.images.filter((i) => i.url.trim());
+      if (imgs.length) {
+        html += `<div class="preview-block preview-gallery">${imgs
+          .map((i) => `<figure><img src="${escapeHtml(i.url.trim())}" alt="${escapeHtml(i.alt || '')}">${i.alt ? `<figcaption>${escapeHtml(i.alt)}</figcaption>` : ''}</figure>`)
+          .join('')}</div>`;
+      }
     }
   });
   previewBody.innerHTML = html || '<div class="preview-placeholder">Postni yozishni boshlaganingda shu yerda ko\'rasan</div>';
@@ -585,6 +670,12 @@ function generatePostMarkdownBody(): string {
         // break that.
         body += `![${markdownAlt(b.alt)}](${b.url})\n\n`;
       }
+    } else if (b.type === 'gallery') {
+      // No blank line between images: one paragraph = one slider on the site.
+      const lines = b.images
+        .filter((i) => i.url.trim())
+        .map((i) => `![${markdownAlt(i.alt)}](${i.url.trim()})`);
+      if (lines.length) body += lines.join('\n') + '\n\n';
     }
   });
   return body.trim() + '\n';
@@ -1145,6 +1236,7 @@ async function publish() {
 export function initPostBuilder() {
   document.getElementById('addTextBtn')?.addEventListener('click', addTextBlock);
   document.getElementById('addMediaBtn')?.addEventListener('click', addMediaBlock);
+  document.getElementById('addGalleryBtn')?.addEventListener('click', addGalleryBlock);
   document.getElementById('titleInput')?.addEventListener('input', renderPreview);
   document.getElementById('generateBtn')?.addEventListener('click', publish);
   document.getElementById('logoutBtn')?.addEventListener('click', async () => {

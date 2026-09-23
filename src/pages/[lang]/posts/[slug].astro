@@ -63,13 +63,71 @@ const jsonLd = {
         <time datetime={entry.data.createdAt.toISOString()}>{dateFmt.format(entry.data.createdAt)}</time>
       </div>
     </header>
-    <div class="post-body">
+    <div class="post-body" data-prev={strings.gallery.prev} data-next={strings.gallery.next}>
       <Content />
     </div>
   </article>
 
   <Footer lang={lang} />
 </BaseLayout>
+
+<script>
+  // Layout decisions that need the image's real shape, which only the browser
+  // knows (covers are remote URLs, so the build never sees their size).
+  // Everything reads fine without this script: figures are full-width and
+  // galleries are swipeable strips.
+  const body = document.querySelector<HTMLElement>('.post-body');
+
+  // Tall or small pictures sit beside the text instead of stretching across it.
+  // The lead figure is exempt — it opens the article at full width.
+  body?.querySelectorAll<HTMLImageElement>('figure.post-figure img').forEach((img) => {
+    const fig = img.closest('figure');
+    if (!fig || fig === body.firstElementChild) return;
+    const decide = () => {
+      if (!img.naturalWidth) return;
+      const tall = img.naturalHeight > img.naturalWidth * 1.15;
+      const small = img.naturalWidth < 480;
+      fig.classList.toggle('is-side', tall || small);
+    };
+    if (img.complete) decide();
+    else img.addEventListener('load', decide, { once: true });
+  });
+
+  // Galleries: add prev/next and an "n / total" counter over the native
+  // scroll-snap strip, so swiping and keyboard scrolling keep working.
+  body?.querySelectorAll<HTMLElement>('.gallery').forEach((gallery) => {
+    const track = gallery.querySelector<HTMLElement>('.gallery-track');
+    const slides = track ? Array.from(track.children) as HTMLElement[] : [];
+    if (!track || slides.length < 2) return;
+
+    const bar = document.createElement('div');
+    bar.className = 'gallery-bar';
+    const prev = document.createElement('button');
+    const next = document.createElement('button');
+    const count = document.createElement('span');
+    prev.type = next.type = 'button';
+    prev.textContent = '←';
+    next.textContent = '→';
+    prev.setAttribute('aria-label', body.dataset.prev || 'Previous');
+    next.setAttribute('aria-label', body.dataset.next || 'Next');
+    count.className = 'gallery-count';
+    bar.append(prev, count, next);
+    gallery.append(bar);
+
+    const current = () => Math.round(track.scrollLeft / track.clientWidth);
+    const update = () => {
+      const i = current();
+      count.textContent = `${i + 1} / ${slides.length}`;
+      prev.disabled = i <= 0;
+      next.disabled = i >= slides.length - 1;
+    };
+    const go = (d: number) => track.scrollTo({ left: (current() + d) * track.clientWidth, behavior: 'smooth' });
+    prev.addEventListener('click', () => go(-1));
+    next.addEventListener('click', () => go(1));
+    track.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
+    update();
+  });
+</script>
 
 <style>
   .post{ padding:48px 0 40px; max-width:720px; margin:0 auto; }
@@ -84,12 +142,41 @@ const jsonLd = {
   .post-body :global(p){ margin:0 0 24px; }
   /* Drop cap on the opening paragraph — the one ornament a newspaper allows itself. */
   .post-body > :global(p:first-of-type::first-letter){ font-family:var(--font-display); font-weight:900; float:left; font-size:4.1em; line-height:0.82; margin:0.06em 0.1em 0 0; }
-  .post-body :global(img){ max-width:100%; margin:8px 0 30px; display:block; }
+  /* Figures: full column width by default, caption from the alt text. */
+  .post-body :global(figure){ margin:8px 0 30px; }
+  .post-body :global(figure img){ display:block; width:100%; height:auto; background:var(--bg-2); }
+  .post-body :global(figcaption){ font-family:var(--font-sans); font-size:13px; line-height:1.45; color:var(--ink-soft); padding:8px 0 0; border-bottom:1px solid var(--line); padding-bottom:8px; }
+  /* The lead figure opens the article: wider than the text, never taller than the screen. */
+  .post-body > :global(figure.post-figure:first-child){ margin:0 -120px 34px; }
+  .post-body > :global(figure.post-figure:first-child img){ max-height:78vh; object-fit:contain; }
+  .post-body > :global(figure.post-figure:first-child figcaption){ padding-left:120px; padding-right:120px; }
+  /* Tall or small pictures (set by the script below) sit beside the text. */
+  .post-body :global(figure.is-side){ float:right; width:44%; margin:6px 0 18px 28px; }
+  .post-body :global(h2), .post-body :global(h3), .post-body :global(blockquote), .post-body :global(.gallery), .post-body :global(hr){ clear:both; }
+  .post-body::after{ content:''; display:block; clear:both; }
+
+  /* Gallery: a native scroll-snap strip (swipeable, works with JS off). */
+  .post-body :global(.gallery){ margin:8px 0 34px; }
+  .post-body :global(.gallery-track){ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; background:var(--bg-2); }
+  .post-body :global(.gallery-track::-webkit-scrollbar){ display:none; }
+  .post-body :global(.gallery-slide){ flex:0 0 100%; margin:0; scroll-snap-align:start; display:flex; flex-direction:column; }
+  .post-body :global(.gallery-slide img){ width:100%; aspect-ratio:3 / 2; object-fit:contain; }
+  .post-body :global(.gallery-slide figcaption){ margin-top:auto; background:var(--bg); padding:8px 0; }
+  .post-body :global(.gallery-bar){ display:flex; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid var(--rule); font-family:var(--font-sans); }
+  .post-body :global(.gallery-bar button){ background:transparent; border:1px solid var(--ink); color:var(--ink); width:36px; height:30px; cursor:pointer; font-size:15px; border-radius:2px; }
+  .post-body :global(.gallery-bar button:hover:not(:disabled)){ background:var(--ink); color:var(--bg); }
+  .post-body :global(.gallery-bar button:disabled){ opacity:0.3; cursor:default; }
+  .post-body :global(.gallery-count){ font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--ink-soft); }
   .post-body :global(a){ color:inherit; text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:0.18em; }
   .post-body :global(a:hover){ color:var(--accent); }
-  .post-body :global(h2){ font-size:28px; margin:44px 0 16px; line-height:1.2; }
+  /* Section heads read as rubrics: a short red rule over the heading. */
+  .post-body :global(h2){ font-size:28px; margin:48px 0 16px; line-height:1.2; padding-top:14px; position:relative; }
+  .post-body :global(h2)::before{ content:''; position:absolute; top:0; left:0; width:48px; height:3px; background:var(--accent); }
   .post-body :global(h3){ font-size:22px; margin:34px 0 14px; line-height:1.25; }
-  .post-body :global(blockquote){ margin:32px 0; padding:0 0 0 20px; border-left:3px solid var(--accent); font-style:italic; color:var(--ink-soft); }
+  /* A Markdown quote becomes a pull quote. */
+  .post-body :global(blockquote){ margin:40px 0; padding:18px 0; border-top:2px solid var(--rule); border-bottom:1px solid var(--rule); font-family:var(--font-display); font-style:italic; font-weight:700; font-size:28px; line-height:1.3; color:var(--ink); text-align:center; }
+  .post-body :global(blockquote p){ margin:0; }
+  .post-body :global(blockquote p + p){ margin-top:12px; }
   .post-body :global(ul), .post-body :global(ol){ padding-left:1.3em; margin:0 0 24px; }
   .post-body :global(li){ margin-bottom:8px; }
   .post-body :global(hr){ border:none; text-align:center; margin:40px 0; }
@@ -97,7 +184,14 @@ const jsonLd = {
   .post-body :global(code){ background:var(--bg-2); border:1px solid var(--line); border-radius:2px; padding:1px 5px; font-size:0.82em; }
   .post-body :global(pre){ background:var(--bg-2); border:1px solid var(--line); border-radius:2px; padding:18px; overflow-x:auto; font-size:15px; line-height:1.55; }
   .post-body :global(pre code){ border:none; padding:0; background:none; }
+  @media (max-width:1000px){
+    .post-body > :global(figure.post-figure:first-child){ margin:0 0 30px; }
+    .post-body > :global(figure.post-figure:first-child figcaption){ padding-left:0; padding-right:0; }
+  }
   @media (max-width:640px){
+    .post-body :global(figure.is-side){ float:none; width:auto; margin:8px 0 26px; }
+    .post-body :global(figure.is-side img){ max-height:70vh; width:auto; max-width:100%; margin:0 auto; }
+    .post-body :global(blockquote){ font-size:22px; }
     .post{ padding:28px 0 24px; }
     .post h1{ font-size:32px; }
     .post-dek{ font-size:18px; }
