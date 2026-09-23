@@ -58,5 +58,15 @@
     "updated_at": "2026-09-21T14:26:14.539Z",
     "telegram_message_id": 104,
     "telegram_has_media": true
+  },
+  {
+    "slug": "claude-opus-55-taqdim-etildi",
+    "title": "Claude Opus 5.5 taqdim etildi",
+    "excerpt": "Claude Opus 5.5 kuchliroq, tezroq, arzonroq va xavfsizroq model – AI foydalanuvchilari uchun muhim yangilik.",
+    "cover_image": "https://github.com/miuceo/images/blob/main/image.png?raw=true",
+    "created_at": "2026-09-22T17:43:07.271Z",
+    "updated_at": "2026-09-22T17:43:07.271Z",
+    "telegram_message_id": 109,
+    "telegram_has_media": true
   }
 ]
