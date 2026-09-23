@@ -63,10 +63,19 @@ export const MAX_INPUT_CHARS = 20000;
 const MAX_OUTPUT_TOKENS = 32000;
 
 /* ---------- Speech to text ----------
-   Groq whisper-large-v3, per §10's routing table. Kept behind this same
-   interface so no feature code talks to a provider directly (SKILLS.md
-   `agent-task` step 2). Free-tier limits: 25 MB per file, 20 req/min,
-   28,800 audio-seconds/day. */
+   Two rungs, same shape as the text ladder (D12):
+
+   1. Gemini 3.5 Transcribe (D19) — when GEMINI_API_KEY and GEMINI_STT_MODEL
+      are both set. Free tier. Known trade-off, accepted by the author: on the
+      free tier Google may use submitted content to improve its products, so
+      the audio of a dictation can outlive this request on Google's side.
+      Dictations become public posts, which is why that was judged acceptable.
+      It is a preview model, so any failure falls through to rung 2.
+   2. Groq whisper-large-v3, per §10's routing table. Free-tier limits: 25 MB
+      per file, 20 req/min, 28,800 audio-seconds/day.
+
+   Kept behind this one interface so no feature code talks to a provider
+   directly (SKILLS.md `agent-task` step 2). */
 
 /** Groq's hard per-file limit. */
 export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -125,7 +134,100 @@ const STT_PROMPTS: Record<string, string> = {
   en: 'A technical blog post in English about AI, machine learning and backend engineering.',
 };
 
+/** Gemini language hints are BCP-47 with region. */
+const GEMINI_LANG_CODES: Record<string, string> = { uz: 'uz-UZ', en: 'en-US', ru: 'ru-RU' };
+
+/** Inline audio shares a 20 MB request cap with its base64 overhead (4/3). */
+const GEMINI_INLINE_MAX_BYTES = 14 * 1024 * 1024;
+
+function geminiMimeFor(filename: string): string {
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  const map: Record<string, string> = {
+    webm: 'audio/webm', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/opus',
+    // Safari records AAC in an MP4 container — the same thing as .m4a.
+    mp4: 'audio/m4a', m4a: 'audio/m4a', mp3: 'audio/mp3', mpeg: 'audio/mpeg',
+    wav: 'audio/wav', flac: 'audio/flac', aac: 'audio/aac',
+  };
+  return map[ext] || 'audio/webm';
+}
+
+function toBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  // Chunked: String.fromCharCode(...hugeArray) overflows the call stack.
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+
+/** The transcript can come back as a convenience field or inside steps. */
+function geminiText(data: unknown): string {
+  const d = data as {
+    output_text?: string;
+    status?: string;
+    steps?: { content?: { type?: string; text?: string }[] }[];
+    outputs?: { type?: string; text?: string }[];
+  };
+  if (d.status && d.status !== 'completed') throw new Error(`status ${d.status}`);
+  if (typeof d.output_text === 'string' && d.output_text.trim()) return d.output_text.trim();
+  const parts = [
+    ...(d.steps ?? []).flatMap((st) => st.content ?? []),
+    ...(d.outputs ?? []),
+  ]
+    .filter((c) => (c.type ?? 'text') === 'text' && typeof c.text === 'string')
+    .map((c) => c.text as string);
+  return parts.join(' ').trim();
+}
+
+async function transcribeWithGemini(
+  env: Env,
+  audio: ArrayBuffer,
+  filename: string,
+  language?: string | null
+): Promise<TranscriptResult> {
+  const model = (env.GEMINI_STT_MODEL || '').trim();
+  const body: Record<string, unknown> = {
+    model,
+    input: [{ type: 'audio', data: toBase64(audio), mime_type: geminiMimeFor(filename) }],
+  };
+  // Pinned for the same reason as Whisper below: detection drifts Uzbek
+  // toward Turkish. Default "verbatim" mode, not "smart" — D17 says the
+  // author's exact words are kept; the narrow polish pass only punctuates.
+  const code = language && language !== 'auto' ? GEMINI_LANG_CODES[language] : undefined;
+  if (code) body.generation_config = { transcription_config: { language_codes: [code] } };
+
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY as string },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 300)}`);
+  const text = geminiText(await res.json());
+  if (!text) throw new Error('empty text');
+  return { text, language: language ?? null, model };
+}
+
 export async function transcribeAudio(
+  env: Env,
+  audio: ArrayBuffer,
+  filename: string,
+  language?: string | null
+): Promise<TranscriptResult> {
+  const geminiReady = !!(env.GEMINI_API_KEY && (env.GEMINI_STT_MODEL || '').trim());
+  if (geminiReady && audio.byteLength <= GEMINI_INLINE_MAX_BYTES) {
+    try {
+      return await transcribeWithGemini(env, audio, filename, language);
+    } catch (err) {
+      // Preview model: an outage, a renamed id or a quota hit must never cost
+      // the author their dictation. Fall through to Whisper.
+      console.warn(`transcribe gemini failed, falling back to groq: ${(err as Error).message}`);
+    }
+  }
+  return transcribeWithGroq(env, audio, filename, language);
+}
+
+async function transcribeWithGroq(
   env: Env,
   audio: ArrayBuffer,
   filename: string,

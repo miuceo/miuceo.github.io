@@ -4,9 +4,9 @@
 **Author:** Muhammadjon Ibrohimov, with Claude
 **Date:** 2026-08-09, last revised 2026-09-23
 
-**The decision log is D1–D18.** D1–D14 are referenced inline throughout;
+**The decision log is D1–D19.** D1–D14 are referenced inline throughout;
 D15–D17 (§12) removed the Telegram bot and the agent loop; D18 (§13) is the
-"Muhammadjon Journal" redesign. §12–§13 are the most recent word wherever they
+"Muhammadjon Journal" redesign; D19 (§13) adds Gemini for dictation. §12–§13 are the most recent word wherever they
 contradict an earlier section.
 
 ---
@@ -29,7 +29,7 @@ Decisions from the requirements interview. These are settled — treat them as c
 | **D10** | **Zero recurring cost. Free tiers only.** | Hard constraint. Overrides every other preference. |
 | **D11** | **The LLM must be multimodal** — image, video, audio, PDF in. | D5 requires reading media, not just text. A text-only model cannot do the job. |
 | **D12** | **A fallback provider is mandatory**, not optional. | Free tiers rate-limit and change terms. One provider is a single point of failure. |
-| **D13** | Providers: **OpenRouter + Groq**. No Gemini, no Claude. | Author preference; both have genuine free tiers. See §10. |
+| **D13** | Providers: **OpenRouter + Groq**. No Gemini, no Claude. | Author preference; both have genuine free tiers. See §10. *Narrowed by D19: Gemini for speech-to-text only.* |
 | **D14** | **Voice is a first-class input and output**, not an add-on. | Speak a post from anywhere; listeners get audio in all three languages. See §5.1. |
 
 **Three non-negotiables:** no secret ever reaches the browser (§4), nothing in this design costs money (§10), and the agent can read media with a fallback behind it (§10 ladder). Everything below follows from those.
@@ -434,7 +434,7 @@ Per D13 the providers are **OpenRouter and Groq**. Routed by task, not by a sing
 2. **The free model roster rotates.** Model IDs above were accurate in August 2026 and *will* change. Never hardcode a model ID in feature code — keep the list in Worker config with a health check that drops a model on repeated failure.
 3. **Groq TTS is Preview status.** Treat audio output as best-effort; the site must render perfectly with no audio version present.
 
-Gemini and Claude are excluded by D13 — Gemini by preference, Claude because it has no free tier. The single-file interface in `worker/src/agent.ts` means either could be reinstated as a config change if that ever changes.
+Claude is excluded by D13 because it has no free tier. Gemini was excluded by preference until D19 (§13) admitted it for speech-to-text only. The single-file interface in `worker/src/agent.ts` means either could be reinstated as a config change if that ever changes.
 
 **Design rule:** never let a provider outage or a hit rate-limit lose a draft. Drafts land in D1 *before* the agent is called, so failure degrades to "translation pending", never to lost work.
 
@@ -517,5 +517,15 @@ The Claude-inspired look read as Anthropic's brand rather than the author's. He 
 - **Light by default, following the OS.** Both editions are first-class; neither is an inverted afterthought.
 - **The hero stayed.** An early draft replaced it with the feed alone; the author asked for it back. Its words are unchanged — only the setting is.
 - **Admin pages come last**, after the public site, so the only publishing path is never mid-restyle.
+
+**D19 — Dictation tries Gemini 3.5 Transcribe first, Groq Whisper second.**
+
+The author asked for Gemini 3.5 Transcribe (public preview since 2026-08-26, lists `uz-UZ`) to improve Uzbek dictation. It narrows D13 rather than reversing it: Gemini does speech-to-text and nothing else.
+
+- **Free tier, so D10 holds.** The paid tier (~$0.005/min) was rejected as a recurring cost.
+- **The privacy trade-off was chosen knowingly.** On the free tier Google may use submitted content to improve its products, so a dictation's audio can persist on Google's side even though this Worker still keeps nothing. Accepted because dictations become public posts. If that ever stops being true (private notes, other people's voices), this decision should be revisited before the feature is used for them.
+- **Groq stays as the fallback (D12).** A preview model can be renamed or withdrawn; any Gemini failure — error, empty text, non-completed status, audio over the ~14 MB inline limit, or a missing key — falls through to Whisper, so dictation never breaks because of it.
+- **Verbatim, not "smart" mode.** Smart mode rewrites false starts and self-corrections; D17 keeps the author's exact words, and the existing narrow polish pass still only punctuates.
+- **Config, not code.** `GEMINI_STT_MODEL` lives in `wrangler.toml`; `GEMINI_API_KEY` is a Worker secret. Clearing either returns dictation to Groq only.
 
 ---

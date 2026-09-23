@@ -46,6 +46,9 @@ OPENROUTER_TEXT_MODELS = "nvidia/nemotron-3-super-120b-a12b:free,openai/gpt-oss-
 # model does exist on OpenRouter — nemotron-3-nano-omni — but it is a reasoning
 # LLM rather than an ASR model and is untested here.)
 GROQ_STT_MODEL = "whisper-large-v3"
+# D19: tried first for dictation; Groq Whisper above is the fallback.
+# Preview model — clear this to go back to Groq only.
+GEMINI_STT_MODEL = "gemini-3.5-transcribe"
 
 # Vision / alt text (Phase 5 Stage 4). OpenRouter only — Groq has no vision
 # model, so this is the one route where OpenRouter is primary rather than
