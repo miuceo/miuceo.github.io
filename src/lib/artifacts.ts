@@ -14,9 +14,8 @@ export interface ModelBadge {
   emoji: string;
 }
 
-/* tokens.css currently aliases every neon accent to `--accent` (no distinct
- * per-hue colors survive the design), so a model badge differentiates by
- * emoji + label rather than color. */
+/* The Journal palette has a single accent, so a model badge differentiates
+ * by emoji + label rather than color. */
 const MODEL_EMOJI: Record<string, string> = {
   claude: '✦',
   gemini: '✨',

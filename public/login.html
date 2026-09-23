@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirish — miuceo</title>
+<title>Kirish — The Muhammadjon Journal</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/theme.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -15,22 +14,22 @@
   .brand-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
 
   .card{
-    background:var(--bg-2); border:1px solid var(--line); border-radius:8px;
-    padding:48px 40px; text-align:center; width:min(400px, 90vw);
+    background:var(--bg); border-top:3px double var(--rule); border-bottom:3px double var(--rule);
+    padding:36px 32px 40px; text-align:center; width:min(420px, 90vw);
   }
-  .brand{ font-weight:800; font-size:18px; color:var(--neon-green); text-shadow:var(--glow-sm) var(--neon-green); }
-  .card h1{ font-size:22px; font-weight:700; margin:0 0 10px; }
-  .card p{ font-size:14px; color:var(--ink-soft); margin:0 0 32px; line-height:1.6; }
+  .brand{ font-family:var(--font-display); font-weight:900; font-size:22px; color:var(--ink); }
+  .card h1{ font-size:30px; font-weight:700; margin:0 0 10px; }
+  .card p{ font-family:var(--font-body); font-style:italic; font-size:16px; color:var(--ink-soft); margin:0 0 32px; line-height:1.55; }
 
   #telegramLoginBox{ display:flex; justify-content:center; min-height:40px; }
 
-  .status-msg{ font-size:13px; margin-top:24px; padding:12px; border-radius:6px; display:none; border:1px solid; }
-  .status-msg.error{ display:block; background:rgba(255,92,122,0.1); color:var(--danger); border-color:var(--danger); }
-  .status-msg.ok{ display:block; background:rgba(61,255,162,0.1); color:var(--neon-green); border-color:var(--neon-green); }
+  .status-msg{ font-size:13px; margin-top:24px; padding:10px 12px; display:none; border-left:3px solid; text-align:left; }
+  .status-msg.error{ display:block; color:var(--danger); border-color:var(--danger); }
+  .status-msg.ok{ display:block; color:var(--ink); border-color:var(--ink); }
 
   .back{ margin-top:24px; }
-  .back a{ font-size:12px; color:var(--ink-soft); }
-  .back a:hover{ color:var(--neon-cyan); }
+  .back a{ font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); }
+  .back a:hover{ color:var(--accent); }
 
   @media (max-width:480px){
     .card{ padding:36px 24px; }
@@ -41,7 +40,7 @@
 
 <div class="card">
   <div class="brand-row">
-    <div class="brand">MIUCEO\</div>
+    <div class="brand">The Muhammadjon Journal</div>
     <button class="theme-toggle" id="themeToggle">☀️</button>
   </div>
   <h1>Admin panel</h1>
