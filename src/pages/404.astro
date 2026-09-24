@@ -21,6 +21,17 @@ const translations = Object.fromEntries(
   hreflangPaths={{}}
   noindex={true}
 >
+  <!-- The repo miuceo/ai-news-agent was renamed to miuceo/neuron-uz, which moved
+       its Pages site. Old links (already sent in Telegram digests) land here, so
+       forward them to the same path under the new prefix before anything paints. -->
+  <script is:inline>
+    (function () {
+      var p = location.pathname;
+      if (p === '/ai-news-agent' || p.indexOf('/ai-news-agent/') === 0) {
+        location.replace('/neuron-uz' + p.slice('/ai-news-agent'.length) + location.search + location.hash);
+      }
+    })();
+  </script>
   <div class="card">
     <div class="mark">The Muhammadjon Journal</div>
     <div class="code">404</div>
