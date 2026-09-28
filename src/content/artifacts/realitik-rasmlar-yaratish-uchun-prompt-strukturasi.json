@@ -1,0 +1,13 @@
+{
+  "title": "Realitik rasmlar yaratish uchun prompt strukturasi",
+  "model": "Claude",
+  "date": "2026-09-28T03:13:09.733Z",
+  "tags": [
+    "gemini",
+    "nanobanana",
+    "text-to-image",
+    "image-text-to-image"
+  ],
+  "requiresClaude": false,
+  "file": "/artifacts/files/realitik-rasmlar-yaratish-uchun-prompt-strukturasi.html"
+}
