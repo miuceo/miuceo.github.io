@@ -4,7 +4,8 @@ excerpt: "Claude Sonnet 5.5 tez, arzon va kundalik vazifalar uchun optimallashti
 coverImage: "https://raw.githubusercontent.com/miuceo/images/main/images/dff17ca2802b49f5a9b01297ee6fe97f.jpg"
 createdAt: "2026-09-29T03:13:47.411Z"
 updatedAt: "2026-09-29T03:13:47.411Z"
-telegramHasMedia: false
+telegramMessageId: 129
+telegramHasMedia: true
 ---
 ![](https://raw.githubusercontent.com/miuceo/images/main/images/dff17ca2802b49f5a9b01297ee6fe97f.jpg)
 
