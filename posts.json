@@ -68,5 +68,15 @@
     "updated_at": "2026-09-22T17:43:07.271Z",
     "telegram_message_id": 109,
     "telegram_has_media": true
+  },
+  {
+    "slug": "claude-sonnet-55",
+    "title": "Claude Sonnet 5.5",
+    "excerpt": "Claude Sonnet 5.5 tez, arzon va kundalik vazifalar uchun optimallashtirilgan yangi model.",
+    "cover_image": "https://raw.githubusercontent.com/miuceo/images/main/images/dff17ca2802b49f5a9b01297ee6fe97f.jpg",
+    "created_at": "2026-09-29T03:13:47.411Z",
+    "updated_at": "2026-09-29T03:13:47.411Z",
+    "telegram_message_id": null,
+    "telegram_has_media": false
   }
 ]
