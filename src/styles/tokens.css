@@ -116,7 +116,6 @@ h3 { font-size: 17px; line-height: 1.3; }
 }
 a:hover .hl, a.hl:hover {
   text-decoration-color: currentColor;
-  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
 }
 
 .btn {
@@ -129,28 +128,49 @@ a:hover .hl, a.hl:hover {
   cursor: pointer;
   display: inline-block;
   text-decoration: none;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
-.btn-primary { background: var(--accent-1); color: var(--on-accent-1); }
-.btn-primary:hover {
-  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-1) 60%, transparent);
+.btn-primary, a.btn-primary {
+  background: var(--accent-1);
+  color: var(--on-accent-1);
+}
+.btn-primary:hover, a.btn-primary:hover, a.post-kicker:hover {
+  background: var(--accent-1);
+  color: var(--on-accent-1);
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 65%, transparent);
   text-shadow: none;
 }
-.btn-secondary { background: var(--accent-2); color: var(--on-accent-2); }
-.btn-secondary:hover {
-  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 60%, transparent);
+.btn-secondary, a.btn-secondary {
+  background: var(--accent-2);
+  color: var(--on-accent-2);
+}
+.btn-secondary:hover, a.btn-secondary:hover {
+  background: var(--accent-2);
+  color: var(--on-accent-2);
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent-2) 65%, transparent);
   text-shadow: none;
 }
-.btn-ghost { background: transparent; color: var(--text); border-color: var(--text); }
-.btn-ghost:hover {
+.btn-ghost, a.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--text);
+}
+.btn-ghost:hover, a.btn-ghost:hover {
   border-color: var(--accent-1);
   color: var(--accent-1-text);
+  transform: translateY(-1px);
   box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 45%, transparent);
   text-shadow: none;
 }
 .btn.small { padding: 8px 12px; font-size: 13px; }
-.btn.danger { background: transparent; color: var(--accent-2); border-color: var(--accent-2); }
-.btn.danger:hover {
+.btn.danger, a.btn.danger {
+  background: transparent;
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.btn.danger:hover, a.btn.danger:hover {
   background: var(--accent-2);
   color: var(--on-accent-2);
   box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 60%, transparent);
@@ -165,19 +185,31 @@ a:hover .hl, a.hl:hover {
   padding: var(--space-4);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.card:hover, .post-card:hover, .project-card:hover, .artifact-card:hover, .contact-card:hover {
+.card:hover, .post-card:hover, .project-card:hover, .contact-card:hover {
+  color: var(--text);
   border-color: var(--accent-1);
   box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
   text-shadow: none;
 }
-.card:hover .card-title, .post-card:hover .card-title, .project-card:hover .project-title, .artifact-card:hover .card-title, .contact-card:hover h2 {
-  color: var(--accent-1);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+.artifact-card:hover {
+  color: var(--text);
+  border-color: var(--accent-3);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent-3) 28%, transparent);
+  text-shadow: none;
+}
+.card:hover .card-title, .post-card:hover .card-title, .project-card:hover .project-title, .contact-card:hover h2 {
+  color: var(--accent-1-text);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 45%, transparent);
+}
+.artifact-card:hover .card-title {
+  color: var(--accent-3);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-3) 45%, transparent);
 }
 .card:hover .card-excerpt, .post-card:hover .card-excerpt, .post-card:hover .card-meta, .post-card:hover .card-date,
 .project-card:hover .desc, .project-card:hover .story, .project-card:hover .stars,
 .artifact-card:hover .card-desc, .artifact-card:hover .card-bottom, .artifact-card:hover .card-date,
 .contact-card:hover p {
+  color: var(--text);
   text-shadow: none !important;
 }
 

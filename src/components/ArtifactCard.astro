@@ -53,8 +53,18 @@ const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', 
     box-sizing: border-box;
   }
   .artifact-card:hover {
-    border-color: var(--accent-1);
-    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+    color: var(--text);
+    text-shadow: none;
+    border-color: var(--accent-3);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-3) 28%, transparent);
+  }
+  .artifact-card:hover .card-title {
+    color: var(--accent-3);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-3) 45%, transparent);
+  }
+  .artifact-card:hover .kind-pill {
+    color: var(--on-accent-3);
+    text-shadow: none;
   }
   .card-meta {
     display: flex;
@@ -88,6 +98,7 @@ const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', 
     line-height: 1.25;
     color: var(--text);
     margin: 0 0 var(--space-2);
+    transition: color 0.2s ease, text-shadow 0.2s ease;
   }
   .card-desc {
     font-family: var(--font-body);

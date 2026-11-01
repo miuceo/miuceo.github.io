@@ -103,9 +103,12 @@ const jsonLd = {
   <main class="front-page">
     <section class="hero">
       <div class="hero-content">
-        <span class="hero-eyebrow">{strings.hero.prompt}</span>
+        <span class="hero-eyebrow">
+          <span class="hero-prompt-symbol" aria-hidden="true">&gt;_</span>
+          <span>{strings.hero.prompt}</span>
+        </span>
         <h1>
-          {strings.hero.titlePre} {strings.hero.titleAccent1} {strings.hero.titleMid} {strings.hero.titleAccent2}
+          {strings.hero.titlePre} <span class="hero-accent-cobalt">{strings.hero.titleAccent1}</span> {strings.hero.titleMid} <span class="hero-accent-coral">{strings.hero.titleAccent2}</span>
         </h1>
         <p class="hero-desc">{strings.hero.desc}</p>
         <div class="hero-cta">
@@ -139,15 +142,15 @@ const jsonLd = {
 
         {/* Middle Bento Row: 3 mini stat cards */}
         <div class="bento-stats">
-          <a href={`/${lang}/projects/`} class="bento-stat">
+          <a href={`/${lang}/projects/`} class="bento-stat stat-projects">
             <span class="bento-stat-num num-projects">{allProjects.length}</span>
             <span class="bento-stat-label">{strings.hero.bento.statProjects}</span>
           </a>
-          <a href={`/${lang}/posts/`} class="bento-stat">
+          <a href={`/${lang}/posts/`} class="bento-stat stat-posts">
             <span class="bento-stat-num num-posts">{posts.length}</span>
             <span class="bento-stat-label">{strings.hero.bento.statPosts}</span>
           </a>
-          <a href={`/${lang}/artifacts/`} class="bento-stat">
+          <a href={`/${lang}/artifacts/`} class="bento-stat stat-artifacts">
             <span class="bento-stat-num num-artifacts">{artifacts.length}</span>
             <span class="bento-stat-label">{strings.hero.bento.statArtifacts}</span>
           </a>
@@ -196,7 +199,7 @@ const jsonLd = {
 
       {feed.length > 0 ? (
         <div class="latest-grid">
-          {feed.map((item) => (
+          {feed.map((item, idx) => (
             <div class="grid-item">
               {item.kind === 'post' ? (
                 <PostCard
@@ -207,6 +210,7 @@ const jsonLd = {
                   createdAt={item.date}
                   coverImage={item.image}
                   showKind
+                  priority={idx === 0}
                 />
               ) : (
                 <ArtifactCard
@@ -280,10 +284,10 @@ const jsonLd = {
 
   .hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    gap: var(--space-5);
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: var(--space-6);
     align-items: center;
-    padding: var(--space-6) 0 var(--space-5);
+    padding: var(--space-6) 0 var(--space-6);
     margin-bottom: var(--space-5);
   }
   .hero-content {
@@ -293,30 +297,49 @@ const jsonLd = {
     text-align: left;
   }
   .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-family: var(--font-heading);
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.14em;
     color: var(--accent-1-text);
-    margin-bottom: var(--space-2);
+    background: color-mix(in srgb, var(--accent-1) 12%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent-1) 40%, var(--mid));
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    margin-bottom: var(--space-3);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 20%, transparent);
+  }
+  .hero-prompt-symbol {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--accent-2);
   }
   .hero h1 {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 48px;
-    line-height: 1.12;
-    letter-spacing: -0.01em;
+    font-size: clamp(36px, 4.4vw, 56px);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
     text-wrap: balance;
     color: var(--text);
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--space-4);
+  }
+  .hero-accent-cobalt {
+    color: var(--accent-1-text);
+  }
+  .hero-accent-coral {
+    color: var(--accent-2);
   }
   .hero-desc {
     font-family: var(--font-body);
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 400;
     line-height: 1.65;
-    max-width: 65ch;
+    max-width: 62ch;
     color: var(--text);
     margin: 0 0 var(--space-4);
   }
@@ -326,7 +349,9 @@ const jsonLd = {
     gap: var(--space-2);
   }
   .hero-cta .btn {
-    min-height: 44px;
+    min-height: 48px;
+    padding: 12px 24px;
+    font-size: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -462,12 +487,25 @@ const jsonLd = {
     justify-content: center;
     text-align: center;
     text-decoration: none;
+    color: var(--text);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
   .bento-stat:hover {
+    color: var(--text);
+    text-shadow: none;
+    transform: translateY(-2px);
+  }
+  .bento-stat.stat-projects:hover {
     border-color: var(--accent-1);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 25%, transparent);
-    transform: translateY(-1px);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 30%, transparent);
+  }
+  .bento-stat.stat-posts:hover {
+    border-color: var(--accent-2);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-2) 30%, transparent);
+  }
+  .bento-stat.stat-artifacts:hover {
+    border-color: var(--accent-3);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-3) 30%, transparent);
   }
   .bento-stat-num {
     font-family: var(--font-heading);
@@ -537,7 +575,9 @@ const jsonLd = {
     transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .bento-pill-quick:hover {
-    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-2) 60%, transparent);
+    color: var(--on-accent-2);
+    text-shadow: none;
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-2) 65%, transparent);
     transform: translateY(-1px);
   }
   .bento-pill-quick .pill-arrow {
@@ -546,7 +586,12 @@ const jsonLd = {
   .bento-featured-body {
     display: block;
     text-decoration: none;
+    color: var(--text);
     position: relative;
+  }
+  .bento-featured-body:hover {
+    color: var(--text);
+    text-shadow: none;
   }
   .bento-featured-body::after {
     content: '';
@@ -569,8 +614,8 @@ const jsonLd = {
     transition: color 0.2s ease, text-shadow 0.2s ease;
   }
   .bento-featured:hover .bento-featured-title {
-    color: var(--accent-1);
-    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+    color: var(--accent-1-text);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 45%, transparent);
   }
   .featured-arrow {
     color: var(--accent-1-text);
@@ -600,20 +645,6 @@ const jsonLd = {
     margin-bottom: var(--space-4);
     flex-wrap: wrap;
     gap: var(--space-2);
-  }
-  .section-title-wrap {
-    display: flex;
-    flex-direction: column;
-  }
-  .section-eyebrow {
-    display: block;
-    font-family: var(--font-heading);
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--accent-1-text);
-    margin-bottom: 4px;
   }
   .section-heading {
     font-family: var(--font-heading);
@@ -713,7 +744,10 @@ const jsonLd = {
 
   @media (max-width: 768px) {
     .hero h1 {
-      font-size: 32px;
+      font-size: 34px;
+    }
+    .hero-desc {
+      font-size: 18px;
     }
     .latest-grid {
       grid-template-columns: minmax(0, 1fr);
@@ -725,7 +759,7 @@ const jsonLd = {
 
   @media (max-width: 640px) {
     .hero h1 {
-      font-size: 28px;
+      font-size: 30px;
     }
     .hero-cta {
       width: 100%;

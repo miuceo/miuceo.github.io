@@ -1,6 +1,7 @@
 ---
 import type { Lang } from '../lib/i18n';
 import { t } from '../lib/i18n';
+import { optimizeImage } from '../lib/image-opt.mjs';
 
 interface Props {
   lang: Lang;
@@ -10,10 +11,22 @@ interface Props {
   createdAt: Date;
   coverImage?: string;
   showKind?: boolean;
+  priority?: boolean;
 }
 
-const { lang, slug, title, excerpt, createdAt, coverImage, showKind = false } = Astro.props;
+const {
+  lang,
+  slug,
+  title,
+  excerpt,
+  createdAt,
+  coverImage,
+  showKind = false,
+  priority = false,
+} = Astro.props;
 const strings = t(lang);
+
+const optImg = coverImage ? await optimizeImage(coverImage) : null;
 
 const dateFmt = new Intl.DateTimeFormat(lang, {
   year: 'numeric',
@@ -22,10 +35,20 @@ const dateFmt = new Intl.DateTimeFormat(lang, {
 });
 ---
 
-<a href={`/${lang}/posts/${slug}/`} class:list={['post-card', { 'has-image': !!coverImage }]}>
-  {coverImage && (
+<a href={`/${lang}/posts/${slug}/`} class:list={['post-card', { 'has-image': !!optImg }]}>
+  {optImg && (
     <figure class="card-image">
-      <img src={coverImage} alt="" loading="lazy" />
+      <img
+        src={optImg.cardSrc}
+        srcset={optImg.srcset}
+        sizes={priority ? '(max-width: 768px) 92vw, 600px' : '(max-width: 768px) 92vw, 540px'}
+        width={optImg.cardWidth ?? 720}
+        height={optImg.cardHeight ?? 405}
+        alt=""
+        loading={priority ? 'eager' : 'lazy'}
+        fetchpriority={priority ? 'high' : undefined}
+        decoding="async"
+      />
     </figure>
   )}
   <div class="card-body">
@@ -53,8 +76,18 @@ const dateFmt = new Intl.DateTimeFormat(lang, {
     box-sizing: border-box;
   }
   .post-card:hover {
+    color: var(--text);
+    text-shadow: none;
     border-color: var(--accent-1);
     box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .post-card:hover .card-title {
+    color: var(--accent-1-text);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 45%, transparent);
+  }
+  .post-card:hover .kind-pill {
+    color: var(--on-accent-1);
+    text-shadow: none;
   }
   .card-body {
     display: flex;
@@ -71,6 +104,7 @@ const dateFmt = new Intl.DateTimeFormat(lang, {
   .card-image img {
     display: block;
     width: 100%;
+    height: auto;
     aspect-ratio: 16 / 9;
     object-fit: cover;
   }
@@ -106,6 +140,7 @@ const dateFmt = new Intl.DateTimeFormat(lang, {
     line-height: 1.25;
     color: var(--text);
     margin: 0 0 var(--space-2);
+    transition: color 0.2s ease, text-shadow 0.2s ease;
   }
   .card-excerpt {
     font-family: var(--font-body);

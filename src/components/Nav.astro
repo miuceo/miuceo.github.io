@@ -172,6 +172,11 @@ const sections = [
     border-bottom-color: var(--accent-1-text);
     text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
   }
+  .nav-link:hover .tag-new,
+  .nav-link.active .tag-new {
+    color: var(--on-accent-3);
+    text-shadow: none;
+  }
 
   @keyframes glow-pulse {
     0%, 100% {
@@ -209,10 +214,12 @@ const sections = [
     align-items: center;
     white-space: nowrap;
     box-shadow: 0 0 8px color-mix(in srgb, var(--accent-2) 75%, transparent), 0 0 18px color-mix(in srgb, var(--accent-2) 45%, transparent);
-    transition: opacity .2s, box-shadow .2s ease;
+    transition: opacity .2s, box-shadow .2s ease, transform .2s ease;
   }
   .nav-pill-coral:hover {
+    color: var(--on-accent-2);
     opacity: 1;
+    transform: translateY(-1px);
     box-shadow: 0 0 12px var(--accent-2), 0 0 24px color-mix(in srgb, var(--accent-2) 70%, transparent);
     text-shadow: none;
   }
@@ -316,8 +323,8 @@ const sections = [
 
   @media (max-width: 1200px) {
     .nav-brand {
-      font-size: 17px;
-      margin-right: 8px;
+      font-size: 16px;
+      margin-right: 6px;
     }
     .nav-link {
       font-size: 13.5px;

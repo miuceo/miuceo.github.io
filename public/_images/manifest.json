@@ -1,0 +1,110 @@
+{
+  "5400eb92650b": {
+    "cardSrc": "/_images/5400eb92650b-720w.webp",
+    "fullSrc": "/_images/5400eb92650b-1280w.webp",
+    "srcset": "/_images/5400eb92650b-720w.webp 720w, /_images/5400eb92650b-1280w.webp 1011w",
+    "width": 1011,
+    "height": 797,
+    "cardWidth": 720,
+    "cardHeight": 568
+  },
+  "cf7a74fb3d0c": {
+    "cardSrc": "/_images/cf7a74fb3d0c-720w.webp",
+    "fullSrc": "/_images/cf7a74fb3d0c-1280w.webp",
+    "srcset": "/_images/cf7a74fb3d0c-720w.webp 720w, /_images/cf7a74fb3d0c-1280w.webp 849w",
+    "width": 849,
+    "height": 1000,
+    "cardWidth": 720,
+    "cardHeight": 848
+  },
+  "57146cd23b81": {
+    "cardSrc": "/_images/57146cd23b81-720w.webp",
+    "fullSrc": "/_images/57146cd23b81-1280w.webp",
+    "srcset": "/_images/57146cd23b81-720w.webp 720w, /_images/57146cd23b81-1280w.webp 1280w",
+    "width": 1280,
+    "height": 714,
+    "cardWidth": 720,
+    "cardHeight": 402
+  },
+  "bc1ba8c83928": {
+    "cardSrc": "/_images/bc1ba8c83928-720w.webp",
+    "fullSrc": "/_images/bc1ba8c83928-1280w.webp",
+    "srcset": "/_images/bc1ba8c83928-720w.webp 720w, /_images/bc1ba8c83928-1280w.webp 1280w",
+    "width": 1280,
+    "height": 714,
+    "cardWidth": 720,
+    "cardHeight": 402
+  },
+  "82712c74de0a": {
+    "cardSrc": "/_images/82712c74de0a-720w.webp",
+    "fullSrc": "/_images/82712c74de0a-1280w.webp",
+    "srcset": "/_images/82712c74de0a-720w.webp 512w, /_images/82712c74de0a-1280w.webp 512w",
+    "width": 512,
+    "height": 512,
+    "cardWidth": 512,
+    "cardHeight": 512
+  },
+  "8b07e54001ab": {
+    "cardSrc": "/_images/8b07e54001ab-720w.webp",
+    "fullSrc": "/_images/8b07e54001ab-1280w.webp",
+    "srcset": "/_images/8b07e54001ab-720w.webp 720w, /_images/8b07e54001ab-1280w.webp 1280w",
+    "width": 1280,
+    "height": 720,
+    "cardWidth": 720,
+    "cardHeight": 405
+  },
+  "f2fc5f52b333": {
+    "cardSrc": "/_images/f2fc5f52b333-720w.webp",
+    "fullSrc": "/_images/f2fc5f52b333-1280w.webp",
+    "srcset": "/_images/f2fc5f52b333-720w.webp 720w, /_images/f2fc5f52b333-1280w.webp 1024w",
+    "width": 1024,
+    "height": 571,
+    "cardWidth": 720,
+    "cardHeight": 401
+  },
+  "937e6fd8cb77": {
+    "cardSrc": "/_images/937e6fd8cb77-720w.webp",
+    "fullSrc": "/_images/937e6fd8cb77-1280w.webp",
+    "srcset": "/_images/937e6fd8cb77-720w.webp 720w, /_images/937e6fd8cb77-1280w.webp 1280w",
+    "width": 1280,
+    "height": 1280,
+    "cardWidth": 720,
+    "cardHeight": 720
+  },
+  "a1b62bfbd66e": {
+    "cardSrc": "/_images/a1b62bfbd66e-720w.webp",
+    "fullSrc": "/_images/a1b62bfbd66e-1280w.webp",
+    "srcset": "/_images/a1b62bfbd66e-720w.webp 720w, /_images/a1b62bfbd66e-1280w.webp 739w",
+    "width": 739,
+    "height": 415,
+    "cardWidth": 720,
+    "cardHeight": 404
+  },
+  "9e79cfd8b649": {
+    "cardSrc": "/_images/9e79cfd8b649-720w.webp",
+    "fullSrc": "/_images/9e79cfd8b649-1280w.webp",
+    "srcset": "/_images/9e79cfd8b649-720w.webp 720w, /_images/9e79cfd8b649-1280w.webp 1024w",
+    "width": 1024,
+    "height": 1024,
+    "cardWidth": 720,
+    "cardHeight": 720
+  },
+  "92b8b7f86a57": {
+    "cardSrc": "/_images/92b8b7f86a57-720w.webp",
+    "fullSrc": "/_images/92b8b7f86a57-1280w.webp",
+    "srcset": "/_images/92b8b7f86a57-720w.webp 720w, /_images/92b8b7f86a57-1280w.webp 1280w",
+    "width": 1280,
+    "height": 607,
+    "cardWidth": 720,
+    "cardHeight": 342
+  },
+  "f65515228dbe": {
+    "cardSrc": "/_images/f65515228dbe-720w.webp",
+    "fullSrc": "/_images/f65515228dbe-1280w.webp",
+    "srcset": "/_images/f65515228dbe-720w.webp 720w, /_images/f65515228dbe-1280w.webp 1280w",
+    "width": 1280,
+    "height": 714,
+    "cardWidth": 720,
+    "cardHeight": 402
+  }
+}

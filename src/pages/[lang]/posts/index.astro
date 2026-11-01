@@ -61,7 +61,7 @@ const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/posts/`])) as R
         </div>
 
         <div class="archive" id="postsArchive">
-          {postsForLang.map((p) => (
+          {postsForLang.map((p, idx) => (
             <div class="post-item" data-search={`${p.data.title} ${p.data.excerpt ?? ''}`.toLowerCase()}>
               <PostCard
                 lang={lang}
@@ -70,6 +70,7 @@ const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/posts/`])) as R
                 excerpt={p.data.excerpt ?? ''}
                 createdAt={p.data.createdAt}
                 coverImage={p.data.coverImage}
+                priority={idx < 2}
               />
             </div>
           ))}
