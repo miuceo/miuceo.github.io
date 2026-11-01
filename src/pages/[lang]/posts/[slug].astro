@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Lang; slug: string };
 const { entry } = Astro.props as { entry: Awaited<ReturnType<typeof getCollection<'posts'>>>[number] };
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 const strings = t(lang);
 const slug = entry.slug.split('/')[0];
 
@@ -28,6 +28,25 @@ const langPaths = Object.fromEntries(LANGS.map((l) => [l, hreflangPaths[l] ?? `/
 
 const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric' });
 
+// 2. Reading Time Calculation
+const wordCount = (entry.body ?? '').trim().split(/\s+/).filter(Boolean).length;
+const readingMins = Math.max(1, Math.round(wordCount / 200));
+
+// 3. TOC Headings
+const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+
+// 5. Prev / Next Post Navigation & Share Bar
+const postsForLang = allPosts
+  .filter((e) => e.slug.endsWith(`/${lang}`))
+  .map((e) => ({ slug: e.slug.split('/')[0], data: e.data }))
+  .sort((a, b) => b.data.createdAt.valueOf() - a.data.createdAt.valueOf());
+
+const idx = postsForLang.findIndex((p) => p.slug === slug);
+const nextPost = idx > 0 ? postsForLang[idx - 1] : null; // newer post
+const prevPost = idx >= 0 && idx < postsForLang.length - 1 ? postsForLang[idx + 1] : null; // older post
+
+const canonicalUrl = new URL(`/${lang}/posts/${slug}/`, Astro.site ?? 'https://muhammadjon.me').toString();
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -36,14 +55,14 @@ const jsonLd = {
   image: entry.data.coverImage,
   datePublished: entry.data.createdAt.toISOString(),
   dateModified: entry.data.updatedAt.toISOString(),
-  inLanguage: lang, // required by SKILLS.md `seo-surface` step 3
+  inLanguage: lang,
   author: { '@type': 'Person', name: 'Muhammadjon Ibrohimov' },
 };
 ---
 
 <BaseLayout
   lang={lang}
-  title={`${entry.data.title} — The Muhammadjon Journal`}
+  title={`${entry.data.title} — ${strings.masthead.name}`}
   description={entry.data.excerpt ?? entry.data.title}
   canonicalPath={`/${lang}/posts/${slug}/`}
   hreflangPaths={hreflangPaths}
@@ -51,33 +70,239 @@ const jsonLd = {
   ogType="article"
   jsonLd={jsonLd}
 >
+  <div class="reading-progress-wrap" aria-hidden="true">
+    <div class="reading-progress-bar" id="readingProgress"></div>
+  </div>
+
   <Nav lang={lang} active="posts" langPaths={langPaths} />
 
   <article class="post">
     <header class="post-head">
-      <a href={`/${lang}/posts/`} class="kicker red">{strings.nav.posts}</a>
+      <a href={`/${lang}/posts/`} class="post-kicker">{strings.nav.posts}</a>
       <h1>{entry.data.title}</h1>
       {entry.data.excerpt && <p class="post-dek">{entry.data.excerpt}</p>}
       <div class="byline">
         <span class="byline-name">Muhammadjon Ibrohimov</span>
         <time datetime={entry.data.createdAt.toISOString()}>{dateFmt.format(entry.data.createdAt)}</time>
+        <span class="reading-time">· {readingMins} {strings.post.readingTime}</span>
       </div>
     </header>
-    <div class="post-body" data-prev={strings.gallery.prev} data-next={strings.gallery.next}>
+
+    {tocHeadings.length >= 2 && (
+      <nav class="post-toc" aria-label={strings.post.tocTitle}>
+        <div class="toc-header" role="button" tabindex="0" aria-expanded="true">
+          <div class="toc-title">{strings.post.tocTitle}</div>
+          <button type="button" class="toc-toggle-btn" aria-expanded="true" aria-label={strings.post.tocTitle}>
+            <span class="toc-chevron" aria-hidden="true">▾</span>
+          </button>
+        </div>
+        <ol class="toc-list">
+          {tocHeadings.map((h) => (
+            <li class={`toc-depth-${h.depth}`}>
+              <a href={`#${h.slug}`}>{h.text}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    )}
+
+    <div
+      class="post-body"
+      data-prev={strings.gallery.prev}
+      data-next={strings.gallery.next}
+      data-copy={strings.post.copyCode}
+      data-copied={strings.post.copiedCode}
+    >
       <Content />
     </div>
+
+    <div class="post-share-bar">
+      <span class="share-label">{strings.post.shareTitle}</span>
+      <div class="share-links">
+        <a
+          href={`https://t.me/share/url?url=${encodeURIComponent(canonicalUrl)}&text=${encodeURIComponent(entry.data.title)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="share-btn"
+          aria-label={strings.post.shareTelegram}
+        >
+          <svg class="share-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+          </svg>
+          <span>{strings.post.shareTelegram}</span>
+        </a>
+        <a
+          href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalUrl)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="share-btn"
+          aria-label={strings.post.shareLinkedin}
+        >
+          <svg class="share-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+          </svg>
+          <span>{strings.post.shareLinkedin}</span>
+        </a>
+        <button
+          type="button"
+          id="postCopyLinkBtn"
+          class="share-btn"
+          data-url={canonicalUrl}
+          data-copied={strings.post.linkCopied}
+        >
+          <svg class="share-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          <span class="copy-link-text">{strings.post.copyLink}</span>
+        </button>
+      </div>
+    </div>
+
+    {(prevPost || nextPost) && (
+      <nav class="post-nav-grid" aria-label="Post navigation">
+        {prevPost ? (
+          <a href={`/${lang}/posts/${prevPost.slug}/`} class="post-nav-card prev-card">
+            <span class="nav-dir-label">{strings.post.prevPost}</span>
+            <span class="nav-post-title">{prevPost.data.title}</span>
+          </a>
+        ) : (
+          <div class="post-nav-empty" aria-hidden="true" />
+        )}
+        {nextPost ? (
+          <a href={`/${lang}/posts/${nextPost.slug}/`} class="post-nav-card next-card">
+            <span class="nav-dir-label">{strings.post.nextPost}</span>
+            <span class="nav-post-title">{nextPost.data.title}</span>
+          </a>
+        ) : (
+          <div class="post-nav-empty" aria-hidden="true" />
+        )}
+      </nav>
+    )}
   </article>
 
   <Footer lang={lang} />
 </BaseLayout>
 
 <script>
+  // 1. Reading Progress Bar
+  const post = document.querySelector<HTMLElement>('.post');
+  const progressBar = document.getElementById('readingProgress');
+  if (post && progressBar) {
+    const updateProgress = () => {
+      const scrollY = window.scrollY || window.pageYOffset;
+      const postTop = post.offsetTop;
+      const postHeight = post.offsetHeight;
+      const windowHeight = window.innerHeight;
+      const scrollable = postHeight - windowHeight;
+      if (scrollable <= 0) {
+        progressBar.style.width = scrollY >= postTop ? '100%' : '0%';
+        return;
+      }
+      const progress = Math.min(100, Math.max(0, ((scrollY - postTop) / scrollable) * 100));
+      progressBar.style.width = `${progress}%`;
+    };
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress, { passive: true });
+    updateProgress();
+  }
+
+  // 3. TOC Collapsible Toggle
+  const toc = document.querySelector<HTMLElement>('.post-toc');
+  if (toc) {
+    const toggleBtn = toc.querySelector<HTMLButtonElement>('.toc-toggle-btn');
+    const header = toc.querySelector<HTMLElement>('.toc-header');
+    const toggle = () => {
+      const isCollapsed = toc.classList.toggle('is-collapsed');
+      if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', String(!isCollapsed));
+      }
+      header?.setAttribute('aria-expanded', String(!isCollapsed));
+    };
+    toggleBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggle();
+    });
+    header?.addEventListener('click', toggle);
+    header?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
+
+  const body = document.querySelector<HTMLElement>('.post-body');
+
+  // 4. One-Click Copy Code Button
+  const copyText = body?.dataset.copy || 'Copy';
+  const copiedText = body?.dataset.copied || 'Copied!';
+  body?.querySelectorAll<HTMLPreElement>('pre').forEach((pre) => {
+    pre.style.position = 'relative';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'code-copy-btn';
+    btn.textContent = copyText;
+    btn.setAttribute('aria-label', copyText);
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      let text = '';
+      if (code) {
+        text = code.innerText;
+      } else {
+        const clone = pre.cloneNode(true) as HTMLElement;
+        clone.querySelector('.code-copy-btn')?.remove();
+        text = clone.innerText;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = copiedText;
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = copyText;
+          btn.classList.remove('copied');
+        }, 1800);
+      } catch (err) {
+        console.error('Failed to copy code', err);
+      }
+    });
+    pre.appendChild(btn);
+  });
+
+  // 5. Share Bar Copy Link Button
+  const copyLinkBtn = document.getElementById('postCopyLinkBtn') as HTMLButtonElement | null;
+  if (copyLinkBtn) {
+    const textSpan = copyLinkBtn.querySelector('.copy-link-text');
+    const defaultText = textSpan?.textContent || copyLinkBtn.textContent || '';
+    const linkCopiedText = copyLinkBtn.dataset.copied || 'Link copied!';
+    copyLinkBtn.addEventListener('click', async () => {
+      const url = copyLinkBtn.dataset.url || window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        if (textSpan) {
+          textSpan.textContent = linkCopiedText;
+        } else {
+          copyLinkBtn.textContent = linkCopiedText;
+        }
+        copyLinkBtn.classList.add('copied');
+        setTimeout(() => {
+          if (textSpan) {
+            textSpan.textContent = defaultText;
+          } else {
+            copyLinkBtn.textContent = defaultText;
+          }
+          copyLinkBtn.classList.remove('copied');
+        }, 1800);
+      } catch (err) {
+        console.error('Failed to copy link', err);
+      }
+    });
+  }
+
   // Layout decisions that need the image's real shape, which only the browser
   // knows (covers are remote URLs, so the build never sees their size).
   // Everything reads fine without this script: figures are full-width and
   // galleries are swipeable strips.
-  const body = document.querySelector<HTMLElement>('.post-body');
-
   // Tall or small pictures sit beside the text instead of stretching across it.
   // The lead figure is exempt — it opens the article at full width.
   body?.querySelectorAll<HTMLImageElement>('figure.post-figure img').forEach((img) => {
@@ -97,7 +322,7 @@ const jsonLd = {
   // scroll-snap strip, so swiping and keyboard scrolling keep working.
   body?.querySelectorAll<HTMLElement>('.gallery').forEach((gallery) => {
     const track = gallery.querySelector<HTMLElement>('.gallery-track');
-    const slides = track ? Array.from(track.children) as HTMLElement[] : [];
+    const slides = track ? (Array.from(track.children) as HTMLElement[]) : [];
     if (!track || slides.length < 2) return;
 
     const bar = document.createElement('div');
@@ -106,6 +331,8 @@ const jsonLd = {
     const next = document.createElement('button');
     const count = document.createElement('span');
     prev.type = next.type = 'button';
+    prev.className = 'gallery-btn';
+    next.className = 'gallery-btn';
     prev.textContent = '←';
     next.textContent = '→';
     prev.setAttribute('aria-label', body.dataset.prev || 'Previous');
@@ -130,71 +357,624 @@ const jsonLd = {
 </script>
 
 <style>
-  .post{ padding:48px 0 40px; max-width:720px; margin:0 auto; }
-  .post-head{ margin-bottom:36px; }
-  .post-head .kicker{ display:inline-block; margin-bottom:14px; }
-  .post h1{ font-size:48px; font-weight:700; line-height:1.1; letter-spacing:-0.01em; margin:0 0 16px; text-wrap:balance; }
-  .post-dek{ font-family:var(--font-body); font-size:21px; line-height:1.45; color:var(--ink-soft); margin:0 0 22px; }
-  .byline{ display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; padding:12px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); font-family:var(--font-sans); font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); }
-  .byline-name{ color:var(--ink); font-weight:700; }
+  /* 1. Reading Progress Bar */
+  .reading-progress-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 60;
+    background: transparent;
+    pointer-events: none;
+  }
+  .reading-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-1);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-1) 70%, transparent);
+    transition: width 0.1s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reading-progress-bar {
+      transition: none;
+    }
+  }
 
-  .post-body{ font-family:var(--font-body); font-size:19px; line-height:1.7; color:var(--ink); }
-  .post-body :global(p){ margin:0 0 24px; }
-  /* Drop cap on the opening paragraph — the one ornament a newspaper allows itself. */
-  .post-body > :global(p:first-of-type::first-letter){ font-family:var(--font-display); font-weight:900; float:left; font-size:4.1em; line-height:0.82; margin:0.06em 0.1em 0 0; }
+  .post {
+    padding: var(--space-6) 0 var(--space-5);
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .post-head {
+    margin-bottom: var(--space-5);
+    text-align: left;
+  }
+  .post-kicker {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    line-height: 1;
+    background: var(--accent-1);
+    color: var(--on-accent-1);
+    text-decoration: none;
+    margin-bottom: var(--space-3);
+  }
+  .post h1 {
+    font-family: var(--font-heading);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin: 0 0 var(--space-3);
+    text-wrap: balance;
+  }
+  .post-dek {
+    font-family: var(--font-body);
+    font-size: 20px;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 0 0 var(--space-4);
+  }
+  .byline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    align-items: baseline;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--mid);
+    border-bottom: 1px solid var(--mid);
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .byline-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* 2. Reading Time */
+  .reading-time {
+    color: var(--text);
+    opacity: 0.85;
+    font-weight: 500;
+  }
+
+  /* 3. Table of Contents */
+  .post-toc {
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    margin: 0 0 var(--space-5);
+    transition: border-color 0.2s ease;
+  }
+  .post-toc:hover {
+    border-color: var(--accent-1);
+  }
+  .toc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toc-header:focus-visible {
+    outline: 2px solid var(--accent-1);
+    outline-offset: 2px;
+    border-radius: var(--radius-ui);
+  }
+  .toc-title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .toc-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-ui);
+    transition: transform 0.2s ease, background 0.15s ease;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  .toc-toggle-btn:hover {
+    background: var(--bg);
+  }
+  .post-toc.is-collapsed .toc-chevron {
+    transform: rotate(-90deg);
+  }
+  .post-toc.is-collapsed .toc-list {
+    display: none;
+  }
+  .toc-chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-3) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--mid) 50%, transparent);
+    padding-top: var(--space-3);
+  }
+  .toc-list li {
+    margin: 0;
+    line-height: 1.4;
+  }
+  .toc-list li a {
+    color: var(--text);
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s ease, padding-left 0.15s ease;
+  }
+  .toc-list li a:hover {
+    color: var(--accent-1);
+    text-decoration: underline;
+  }
+  .toc-list .toc-depth-3 {
+    padding-left: var(--space-3);
+    font-size: 13px;
+    opacity: 0.9;
+  }
+
+  .post-body {
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .post-body :global(p) {
+    margin: 0 0 var(--space-4);
+  }
+
   /* Figures: full column width by default, caption from the alt text. */
-  .post-body :global(figure){ margin:8px 0 30px; }
-  .post-body :global(figure img){ display:block; width:100%; height:auto; background:var(--bg-2); }
-  .post-body :global(figcaption){ font-family:var(--font-sans); font-size:13px; line-height:1.45; color:var(--ink-soft); padding:8px 0 0; border-bottom:1px solid var(--line); padding-bottom:8px; }
+  .post-body :global(figure) {
+    margin: var(--space-4) 0 var(--space-5);
+  }
+  .post-body :global(figure img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--surface);
+    border-radius: var(--radius-card);
+  }
+  .post-body :global(figcaption) {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--text);
+    padding-top: var(--space-2);
+    margin: 0;
+  }
+
   /* The lead figure opens the article: wider than the text, never taller than the screen. */
-  .post-body > :global(figure.post-figure:first-child){ margin:0 -120px 34px; }
-  .post-body > :global(figure.post-figure:first-child img){ max-height:78vh; object-fit:contain; }
-  .post-body > :global(figure.post-figure:first-child figcaption){ padding-left:120px; padding-right:120px; }
-  /* Tall or small pictures (set by the script below) sit beside the text. */
-  .post-body :global(figure.is-side){ float:right; width:44%; margin:6px 0 18px 28px; }
-  .post-body :global(h2), .post-body :global(h3), .post-body :global(blockquote), .post-body :global(.gallery), .post-body :global(hr){ clear:both; }
-  .post-body::after{ content:''; display:block; clear:both; }
+  .post-body > :global(figure.post-figure:first-child) {
+    margin: 0 -120px var(--space-5);
+  }
+  .post-body > :global(figure.post-figure:first-child img) {
+    max-height: 78vh;
+    object-fit: contain;
+    border-radius: var(--radius-card);
+  }
+  .post-body > :global(figure.post-figure:first-child figcaption) {
+    padding-left: 120px;
+    padding-right: 120px;
+  }
+
+  /* Tall or small pictures sit beside the text. */
+  .post-body :global(figure.is-side) {
+    float: right;
+    width: 44%;
+    margin: 6px 0 var(--space-3) var(--space-4);
+  }
+  .post-body :global(figure.is-side img) {
+    border-radius: var(--radius-card);
+  }
+
+  .post-body :global(h2),
+  .post-body :global(h3),
+  .post-body :global(h4),
+  .post-body :global(blockquote),
+  .post-body :global(.gallery),
+  .post-body :global(hr) {
+    clear: both;
+  }
+  .post-body::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+
+  /* Headings scroll margin for smooth TOC linking */
+  .post-body :global(h2),
+  .post-body :global(h3) {
+    scroll-margin-top: 24px;
+  }
 
   /* Gallery: a native scroll-snap strip (swipeable, works with JS off). */
-  .post-body :global(.gallery){ margin:8px 0 34px; }
-  .post-body :global(.gallery-track){ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; background:var(--bg-2); }
-  .post-body :global(.gallery-track::-webkit-scrollbar){ display:none; }
-  .post-body :global(.gallery-slide){ flex:0 0 100%; margin:0; scroll-snap-align:start; display:flex; flex-direction:column; }
-  .post-body :global(.gallery-slide img){ width:100%; aspect-ratio:3 / 2; object-fit:contain; }
-  .post-body :global(.gallery-slide figcaption){ margin-top:auto; background:var(--bg); padding:8px 0; }
-  .post-body :global(.gallery-bar){ display:flex; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid var(--rule); font-family:var(--font-sans); }
-  .post-body :global(.gallery-bar button){ background:transparent; border:1px solid var(--ink); color:var(--ink); width:36px; height:30px; cursor:pointer; font-size:15px; border-radius:2px; }
-  .post-body :global(.gallery-bar button:hover:not(:disabled)){ background:var(--ink); color:var(--bg); }
-  .post-body :global(.gallery-bar button:disabled){ opacity:0.3; cursor:default; }
-  .post-body :global(.gallery-count){ font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--ink-soft); }
-  .post-body :global(a){ color:inherit; text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:0.18em; }
-  .post-body :global(a:hover){ color:var(--accent); }
-  /* Section heads read as rubrics: a short red rule over the heading. */
-  .post-body :global(h2){ font-size:28px; margin:48px 0 16px; line-height:1.2; padding-top:14px; position:relative; }
-  .post-body :global(h2)::before{ content:''; position:absolute; top:0; left:0; width:48px; height:3px; background:var(--accent); }
-  .post-body :global(h3){ font-size:22px; margin:34px 0 14px; line-height:1.25; }
-  /* A Markdown quote becomes a pull quote. */
-  .post-body :global(blockquote){ margin:40px 0; padding:18px 0; border-top:2px solid var(--rule); border-bottom:1px solid var(--rule); font-family:var(--font-display); font-style:italic; font-weight:700; font-size:28px; line-height:1.3; color:var(--ink); text-align:center; }
-  .post-body :global(blockquote p){ margin:0; }
-  .post-body :global(blockquote p + p){ margin-top:12px; }
-  .post-body :global(ul), .post-body :global(ol){ padding-left:1.3em; margin:0 0 24px; }
-  .post-body :global(li){ margin-bottom:8px; }
-  .post-body :global(hr){ border:none; text-align:center; margin:40px 0; }
-  .post-body :global(hr)::after{ content:'* * *'; letter-spacing:0.6em; color:var(--ink-soft); }
-  .post-body :global(code){ background:var(--bg-2); border:1px solid var(--line); border-radius:2px; padding:1px 5px; font-size:0.82em; }
-  .post-body :global(pre){ background:var(--bg-2); border:1px solid var(--line); border-radius:2px; padding:18px; overflow-x:auto; font-size:15px; line-height:1.55; }
-  .post-body :global(pre code){ border:none; padding:0; background:none; }
-  @media (max-width:1000px){
-    .post-body > :global(figure.post-figure:first-child){ margin:0 0 30px; }
-    .post-body > :global(figure.post-figure:first-child figcaption){ padding-left:0; padding-right:0; }
+  .post-body :global(.gallery) {
+    margin: var(--space-4) 0 var(--space-5);
   }
-  @media (max-width:640px){
-    .post-body :global(figure.is-side){ float:none; width:auto; margin:8px 0 26px; }
-    .post-body :global(figure.is-side img){ max-height:70vh; width:auto; max-width:100%; margin:0 auto; }
-    .post-body :global(blockquote){ font-size:22px; }
-    .post{ padding:28px 0 24px; }
-    .post h1{ font-size:32px; }
-    .post-dek{ font-size:18px; }
-    .post-body{ font-size:18px; }
+  .post-body :global(.gallery-track) {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    background: var(--surface);
+    border-radius: var(--radius-card);
+  }
+  .post-body :global(.gallery-track::-webkit-scrollbar) {
+    display: none;
+  }
+  .post-body :global(.gallery-slide) {
+    flex: 0 0 100%;
+    margin: 0;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+  }
+  .post-body :global(.gallery-slide img) {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: contain;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+  .post-body :global(.gallery-slide figcaption) {
+    margin-top: auto;
+    background: var(--bg);
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .post-body :global(.gallery-bar) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--mid);
+    font-family: var(--font-heading);
+    margin-top: var(--space-2);
+  }
+  .post-body :global(.gallery-btn),
+  .post-body :global(.gallery-bar button) {
+    background: var(--bg);
+    color: var(--text);
+    border: 2px solid var(--text);
+    border-radius: var(--radius-ui);
+    min-width: 40px;
+    min-height: 40px;
+    cursor: pointer;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+  }
+  .post-body :global(.gallery-btn:hover:not(:disabled)),
+  .post-body :global(.gallery-bar button:hover:not(:disabled)) {
+    background: var(--text);
+    color: var(--bg);
+  }
+  .post-body :global(.gallery-btn:disabled),
+  .post-body :global(.gallery-bar button:disabled) {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .post-body :global(.gallery-count) {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .post-body :global(a) {
+    color: var(--accent-1-text);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+  .post-body :global(a:hover) {
+    color: var(--accent-1);
+  }
+
+  .post-body :global(h2) {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 600;
+    margin: var(--space-5) 0 var(--space-3);
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .post-body :global(h3) {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 600;
+    margin: var(--space-4) 0 var(--space-2);
+    line-height: 1.25;
+    color: var(--text);
+  }
+  .post-body :global(h4) {
+    font-family: var(--font-heading);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .post-body :global(blockquote) {
+    border-left: 4px solid var(--accent-1);
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.5;
+    padding-left: var(--space-4);
+    margin: var(--space-5) 0;
+    color: var(--text);
+    text-align: left;
+    border-top: none;
+    border-bottom: none;
+  }
+  .post-body :global(blockquote p) {
+    margin: 0;
+  }
+  .post-body :global(blockquote p + p) {
+    margin-top: var(--space-2);
+  }
+
+  .post-body :global(ul),
+  .post-body :global(ol) {
+    padding-left: 1.4em;
+    margin: 0 0 var(--space-4);
+  }
+  .post-body :global(li) {
+    margin-bottom: var(--space-1);
+  }
+
+  .post-body :global(hr) {
+    border: none;
+    border-top: 1px solid var(--mid);
+    margin: var(--space-5) 0;
+  }
+
+  .post-body :global(code) {
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-ui);
+    padding: 2px 6px;
+    font-family: var(--mono);
+    font-size: 0.85em;
+  }
+
+  /* 4. One-Click Copy Code Button */
+  .post-body :global(pre) {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-ui);
+    padding: var(--space-4);
+    padding-top: calc(var(--space-4) + 8px);
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.55;
+    margin: var(--space-4) 0;
+  }
+  .post-body :global(pre code) {
+    border: none;
+    padding: 0;
+    background: none;
+  }
+  .post-body :global(.code-copy-btn) {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 6px 12px;
+    min-height: 28px;
+    border-radius: var(--radius-ui);
+    border: 1px solid var(--mid);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+    z-index: 2;
+  }
+  .post-body :global(.code-copy-btn:hover) {
+    border-color: var(--accent-1);
+    color: var(--accent-1);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .post-body :global(.code-copy-btn.copied) {
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+    border-color: var(--accent-3);
+  }
+
+  /* 5. Share Bar */
+  .post-share-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    padding: var(--space-4) 0;
+    border-top: 1px solid var(--mid);
+    border-bottom: 1px solid var(--mid);
+  }
+  .share-label {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .share-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    min-height: 40px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+  }
+  .share-btn:hover {
+    background: var(--bg);
+    border-color: var(--accent-1);
+    color: var(--accent-1);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .share-btn:focus-visible {
+    outline: 2px solid var(--accent-1);
+    outline-offset: 2px;
+  }
+  .share-btn.copied {
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+    border-color: var(--accent-3);
+  }
+  .share-icon {
+    flex-shrink: 0;
+  }
+
+  /* 5. Prev / Next Post Grid */
+  .post-nav-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+  }
+  .post-nav-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .post-nav-card:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+    transform: translateY(-2px);
+  }
+  .post-nav-card:focus-visible {
+    outline: 2px solid var(--accent-1);
+    outline-offset: 2px;
+  }
+  .post-nav-card.next-card {
+    text-align: right;
+  }
+  .nav-dir-label {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    letter-spacing: 0.01em;
+  }
+  .nav-post-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
+    transition: color 0.15s ease;
+  }
+  .post-nav-card:hover .nav-post-title {
+    color: var(--accent-1);
+  }
+
+  @media (max-width: 1060px) {
+    .post-body > :global(figure.post-figure:first-child) {
+      margin: 0 0 var(--space-5);
+    }
+    .post-body > :global(figure.post-figure:first-child figcaption) {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .post {
+      padding: var(--space-4) 0 var(--space-3);
+    }
+    .post h1 {
+      font-size: 30px;
+    }
+    .post-dek {
+      font-size: 18px;
+    }
+    .post-body {
+      font-size: 18px;
+    }
+    .post-body :global(figure.is-side) {
+      float: none;
+      width: auto;
+      margin: var(--space-3) 0 var(--space-4);
+    }
+    .post-body :global(figure.is-side img) {
+      max-height: 70vh;
+      width: auto;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    .post-body :global(blockquote) {
+      font-size: 19px;
+      padding-left: var(--space-3);
+    }
+    .post-nav-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+    .post-nav-empty {
+      display: none;
+    }
+    .post-nav-card.next-card {
+      text-align: left;
+    }
   }
 </style>

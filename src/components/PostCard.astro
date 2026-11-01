@@ -1,5 +1,6 @@
 ---
 import type { Lang } from '../lib/i18n';
+import { t } from '../lib/i18n';
 
 interface Props {
   lang: Lang;
@@ -8,69 +9,111 @@ interface Props {
   excerpt: string;
   createdAt: Date;
   coverImage?: string;
+  showKind?: boolean;
 }
 
-const { lang, slug, title, excerpt, createdAt, coverImage } = Astro.props;
+const { lang, slug, title, excerpt, createdAt, coverImage, showKind = false } = Astro.props;
+const strings = t(lang);
 
 const dateFmt = new Intl.DateTimeFormat(lang, {
-  year: 'numeric', month: 'long', day: 'numeric'
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
 });
 ---
 
-<!-- One row of the archive: date gutter, headline + dek, optional thumbnail.
-     No image means no empty box — the row is simply text. -->
-<a href={`/${lang}/posts/${slug}/`} class:list={['row', { 'has-image': coverImage }]}>
-  <time class="row-date" datetime={createdAt.toISOString()}>{dateFmt.format(createdAt)}</time>
-  <div class="row-text">
-    <h2 class="row-title"><span class="hl">{title}</span></h2>
-    {excerpt && <p class="row-excerpt">{excerpt}</p>}
-  </div>
+<a href={`/${lang}/posts/${slug}/`} class:list={['post-card', { 'has-image': !!coverImage }]}>
   {coverImage && (
-    <figure class="row-image"><img src={coverImage} alt="" loading="lazy" /></figure>
+    <figure class="card-image">
+      <img src={coverImage} alt="" loading="lazy" />
+    </figure>
   )}
+  <div class="card-body">
+    <div class="card-meta">
+      {showKind && <span class="kind-pill">{strings.home.kickerPost}</span>}
+      <time class="card-date" datetime={createdAt.toISOString()}>{dateFmt.format(createdAt)}</time>
+    </div>
+    <h2 class="card-title"><span class="hl">{title}</span></h2>
+    {excerpt && <p class="card-excerpt">{excerpt}</p>}
+  </div>
 </a>
 
 <style>
-  .row {
-    display: grid;
-    grid-template-columns: 150px minmax(0, 1fr);
-    gap: 28px;
-    padding: 26px 0;
-    border-bottom: 1px solid var(--line);
-    color: var(--ink);
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    box-sizing: border-box;
   }
-  .row.has-image { grid-template-columns: 150px minmax(0, 1fr) 220px; }
-  .row-date {
-    font-family: var(--font-sans);
-    font-size: 11px;
+  .post-card:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+  }
+  .card-image {
+    margin: 0 0 var(--space-3);
+    border-radius: var(--radius-ui);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .card-image img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .kind-pill {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    padding-top: 7px;
+    padding: 4px 11px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    background: var(--accent-1);
+    color: var(--on-accent-1);
   }
-  .row-title { font-size: 28px; line-height: 1.15; margin: 0 0 10px; }
-  .row-excerpt {
+  .card-date {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .card-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+    margin: 0 0 var(--space-2);
+  }
+  .card-excerpt {
     font-family: var(--font-body);
-    font-size: 17px;
-    line-height: 1.55;
-    color: var(--ink-soft);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.65;
+    color: var(--text);
     margin: 0;
-    max-width: 640px;
-  }
-  .row-image { margin: 0; overflow: hidden; background: var(--bg-3); align-self: start; }
-  .row-image img {
-    display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover;
-    transition: transform .8s ease;
-  }
-  .row:hover .row-image img { transform: scale(1.02); }
-
-  @media (max-width: 760px) {
-    .row, .row.has-image { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 22px 0; }
-    .row-date { padding-top: 0; order: 1; }
-    .row-text { order: 2; }
-    .row-image { order: 0; margin-bottom: 8px; }
-    .row-title { font-size: 23px; }
-    .row-excerpt { font-size: 16px; }
+    flex-grow: 0;
   }
 </style>

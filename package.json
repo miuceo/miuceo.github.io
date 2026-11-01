@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test:uz": "node --test scripts/uz-alphabet.test.mjs scripts/uz-alphabet-integration.test.mjs",
+    "report:uz": "node scripts/convert-uz.mjs --built dist"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.11",
@@ -18,6 +20,8 @@
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-basic-ssl": "^2.3.0"
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "rehype-parse": "^9.0.1",
+    "unified": "^11.0.5"
   }
 }

@@ -1,0 +1,27 @@
+{
+  "protectedWords": [
+    "machine",
+    "learning",
+    "pytorch",
+    "bench",
+    "benchmark",
+    "teacher",
+    "internship",
+    "research",
+    "show",
+    "cache",
+    "changes",
+    "changing",
+    "christopher",
+    "chroma",
+    "langchain",
+    "churn",
+    "chatgpt",
+    "chrome",
+    "speech",
+    "chat",
+    "chatbot",
+    "chatbotlarda"
+  ],
+  "exceptions": {}
+}

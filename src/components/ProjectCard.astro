@@ -23,10 +23,19 @@ const hasStory = problem && solution && result;
 ---
 
 <div class="project-card">
-  <span class={`status-badge status-${status}`}>
-    {status === 'active' ? strings.projects.statusActive : strings.projects.statusArchived}
-  </span>
-  <h2>{title}</h2>
+  <div class="card-top">
+    <span class={`status-pill status-${status}`}>
+      {status === 'active' ? strings.projects.statusActive : strings.projects.statusArchived}
+    </span>
+    {typeof stars === 'number' && (
+      <span class="stars" title={strings.projects.starsLabel}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+        {stars}
+      </span>
+    )}
+  </div>
+
+  <h3 class="project-title">{title}</h3>
 
   {hasStory ? (
     <dl class="story">
@@ -47,43 +56,145 @@ const hasStory = problem && solution && result;
     <p class="desc">{description}</p>
   )}
 
-  {tags.length > 0 && <p class="tags">{tags.join(' · ')}</p>}
+  {tags.length > 0 && (
+    <div class="tags-row">
+      {tags.map((tag) => (
+        <span class="tag-pill">{tag}</span>
+      ))}
+    </div>
+  )}
 
   <div class="card-bottom">
-    {external
-      ? <a href={url} target="_blank" rel="noopener" class="project-link">{linkLabel}</a>
-      : <a href={url} class="project-link">{linkLabel}</a>}
-    {typeof stars === 'number' && (
-      <span class="stars" title={strings.projects.starsLabel}>
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
-        {stars}
-      </span>
-    )}
+    <a
+      href={url}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener" : undefined}
+      class="project-link"
+    >
+      {linkLabel}
+    </a>
   </div>
 </div>
 
 <style>
-  /* A newspaper column, not a card: heavy top rule, no box. */
-  .project-card{ border-top:2px solid var(--rule); padding:12px 0 28px; display:flex; flex-direction:column; }
-
-  .status-badge{ font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; }
-  .status-active{ color:var(--accent); }
-  .status-archived{ color:var(--ink-soft); }
-  .project-card h2{ font-size:28px; line-height:1.15; margin:0 0 14px; }
-
-  .desc{ font-family:var(--font-body); font-size:17px; color:var(--ink-soft); line-height:1.55; flex:1; margin:0 0 18px; }
-
-  .story{ margin:0 0 18px; flex:1; }
-  .story-row{ display:grid; grid-template-columns:92px minmax(0,1fr); gap:14px; padding:10px 0; border-top:1px solid var(--line); }
-  .story dt{ font-family:var(--font-sans); font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); padding-top:4px; }
-  .story dd{ font-family:var(--font-body); font-size:16px; color:var(--ink); line-height:1.5; margin:0; }
-
-  .tags{ font-family:var(--font-sans); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 16px; }
-
-  .card-bottom{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:auto; padding-top:12px; border-top:1px solid var(--line); }
-  .project-link{ font-family:var(--font-sans); font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink); }
-  .project-link:hover{ color:var(--accent); }
-  .stars{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-sans); font-size:12px; color:var(--ink-soft); }
-
-  @media (max-width:640px){ .project-card h2{ font-size:24px; } .story-row{ grid-template-columns:1fr; gap:4px; } .story dt{ padding-top:0; } }
+  .project-card {
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .project-card:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+  }
+  .status-pill {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+  }
+  .status-active {
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+  }
+  .status-archived {
+    background: var(--surface);
+    color: var(--text);
+  }
+  .stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .project-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+    margin: 0 0 var(--space-3);
+  }
+  .desc {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--text);
+    margin: 0 0 var(--space-4);
+    flex-grow: 1;
+  }
+  .story {
+    margin: 0 0 var(--space-4);
+    flex-grow: 1;
+  }
+  .story-row {
+    padding: 8px 0;
+    border-top: 1px solid var(--mid);
+  }
+  .story-row:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+  .story dt {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent-1-text);
+    margin-bottom: 4px;
+  }
+  .story dd {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+    margin: 0;
+  }
+  .tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: var(--space-4);
+  }
+  .tag-pill {
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    line-height: 1;
+  }
+  .card-bottom {
+    margin-top: auto;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--mid);
+  }
+  .project-link {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    text-decoration: underline;
+  }
 </style>

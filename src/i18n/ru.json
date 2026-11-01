@@ -1,14 +1,13 @@
 {
   "masthead": {
-    "name": "The Muhammadjon Journal",
+    "name": "Мухаммаджон Иброхимов",
     "tagline": "Об искусственном интеллекте и инженерии"
   },
   "meta": {
-    "siteTitle": "The Muhammadjon Journal — Мухаммаджон Иброхимов",
+    "siteTitle": "Мухаммаджон Иброхимов",
     "siteDescription": "Личный сайт Мухаммаджона Иброхимова — посты, проекты и мысли."
   },
   "nav": {
-    "brand": "MIUCEO\\",
     "posts": "Посты",
     "projects": "Проекты",
     "about": "Обо мне",
@@ -26,17 +25,47 @@
     "desc": "Я Мухаммаджон Иброхимов — изучаю machine learning, AI engineering, backend-разработку и DevOps, наблюдая, как технологии пересекаются с экономикой. Здесь я пишу о том, что изучаю, что создаю, и о чём думаю.",
     "ctaProjects": "Смотреть проекты",
     "ctaContact": "Связаться",
-    "ctaTelegram": "Telegram-канал"
+    "ctaTelegram": "Telegram-канал",
+    "bento": {
+      "statusLabel": "Текущий фокус",
+      "statusValue": "AI-агенты · MCP · ML-системы",
+      "statProjects": "Открытые проекты",
+      "statPosts": "Статьи",
+      "statArtifacts": "AI-артефакты",
+      "featuredLabel": "Избранное",
+      "quickSearch": "Быстрый поиск"
+    }
+  },
+  "search": {
+    "buttonLabel": "Поиск",
+    "placeholder": "Поиск постов, проектов, артефактов или действий...",
+    "noResults": "Ничего не найдено.",
+    "groupActions": "Быстрые действия",
+    "groupPosts": "Посты",
+    "groupProjects": "Проекты",
+    "groupArtifacts": "Артефакты",
+    "actionTheme": "Сменить тему (Светлая / Тёмная)",
+    "actionCv": "Скачать резюме (PDF)",
+    "actionTelegram": "Открыть Telegram-канал",
+    "actionGithub": "Открыть профиль GitHub",
+    "hintNavigate": "Выбор: ↑↓ · Открыть: Enter · Закрыть: Esc"
+  },
+  "post": {
+    "readingTime": "мин чтения",
+    "tocTitle": "Содержание",
+    "copyCode": "Копировать",
+    "copiedCode": "Скопировано!",
+    "shareTitle": "Поделиться",
+    "shareTelegram": "Telegram",
+    "shareLinkedin": "LinkedIn",
+    "copyLink": "Скопировать ссылку",
+    "linkCopied": "Ссылка скопирована!",
+    "prevPost": "← Предыдущий пост",
+    "nextPost": "Следующий пост →",
+    "searchPlaceholder": "Поиск постов..."
   },
   "home": {
-    "latestPost": "Последний пост",
-    "latestPosts": "Последние посты",
-    "recentPosts": "Недавние посты",
-    "continueReading": "Читать далее →",
-    "readPost": "Читать пост →",
-    "noPosts": "Постов пока нет. Создайте первый через админ-панель.",
-    "noPostsShort": "Постов пока нет",
-    "noOtherPosts": "Других постов пока нет",
+    "noPosts": "Постов пока нет.",
     "viewAllProjects": "Все проекты →",
     "viewAllArtifacts": "Все артефакты →",
     "viewAllPosts": "Все посты →",
@@ -54,7 +83,10 @@
     "result": "Результат",
     "statusActive": "Активен",
     "statusArchived": "Архив",
-    "starsLabel": "Звёзды на GitHub"
+    "starsLabel": "Звёзды на GitHub",
+    "filterAll": "Все",
+    "searchPlaceholder": "Поиск проектов...",
+    "noResults": "Ничего не найдено."
   },
   "contact": {
     "title": "Контакты",
@@ -72,16 +104,54 @@
     "introTitle": "Привет, я Мухаммаджон",
     "intro": "Я вырос в Фергане и сейчас планирую переезд в Ташкент. Учусь на бакалавриате по экономике, но большую часть времени пишу код: строю масштабируемые, отказоустойчивые системы и интегрирую в них искусственный интеллект. Стараюсь автоматизировать как можно больше — передавая повторяющуюся работу коду, чтобы самому заниматься интересными задачами.",
     "focusTitle": "Направления",
-    "focusItems": ["Machine Learning", "AI Engineering", "Backend-разработка", "DevOps (в процессе изучения)"],
+    "focusItems": [
+      "Machine Learning",
+      "AI Engineering",
+      "Backend-разработка",
+      "DevOps (в процессе изучения)"
+    ],
     "skillsTitle": "Навыки",
-    "skills": ["Python", "Go", "TypeScript / Astro", "FastAPI / Django", "PyTorch", "scikit-learn / XGBoost", "SQL", "Cloudflare Workers", "Model Context Protocol (MCP)", "Telegram Bot API / Telethon", "Git / GitHub Actions", "Prompt Engineering"],
+    "skills": [
+      "Python",
+      "Go",
+      "TypeScript / Astro",
+      "FastAPI / Django",
+      "PyTorch",
+      "scikit-learn / XGBoost",
+      "SQL",
+      "Cloudflare Workers",
+      "Model Context Protocol (MCP)",
+      "Telegram Bot API / Telethon",
+      "Git / GitHub Actions",
+      "Prompt Engineering"
+    ],
     "timelineTitle": "Хронология",
     "timeline": [
-      { "date": "2024 — настоящее время", "title": "B.Sc Economics", "desc": "International Islamic Academy of Uzbekistan. Направление: мировая экономика, исламские финансы и международные экономические отношения, GPA 4.5/5.0." },
-      { "date": "Апр – окт 2025", "title": "Ассистент преподавателя, Najot Ta'lim (филиал в Фергане)", "desc": "Обучал студентов основам программирования, операционным системам, SQL и веб-процессам." },
-      { "date": "Май – июль 2025", "title": "Стажировка Data Science, Valk Research", "desc": "Сбор и очистка данных, feature engineering, подготовка данных для ML-пайплайнов." },
-      { "date": "2026", "title": "Открытые AI-инструменты", "desc": "Создал открытые проекты: Post Builder, Local RAG Agent, Local Voice Agent, Gemini Image MCP, Telegram Account MCP и MIU secretary." },
-      { "date": "2027 (план)", "title": "Фергана → Ташкент", "desc": "Планирую переезд в Ташкент." }
+      {
+        "date": "2024 — настоящее время",
+        "title": "B.Sc Economics",
+        "desc": "International Islamic Academy of Uzbekistan. Направление: мировая экономика, исламские финансы и международные экономические отношения, GPA 4.5/5.0."
+      },
+      {
+        "date": "Апр – окт 2025",
+        "title": "Ассистент преподавателя, Najot Ta'lim (филиал в Фергане)",
+        "desc": "Обучал студентов основам программирования, операционным системам, SQL и веб-процессам."
+      },
+      {
+        "date": "Май – июль 2025",
+        "title": "Стажировка Data Science, Valk Research",
+        "desc": "Сбор и очистка данных, feature engineering, подготовка данных для ML-пайплайнов."
+      },
+      {
+        "date": "2026",
+        "title": "Открытые AI-инструменты",
+        "desc": "Создал открытые проекты: Post Builder, Local RAG Agent, Local Voice Agent, Gemini Image MCP, Telegram Account MCP и MIU secretary."
+      },
+      {
+        "date": "2027 (план)",
+        "title": "Фергана → Ташкент",
+        "desc": "Планирую переезд в Ташкент."
+      }
     ],
     "cvTitle": "Резюме",
     "cvButton": "Скачать CV (EN)",

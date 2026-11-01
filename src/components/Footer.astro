@@ -8,44 +8,94 @@ const strings = t(lang);
 ---
 
 <footer class="site-footer">
-  <a href={`/${lang}/`} class="footer-mark">{strings.masthead.name}</a>
-  <div class="footer-meta">
-    <span>{strings.footer.copyright}</span>
-    <span class="footer-links">
+  <div class="footer-inner">
+    <div class="footer-brand-col">
+      <a href={`/${lang}/`} class="footer-mark">{strings.masthead.name}</a>
+      <p class="footer-copyright">{strings.footer.copyright}</p>
+    </div>
+    <nav class="footer-links" aria-label="Footer navigation">
       <a href={`/${lang}/rss.xml`}>RSS</a>
       <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener">Telegram</a>
       <a href="https://github.com/miuceo" target="_blank" rel="noopener">GitHub</a>
-    </span>
+    </nav>
   </div>
 </footer>
 
 <style>
   .site-footer {
-    margin-top: 72px;
-    border-top: 3px double var(--rule);
-    padding: 22px 0 32px;
-    text-align: center;
+    margin-top: var(--space-6);
+    margin-bottom: var(--space-5);
+    background: var(--band);
+    color: var(--band-text);
+    border-radius: var(--radius-card);
+    padding: var(--space-5) var(--space-5);
+    transition: background-color .25s ease, color .25s ease;
   }
-  .footer-mark {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 22px;
-    color: var(--ink);
-  }
-  .footer-meta {
-    margin-top: 14px;
+  .footer-inner {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
-    font-family: var(--font-sans);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
   }
-  .footer-links { display: flex; gap: 16px; }
-  .footer-links a:hover { color: var(--ink); }
+  .footer-brand-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .footer-mark {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--band-text);
+    text-decoration: none;
+    transition: opacity .2s, text-shadow .2s ease;
+  }
+  .footer-mark:hover {
+    opacity: 1;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+  }
+  .footer-copyright {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--band-text);
+    margin: 0;
+    opacity: 0.85;
+  }
+  .footer-links {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .footer-links a {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--band-text);
+    text-decoration: none;
+    opacity: 0.85;
+    padding: 4px 0;
+    transition: opacity .2s, text-shadow .2s ease;
+  }
+  .footer-links a:hover {
+    opacity: 1;
+    text-decoration: underline;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+  }
   @media (max-width: 640px) {
-    .footer-meta { flex-direction: column; align-items: center; }
+    .site-footer {
+      padding: var(--space-4) var(--space-3);
+      margin-top: var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .footer-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-3);
+    }
+    .footer-links {
+      gap: var(--space-3);
+    }
   }
 </style>

@@ -15,7 +15,9 @@ const { lang } = Astro.params as { lang: Lang };
 const strings = t(lang);
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/projects/`])) as Record<Lang, string>;
 
-const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const projects = (await getCollection('projects')).sort((a, b) => b.data.order - a.data.order);
+const allTags = [...new Set(projects.flatMap((p) => p.data.tags))];
+
 const starsByRepo = new Map(
   await Promise.all(
     projects
@@ -27,7 +29,7 @@ const starsByRepo = new Map(
 
 <BaseLayout
   lang={lang}
-  title={`${strings.projects.title} — The Muhammadjon Journal`}
+  title={`${strings.projects.title} — ${strings.masthead.name}`}
   description={strings.projects.desc}
   canonicalPath={`/${lang}/projects/`}
   hreflangPaths={langPaths}
@@ -39,28 +41,200 @@ const starsByRepo = new Map(
     <p>{strings.projects.desc}</p>
   </section>
 
+  <div class="projects-filter-bar">
+    <div class="project-search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="search"
+        id="projectSearch"
+        placeholder={strings.projects.searchPlaceholder}
+        aria-label={strings.projects.searchPlaceholder}
+      />
+    </div>
+
+    <div class="tag-filter-row" role="toolbar" aria-label="Tag filters">
+      <button type="button" class="tag-filter-btn active" data-tag="" aria-pressed="true">
+        {strings.projects.filterAll}
+      </button>
+      {allTags.map((tag) => (
+        <button type="button" class="tag-filter-btn" data-tag={tag} aria-pressed="false">
+          {tag}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="empty-state" id="noProjectsFound" style="display: none;">
+    {strings.projects.noResults}
+  </div>
+
   <div class="projects-grid">
     {projects.map((p) => (
-      <ProjectCard
-        lang={lang}
-        title={p.data.title[lang]}
-        description={p.data.description[lang]}
-        problem={p.data.problem?.[lang]}
-        solution={p.data.solution?.[lang]}
-        result={p.data.result?.[lang]}
-        tags={p.data.tags}
-        status={p.data.status}
-        url={p.data.url}
-        external={p.data.external}
-        stars={p.data.githubRepo ? starsByRepo.get(p.data.githubRepo) : undefined}
-      />
+      <div
+        class="project-item"
+        data-tags={p.data.tags.join('|').toLowerCase()}
+        data-search={`${p.data.title[lang]} ${p.data.description[lang]} ${p.data.tags.join(' ')}`.toLowerCase()}
+      >
+        <ProjectCard
+          lang={lang}
+          title={p.data.title[lang]}
+          description={p.data.description[lang]}
+          problem={p.data.problem?.[lang]}
+          solution={p.data.solution?.[lang]}
+          result={p.data.result?.[lang]}
+          tags={p.data.tags}
+          status={p.data.status}
+          url={p.data.url}
+          external={p.data.external}
+          stars={p.data.githubRepo ? starsByRepo.get(p.data.githubRepo) : undefined}
+        />
+      </div>
     ))}
   </div>
 
   <Footer lang={lang} />
 </BaseLayout>
 
+<script is:inline>
+  (function () {
+    var searchInput = document.getElementById('projectSearch');
+    var noProjectsFound = document.getElementById('noProjectsFound');
+    var items = document.querySelectorAll('.project-item');
+    var tagButtons = document.querySelectorAll('.tag-filter-btn');
+    var activeTag = '';
+
+    function filterProjects() {
+      var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      var visibleCount = 0;
+
+      items.forEach(function (item) {
+        var itemTags = (item.getAttribute('data-tags') || '').split('|');
+        var itemSearch = item.getAttribute('data-search') || '';
+
+        var matchesTag = !activeTag || itemTags.indexOf(activeTag) !== -1;
+        var matchesSearch = !query || itemSearch.indexOf(query) !== -1;
+
+        if (matchesTag && matchesSearch) {
+          item.style.display = '';
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      if (noProjectsFound) {
+        noProjectsFound.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', filterProjects);
+    }
+
+    tagButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tag = (btn.getAttribute('data-tag') || '').toLowerCase();
+        activeTag = tag;
+        tagButtons.forEach(function (b) {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        filterProjects();
+      });
+    });
+  })();
+</script>
+
 <style>
-  .projects-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:0 48px; padding:36px 0 0; }
-  @media (max-width:860px){ .projects-grid{ grid-template-columns:minmax(0,1fr); } }
+  .projects-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+  .project-search-wrap {
+    position: relative;
+    max-width: 440px;
+    width: 100%;
+  }
+  .project-search-wrap .search-icon {
+    position: absolute;
+    left: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mid);
+    pointer-events: none;
+  }
+  .project-search-wrap input {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    font-family: var(--font-heading);
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-ui);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .project-search-wrap input:focus {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .project-search-wrap input::placeholder {
+    color: var(--mid);
+  }
+  .tag-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    align-items: center;
+  }
+  .tag-filter-btn {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--mid);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .tag-filter-btn:hover {
+    border-color: var(--accent-1);
+    color: var(--accent-1-text);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-1) 20%, transparent);
+  }
+  .tag-filter-btn.active {
+    background: var(--accent-1);
+    border-color: var(--accent-1);
+    color: var(--on-accent-1);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 40%, transparent);
+  }
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    padding: var(--space-2) 0 var(--space-6);
+  }
+  .project-item {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .project-item :global(.project-card) {
+    height: 100%;
+  }
+  @media (max-width: 768px) {
+    .projects-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 </style>

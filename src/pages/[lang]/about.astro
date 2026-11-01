@@ -26,7 +26,7 @@ const jsonLd = {
 
 <BaseLayout
   lang={lang}
-  title={`${strings.about.title} — The Muhammadjon Journal`}
+  title={`${strings.about.title} — ${strings.masthead.name}`}
   description={strings.about.desc}
   canonicalPath={`/${lang}/about/`}
   hreflangPaths={langPaths}
@@ -50,7 +50,10 @@ const jsonLd = {
   <section class="block">
     <h2 class="block-title">{strings.about.focusTitle}</h2>
     <div class="pill-row">
-      {strings.about.focusItems.map((item: string) => <span class="pill">{item}</span>)}
+      {strings.about.focusItems.map((item: string, i: number) => {
+        const accents = ['accent-cobalt', 'accent-coral', 'accent-green'];
+        return <span class:list={['pill', accents[i % 3]]}>{item}</span>;
+      })}
     </div>
   </section>
 
@@ -76,7 +79,7 @@ const jsonLd = {
 
   <section class="block cv-block">
     <h2 class="block-title">{strings.about.cvTitle}</h2>
-    <a href="/cv/muhammadjon-ibrohimov-cv-en.pdf" download class="btn">{strings.about.cvButton}</a>
+    <a href="/cv/muhammadjon-ibrohimov-cv-en.pdf" download class="btn btn-primary">{strings.about.cvButton}</a>
     <p class="cv-note">{strings.about.cvNote}</p>
   </section>
 
@@ -96,68 +99,179 @@ const jsonLd = {
   .intro {
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
-    gap: 36px;
+    gap: var(--space-5);
     align-items: start;
-    padding: 40px 0 36px;
-    max-width: 1000px;
-    margin: 0 auto;
+    padding: var(--space-5) 0;
   }
   .avatar {
     width: 200px;
     height: 240px;
     object-fit: cover;
     display: block;
-    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--mid);
+    background: var(--surface);
   }
-  .intro-text h2 { font-size: 34px; line-height: 1.1; margin: 0 0 16px; }
-  .intro-text p { font-family: var(--font-body); font-size: 19px; line-height: 1.7; color: var(--ink); margin: 0; }
-  .intro-text p::first-letter { font-family: var(--font-display); font-weight: 900; float: left; font-size: 4.1em; line-height: 0.82; margin: 0.06em 0.1em 0 0; }
+  .intro-text h2 {
+    font-family: var(--font-heading);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0 0 var(--space-3);
+    color: var(--text);
+  }
+  .intro-text p {
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text);
+    margin: 0;
+  }
 
-  .block { max-width: 1000px; margin: 0 auto; padding: 12px 0 32px; border-top: 2px solid var(--rule); }
+  .block {
+    padding: var(--space-5) 0;
+    border-top: 1px solid var(--mid);
+  }
   .block-title {
-    font-family: var(--font-sans); font-size: 11px; font-weight: 700;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); margin: 0 0 16px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-1-text);
+    margin: 0 0 var(--space-3);
   }
 
-  /* Focus areas and skills read as a printed list, not chips. */
-  .pill-row { display: flex; flex-wrap: wrap; gap: 6px 0; font-family: var(--font-body); font-size: 18px; line-height: 1.5; }
-  .pill { color: var(--ink); }
-  .pill + .pill::before { content: '·'; margin: 0 12px; color: var(--accent); }
-  .pill-skill { color: var(--ink-soft); font-size: 16px; }
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+  }
+  .pill.accent-cobalt {
+    background: var(--accent-1);
+    color: var(--on-accent-1);
+  }
+  .pill.accent-coral {
+    background: var(--accent-2);
+    color: var(--on-accent-2);
+  }
+  .pill.accent-green {
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+  }
+  .pill.pill-skill {
+    background: var(--surface);
+    color: var(--text);
+  }
 
-  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 16px;
+    border-left: 1px solid var(--mid);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
   .timeline-item {
-    display: grid;
-    grid-template-columns: 200px minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    column-gap: 28px;
-    padding: 16px 0;
-    border-top: 1px solid var(--line);
+    position: relative;
+    padding-left: var(--space-3);
   }
-  .timeline-item:first-child { border-top: none; padding-top: 0; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: calc(-16px - 5px);
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent-1);
+  }
   .timeline-date {
-    grid-row: 1 / 3;
-    font-family: var(--font-sans); font-size: 11px; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); padding-top: 5px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent-1-text);
+    display: block;
+    margin-bottom: 2px;
   }
-  .timeline-title { font-size: 21px; line-height: 1.2; margin: 0 0 6px; color: var(--ink); }
-  .timeline-desc { font-family: var(--font-body); font-size: 16px; color: var(--ink-soft); line-height: 1.55; margin: 0; max-width: 640px; }
+  .timeline-title {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+  .timeline-desc {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 0;
+    max-width: 65ch;
+  }
 
-  .cv-block .cv-note { font-family: var(--font-body); font-style: italic; font-size: 15px; color: var(--ink-soft); margin: 12px 0 0; }
+  .cv-block .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cv-block .cv-note {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--text);
+    margin: var(--space-2) 0 0;
+  }
 
-  .social-row { display: flex; flex-wrap: wrap; gap: 24px; }
+  .social-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
   .social-link {
-    font-family: var(--font-sans); font-size: 12px; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink);
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    text-decoration: underline;
   }
-  .social-link:hover { color: var(--accent); }
+  .social-link:hover {
+    color: var(--accent-1);
+  }
 
   @media (max-width: 640px) {
-    .intro { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 28px 0 24px; }
-    .avatar { width: 140px; height: 168px; }
-    .intro-text h2 { font-size: 28px; }
-    .intro-text p { font-size: 17px; }
-    .timeline-item { grid-template-columns: minmax(0, 1fr); }
-    .timeline-date { grid-row: auto; padding: 0 0 4px; }
+    .intro {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-4);
+      padding: var(--space-4) 0;
+    }
+    .avatar {
+      width: 140px;
+      height: 168px;
+    }
+    .intro-text h2 {
+      font-size: 26px;
+    }
+    .intro-text p {
+      font-size: 17px;
+    }
+    .block {
+      padding: var(--space-4) 0;
+    }
   }
 </style>

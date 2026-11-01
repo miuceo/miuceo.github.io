@@ -3,36 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirish — The Muhammadjon Journal</title>
+<title>Kirish — Muhammadjon Ibrohimov</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="assets/theme.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  body{ min-height:100vh; display:flex; align-items:center; justify-content:center; }
-  .brand-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
-
-  .card{
-    background:var(--bg); border-top:3px double var(--rule); border-bottom:3px double var(--rule);
-    padding:36px 32px 40px; text-align:center; width:min(420px, 90vw);
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3);
+    background: var(--bg);
   }
-  .brand{ font-family:var(--font-display); font-weight:900; font-size:22px; color:var(--ink); }
-  .card h1{ font-size:30px; font-weight:700; margin:0 0 10px; }
-  .card p{ font-family:var(--font-body); font-style:italic; font-size:16px; color:var(--ink-soft); margin:0 0 32px; line-height:1.55; }
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-5);
+    text-align: center;
+    width: min(440px, calc(100vw - 32px));
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--text) 5%, transparent);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .brand-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+  .brand {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--accent-1-text);
+  }
+  .card h1 {
+    font-family: var(--font-heading);
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 10px;
+  }
+  #cardHint {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-style: normal;
+    color: var(--text);
+    margin: 0 0 var(--space-5);
+    line-height: 1.55;
+    opacity: 0.85;
+  }
 
-  #telegramLoginBox{ display:flex; justify-content:center; min-height:40px; }
+  #telegramLoginBox {
+    display: flex;
+    justify-content: center;
+    min-height: 44px;
+    margin: var(--space-3) 0;
+  }
 
-  .status-msg{ font-size:13px; margin-top:24px; padding:10px 12px; display:none; border-left:3px solid; text-align:left; }
-  .status-msg.error{ display:block; color:var(--danger); border-color:var(--danger); }
-  .status-msg.ok{ display:block; color:var(--ink); border-color:var(--ink); }
+  .status-msg {
+    font-size: 13px;
+    font-family: var(--font-heading);
+    margin-top: var(--space-4);
+    padding: 12px 14px;
+    display: none;
+    border-radius: var(--radius-ui);
+    background: var(--surface);
+    border-left: 4px solid var(--accent-1);
+    text-align: left;
+    line-height: 1.45;
+  }
+  .status-msg.error {
+    display: block;
+    border-left-color: var(--accent-2);
+    color: var(--accent-2);
+  }
+  .status-msg.ok {
+    display: block;
+    border-left-color: var(--accent-3);
+    color: var(--text);
+  }
 
-  .back{ margin-top:24px; }
-  .back a{ font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); }
-  .back a:hover{ color:var(--accent); }
+  .back {
+    margin-top: var(--space-4);
+  }
+  .back a {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    text-decoration: none;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+  }
+  .back a:hover {
+    color: var(--accent-1);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+  }
 
-  @media (max-width:480px){
-    .card{ padding:36px 24px; }
+  @media (max-width: 480px) {
+    .card {
+      padding: var(--space-4) var(--space-3);
+    }
   }
 </style>
 </head>
@@ -40,17 +114,16 @@
 
 <div class="card">
   <div class="brand-row">
-    <div class="brand">The Muhammadjon Journal</div>
-    <button class="theme-toggle" id="themeToggle">☀️</button>
+    <div class="brand">Muhammadjon Ibrohimov</div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">☀️</button>
   </div>
   <h1>Admin panel</h1>
   <p id="cardHint">Faqat sayt egasi kira oladi.<br>Telegram orqali tasdiqlang.</p>
 
-
   <div id="telegramLoginBox"></div>
   <div id="statusMsg" class="status-msg"></div>
 
-  <div class="back"><a href="index.html">← Bosh sahifaga qaytish</a></div>
+  <div class="back"><a href="/uz/">← Bosh sahifaga qaytish</a></div>
 </div>
 
 <script src="assets/theme.js"></script>

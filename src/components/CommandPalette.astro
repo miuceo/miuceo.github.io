@@ -1,0 +1,666 @@
+---
+import { getCollection } from 'astro:content';
+import { type Lang, t } from '../lib/i18n';
+import { resolveLocalized } from '../lib/artifacts';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const strings = t(lang);
+
+// 1. Posts
+const allPosts = await getCollection('posts');
+const posts = allPosts
+  .filter((entry) => entry.slug.endsWith(`/${lang}`))
+  .map((entry) => {
+    const slug = entry.slug.split('/')[0];
+    return {
+      kind: 'post' as const,
+      title: entry.data.title,
+      desc: entry.data.excerpt ?? '',
+      url: `/${lang}/posts/${slug}/`,
+    };
+  });
+
+// 2. Projects
+const allProjects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const projects = allProjects.map((p) => ({
+  kind: 'project' as const,
+  title: p.data.title[lang],
+  desc: p.data.description[lang],
+  tags: p.data.tags.join(' '),
+  url: p.data.url,
+  external: p.data.external,
+}));
+
+// 3. Artifacts
+const allArtifacts = (await getCollection('artifacts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const artifacts = allArtifacts.map((a) => ({
+  kind: 'artifact' as const,
+  title: resolveLocalized(a.data.title, lang),
+  desc: a.data.description ? resolveLocalized(a.data.description, lang) : '',
+  tags: a.data.tags.join(' '),
+  url: `/${lang}/artifacts/${a.id}/`,
+}));
+
+// 4. Quick Actions
+const actions = [
+  { kind: 'action' as const, action: 'theme', title: strings.search.actionTheme, desc: '' },
+  { kind: 'action' as const, title: strings.search.actionCv, desc: 'PDF', url: '/cv/muhammadjon-ibrohimov-cv-en.pdf', external: true },
+  { kind: 'action' as const, title: strings.search.actionTelegram, desc: '@muhammadibrohimov_ceo', url: 'https://t.me/muhammadibrohimov_ceo', external: true },
+  { kind: 'action' as const, title: strings.search.actionGithub, desc: '@miuceo', url: 'https://github.com/miuceo', external: true },
+];
+
+const clientPayload = {
+  items: [...actions, ...posts, ...projects, ...artifacts],
+  labels: {
+    groupActions: strings.search.groupActions,
+    groupPosts: strings.search.groupPosts,
+    groupProjects: strings.search.groupProjects,
+    groupArtifacts: strings.search.groupArtifacts,
+    noResults: strings.search.noResults,
+  },
+};
+---
+
+<div class="cmdk-backdrop" id="cmdkBackdrop" hidden aria-hidden="true">
+  <div class="cmdk-modal" role="dialog" aria-modal="true" aria-label={strings.search.buttonLabel}>
+    <div class="cmdk-header">
+      <svg class="cmdk-search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="search"
+        class="cmdk-input"
+        id="cmdkInput"
+        placeholder={strings.search.placeholder}
+        autocomplete="off"
+        spellcheck="false"
+        role="combobox"
+        aria-expanded="false"
+        aria-autocomplete="list"
+        aria-controls="cmdkResults"
+      />
+      <button type="button" class="cmdk-esc" id="cmdkClose" aria-label="Close">ESC</button>
+    </div>
+    <div class="cmdk-results" id="cmdkResults" role="listbox" aria-label={strings.search.buttonLabel}></div>
+    <div class="cmdk-footer">
+      <span class="cmdk-hint">{strings.search.hintNavigate}</span>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="cmdkData" set:html={JSON.stringify(clientPayload).replace(/</g, '\\u003c')} />
+
+<script is:inline>
+  (function () {
+    const dataEl = document.getElementById('cmdkData');
+    if (!dataEl) return;
+
+    let payload;
+    try {
+      payload = JSON.parse(dataEl.textContent || '{}');
+    } catch (e) {
+      return;
+    }
+
+    const { items = [], labels = {} } = payload;
+
+    function normalizeUzbek(str) {
+      if (!str) return '';
+      return String(str)
+        .toLowerCase()
+        .replace(/[ʻ‘’`´ʼ]/g, "'")
+        .replace(/ş/g, 'sh')
+        .replace(/ç/g, 'ch')
+        .replace(/ö/g, "o'")
+        .replace(/ğ/g, "g'");
+    }
+
+    function stripApostrophes(str) {
+      return str.replace(/'/g, '');
+    }
+
+    // Pre-calculate search tokens for high performance
+    const preparedItems = items.map((item, idx) => {
+      const combined = [item.title || '', item.desc || '', item.tags || ''].join(' ');
+      const normText = normalizeUzbek(combined);
+      const cleanText = stripApostrophes(normText);
+      return {
+        ...item,
+        _idx: idx,
+        _normText: normText,
+        _cleanText: cleanText,
+      };
+    });
+
+    const ICONS = {
+      theme: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
+      cv: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+      telegram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>',
+      github: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
+      post: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>',
+      project: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>',
+      artifact: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
+    };
+
+    function getItemIcon(item) {
+      if (item.kind === 'action') {
+        if (item.action === 'theme') return ICONS.theme;
+        if (item.url && item.url.includes('.pdf')) return ICONS.cv;
+        if (item.url && item.url.includes('t.me')) return ICONS.telegram;
+        if (item.url && item.url.includes('github.com')) return ICONS.github;
+      }
+      return ICONS[item.kind] || ICONS.post;
+    }
+
+    const backdrop = document.getElementById('cmdkBackdrop');
+    const input = document.getElementById('cmdkInput');
+    const closeBtn = document.getElementById('cmdkClose');
+    const resultsContainer = document.getElementById('cmdkResults');
+
+    if (!backdrop || !input || !resultsContainer) return;
+
+    let visibleItems = [];
+    let selectedIndex = 0;
+    let previousActiveElement = null;
+
+    function filterItems(query) {
+      const q = query.trim();
+      if (!q) {
+        return preparedItems;
+      }
+      const normTokens = normalizeUzbek(q).split(/\s+/).filter(Boolean);
+      return preparedItems.filter((item) =>
+        normTokens.every((token) => {
+          const cleanToken = stripApostrophes(token);
+          return item._normText.includes(token) || item._cleanText.includes(cleanToken);
+        })
+      );
+    }
+
+    function renderResults(query) {
+      visibleItems = filterItems(query);
+      selectedIndex = 0;
+
+      if (visibleItems.length === 0) {
+        resultsContainer.innerHTML = `<div class="cmdk-empty">${escapeHtml(labels.noResults || 'No results')}</div>`;
+        input.removeAttribute('aria-activedescendant');
+        return;
+      }
+
+      // Group items by kind in defined order
+      const groups = [
+        { key: 'action', title: labels.groupActions || 'Quick actions' },
+        { key: 'post', title: labels.groupPosts || 'Posts' },
+        { key: 'project', title: labels.groupProjects || 'Projects' },
+        { key: 'artifact', title: labels.groupArtifacts || 'Artifacts' },
+      ];
+
+      let html = '';
+      let globalIndex = 0;
+
+      groups.forEach((group) => {
+        const groupItems = visibleItems.filter((item) => item.kind === group.key);
+        if (groupItems.length === 0) return;
+
+        html += `<div class="cmdk-group" role="group" aria-label="${escapeHtml(group.title)}">`;
+        html += `<div class="cmdk-group-title">${escapeHtml(group.title)}</div>`;
+
+        groupItems.forEach((item) => {
+          const isSelected = globalIndex === selectedIndex;
+          const itemId = `cmdk-item-${globalIndex}`;
+          const icon = getItemIcon(item);
+
+          html += `
+            <div
+              class="cmdk-item"
+              id="${itemId}"
+              role="option"
+              aria-selected="${isSelected ? 'true' : 'false'}"
+              data-global-index="${globalIndex}"
+            >
+              <div class="cmdk-item-icon">${icon}</div>
+              <div class="cmdk-item-info">
+                <div class="cmdk-item-title">${escapeHtml(item.title)}</div>
+                ${item.desc ? `<div class="cmdk-item-desc">${escapeHtml(item.desc)}</div>` : ''}
+              </div>
+              <span class="cmdk-item-badge" data-kind="${item.kind}">${escapeHtml(group.title)}</span>
+              <span class="cmdk-item-enter" aria-hidden="true">↵</span>
+            </div>
+          `;
+          globalIndex++;
+        });
+
+        html += `</div>`;
+      });
+
+      resultsContainer.innerHTML = html;
+      updateActiveItem();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function updateActiveItem() {
+      const itemEls = resultsContainer.querySelectorAll('.cmdk-item');
+      itemEls.forEach((el, idx) => {
+        const isSelected = idx === selectedIndex;
+        el.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      });
+
+      const activeEl = document.getElementById(`cmdk-item-${selectedIndex}`);
+      if (activeEl) {
+        input.setAttribute('aria-activedescendant', `cmdk-item-${selectedIndex}`);
+        activeEl.scrollIntoView({ block: 'nearest' });
+      } else {
+        input.removeAttribute('aria-activedescendant');
+      }
+    }
+
+    function activateItem(item) {
+      if (!item) return;
+      closeCmdk();
+
+      if (item.action === 'theme') {
+        const btn = document.getElementById('themeToggle');
+        if (btn) {
+          btn.click();
+        } else {
+          const current = document.documentElement.getAttribute('data-theme') || 'light';
+          const next = current === 'light' ? 'dark' : 'light';
+          try {
+            localStorage.setItem('miuceo_theme', next);
+          } catch (e) {}
+          document.documentElement.setAttribute('data-theme', next);
+        }
+      } else if (item.url) {
+        if (item.external) {
+          window.open(item.url, '_blank', 'noopener,noreferrer');
+        } else {
+          window.location.href = item.url;
+        }
+      }
+    }
+
+    function openCmdk() {
+      if (!backdrop.hasAttribute('hidden')) return;
+
+      previousActiveElement = document.activeElement;
+      backdrop.removeAttribute('hidden');
+      backdrop.setAttribute('aria-hidden', 'false');
+      input.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+
+      input.value = '';
+      renderResults('');
+      input.focus();
+    }
+
+    function closeCmdk() {
+      if (backdrop.hasAttribute('hidden')) return;
+
+      backdrop.setAttribute('hidden', '');
+      backdrop.setAttribute('aria-hidden', 'true');
+      input.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+
+      if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+        previousActiveElement.focus();
+      }
+    }
+
+    // Input listeners
+    input.addEventListener('input', function () {
+      renderResults(input.value);
+    });
+
+    input.addEventListener('keydown', function (e) {
+      if (visibleItems.length === 0) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeCmdk();
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % visibleItems.length;
+        updateActiveItem();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + visibleItems.length) % visibleItems.length;
+        updateActiveItem();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        activateItem(visibleItems[selectedIndex]);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeCmdk();
+      }
+    });
+
+    // Clicking results
+    resultsContainer.addEventListener('click', function (e) {
+      const itemEl = e.target.closest('.cmdk-item');
+      if (!itemEl) return;
+      const idx = parseInt(itemEl.getAttribute('data-global-index') || '0', 10);
+      activateItem(visibleItems[idx]);
+    });
+
+    // Hover moves selection
+    resultsContainer.addEventListener('mousemove', function (e) {
+      const itemEl = e.target.closest('.cmdk-item');
+      if (!itemEl) return;
+      const idx = parseInt(itemEl.getAttribute('data-global-index') || '0', 10);
+      if (idx !== selectedIndex) {
+        selectedIndex = idx;
+        updateActiveItem();
+      }
+    });
+
+    // Close button & backdrop click
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeCmdk);
+    }
+
+    backdrop.addEventListener('click', function (e) {
+      if (e.target === backdrop) {
+        closeCmdk();
+      }
+    });
+
+    // Global keyboard shortcut
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        if (backdrop.hasAttribute('hidden')) {
+          openCmdk();
+        } else {
+          closeCmdk();
+        }
+      } else if (e.key === 'Escape' && !backdrop.hasAttribute('hidden')) {
+        e.preventDefault();
+        closeCmdk();
+      }
+    });
+
+    // Global trigger clicks
+    document.addEventListener('click', function (e) {
+      const trigger = e.target.closest('#cmdkTrigger, [data-open-cmdk]');
+      if (trigger) {
+        e.preventDefault();
+        openCmdk();
+      }
+    });
+  })();
+</script>
+
+<style is:global>
+  .cmdk-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(16px, 10vh, 100px) var(--space-3) var(--space-3);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .cmdk-backdrop[hidden] {
+    display: none !important;
+  }
+
+  .cmdk-modal {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    max-height: min(80vh, 560px);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: 0 16px 36px color-mix(in srgb, var(--text) 18%, transparent);
+    animation: cmdk-in 0.18s cubic-bezier(0.05, 0.7, 0.1, 1);
+  }
+
+  @keyframes cmdk-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97) translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .cmdk-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--mid);
+    background: var(--surface);
+  }
+
+  .cmdk-search-icon {
+    flex-shrink: 0;
+    color: var(--accent-1-text);
+  }
+
+  .cmdk-input {
+    flex: 1 1 auto;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    padding: 0;
+    margin: 0;
+  }
+
+  .cmdk-input::placeholder {
+    color: color-mix(in srgb, var(--text) 55%, transparent);
+  }
+
+  .cmdk-esc {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: var(--radius-ui);
+    border: 1px solid var(--mid);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    line-height: 1.4;
+    transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+  }
+
+  .cmdk-esc:hover {
+    border-color: var(--accent-1);
+    color: var(--accent-1-text);
+  }
+
+  .cmdk-results {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: var(--space-2);
+    scrollbar-width: thin;
+    scrollbar-color: var(--mid) transparent;
+  }
+
+  .cmdk-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--space-2);
+  }
+
+  .cmdk-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .cmdk-group-title {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-1-text);
+    padding: 6px var(--space-2) 4px;
+  }
+
+  .cmdk-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 8px var(--space-3);
+    border-radius: var(--radius-ui);
+    cursor: pointer;
+    color: var(--text);
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .cmdk-item:hover,
+  .cmdk-item[aria-selected="true"] {
+    background: var(--surface);
+    border-color: var(--accent-1);
+  }
+
+  .cmdk-item-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-ui);
+    background: color-mix(in srgb, var(--surface) 60%, var(--bg));
+    color: var(--accent-1-text);
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  .cmdk-item[aria-selected="true"] .cmdk-item-icon {
+    background: var(--accent-1);
+    color: var(--on-accent-1);
+  }
+
+  .cmdk-item-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cmdk-item-title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cmdk-item-desc {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: color-mix(in srgb, var(--text) 70%, transparent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cmdk-item-badge {
+    flex-shrink: 0;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--mid);
+    color: var(--text);
+    background: transparent;
+  }
+
+  .cmdk-item[aria-selected="true"] .cmdk-item-badge {
+    border-color: var(--accent-1);
+    color: var(--accent-1-text);
+  }
+
+  .cmdk-item-enter {
+    flex-shrink: 0;
+    display: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent-1-text);
+    font-weight: 600;
+  }
+
+  .cmdk-item[aria-selected="true"] .cmdk-item-enter {
+    display: inline-block;
+  }
+
+  .cmdk-empty {
+    padding: var(--space-5) var(--space-4);
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 14px;
+    color: color-mix(in srgb, var(--text) 65%, transparent);
+  }
+
+  .cmdk-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-4);
+    border-top: 1px solid var(--mid);
+    background: var(--surface);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    color: color-mix(in srgb, var(--text) 75%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cmdk-modal {
+      animation: none !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .cmdk-backdrop {
+      padding: var(--space-2);
+    }
+    .cmdk-modal {
+      max-height: 90vh;
+    }
+    .cmdk-item-badge {
+      display: none;
+    }
+    .cmdk-footer {
+      font-size: 11px;
+      padding: 6px var(--space-3);
+    }
+  }
+</style>

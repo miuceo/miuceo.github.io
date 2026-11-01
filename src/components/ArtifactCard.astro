@@ -12,47 +12,117 @@ interface Props {
   date: Date;
   tags: string[];
   requiresClaude: boolean;
+  showKind?: boolean;
 }
 
-const { lang, slug, title, description, model, date, tags, requiresClaude } = Astro.props;
+const { lang, slug, title, description, model, date, tags, requiresClaude, showKind = false } = Astro.props;
 const strings = t(lang);
 const badge = modelBadge(model);
 
 const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric' });
 ---
 
-<a href={`/${lang}/artifacts/${slug}/`} class="card">
-  <span class="kicker red">
-    <span aria-hidden="true">{badge.emoji}</span> {badge.label}
-  </span>
+<a href={`/${lang}/artifacts/${slug}/`} class="artifact-card">
+  <div class="card-meta">
+    {showKind && <span class="kind-pill">{strings.home.kickerArtifact}</span>}
+    <span class="model-badge">
+      <span aria-hidden="true">{badge.emoji}</span> {badge.label}
+    </span>
+  </div>
   <h3 class="card-title"><span class="hl">{title}</span></h3>
   {description && <p class="card-desc">{description}</p>}
   <div class="card-bottom">
     <time class="card-date" datetime={date.toISOString()}>{dateFmt.format(date)}</time>
-    {tags.length > 0 && <span class="tags">{tags.slice(0, 4).join(' · ')}</span>}
+    {tags.length > 0 && <span class="tags">{tags.slice(0, 3).join(' · ')}</span>}
     {requiresClaude && <span class="claude-only">{strings.artifacts.requiresClaudeBadge}</span>}
   </div>
 </a>
 
 <style>
-  .card {
+  .artifact-card {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     height: 100%;
-    padding: 12px 0 24px;
-    border-top: 2px solid var(--rule);
-    color: var(--ink);
+    box-sizing: border-box;
   }
-  .card-title { font-size: 24px; line-height: 1.15; margin: 0; }
+  .artifact-card:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .kind-pill {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+  }
+  .model-badge {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+  }
+  .card-title {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+    margin: 0 0 var(--space-2);
+  }
   .card-desc {
-    font-family: var(--font-body); font-size: 16px; line-height: 1.5;
-    color: var(--ink-soft); margin: 0; flex-grow: 1;
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.65;
+    color: var(--text);
+    margin: 0 0 var(--space-3);
+    flex-grow: 1;
   }
   .card-bottom {
-    margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line);
-    display: flex; flex-wrap: wrap; gap: 4px 14px;
-    font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+    margin-top: auto;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--mid);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
   }
-  .claude-only { color: var(--accent); }
+  .card-date {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .tags {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent-1-text);
+  }
+  .claude-only {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-2);
+  }
 </style>

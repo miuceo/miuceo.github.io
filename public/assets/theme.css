@@ -1,103 +1,284 @@
-/* Mirror of src/styles/tokens.css for the build-less v1 pages (login.html,
-   admin.html). They cannot import from src/, so this file is a copy —
-   change tokens.css first, then copy it here. */
-/* Shared design tokens — "The Muhammadjon Journal": a New York Times-style
-   editorial base with Porsche-style precision (tracked sans labels, one red
-   accent). Light is the "day edition", dark the "night edition"; BaseLayout
-   picks one from the visitor's OS setting until they choose.
+/* Brand Unbound: Kobalt tokens mirror for standalone v1/admin pages.
+   Mirrors src/styles/tokens.css so public/admin.html and public/login.html
+   share the exact same visual identity, typography, and glowing hover states. */
+@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@600;700&family=Poppins:wght@500;600;700&display=swap");
 
-   All three families cover Cyrillic, so /ru/ renders in the same type as
-   /uz/ and /en/ (Archivo and Newsreader were rejected for lacking it). */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap');
+:root {
+  /* color */
+  --text: #14161f;
+  --bg: #f6f7fb;
+  --mid: #aeb1c2;
+  --surface: #e2e4ee;
+  --accent-1: #3a5bd9;
+  --accent-2: #ef6f5e;
+  --accent-3: #4fae8b;
+  --accent-1-text: #2e459e;
+  --band: #14161f;
+  --band-text: #f6f7fb;
+  --on-accent-1: #f6f7fb;
+  --on-accent-2: #14161f;
+  --on-accent-3: #14161f;
 
-:root{
-  --bg:       #FFFFFF;
-  --bg-2:     #F7F7F5;
-  --bg-3:     #EDECE8;
-  --ink:      #121212;
-  --ink-soft: #5A5A5A;
-  --line:     #E2E2E2;
-  --line-soft:#EFEFEF;
-  --rule:     #121212;   /* the strong newspaper rules (masthead, section heads) */
+  /* legacy aliases for compatibility */
+  --ink: var(--text);
+  --ink-soft: var(--mid);
+  --line: var(--mid);
+  --line-soft: var(--surface);
+  --rule: var(--mid);
+  --accent: var(--accent-1);
+  --danger: var(--accent-2);
+  --font-display: var(--font-heading);
+  --font-sans: var(--font-heading);
+  --font-serif: var(--font-body);
+  --bg-2: var(--surface);
+  --bg-3: var(--bg);
 
-  --accent:   #D5001C;
-  --danger:   #D5001C;
-
-  --font-display: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
-  --font-body:    'Source Serif 4', 'Georgia', 'Times New Roman', serif;
-  --font-sans:    'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-serif:   var(--font-display);
+  /* type */
+  --font-heading: "Poppins", "Montserrat", Arial, sans-serif;
+  --font-body: "Lora", Georgia, serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* shape and space */
+  --radius-ui: 8px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 56px;
 }
 
-[data-theme="dark"]{
-  --bg:       #111111;
-  --bg-2:     #1A1A1A;
-  --bg-3:     #242424;
-  --ink:      #ECECEC;
-  --ink-soft: #A3A3A3;
-  --line:     #2E2E2E;
-  --line-soft:#222222;
-  --rule:     #ECECEC;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --text: #eff0f8;
+    --bg: #0f1119;
+    --mid: #8f93aa;
+    --surface: #1b1f31;
+    --accent-1: #6483f0;
+    --accent-2: #f48372;
+    --accent-3: #5fc4a0;
+    --accent-1-text: #91a6f3;
+    --band: #454959;
+    --band-text: #eff0f8;
+    --on-accent-1: #0f1119;
+    --on-accent-2: #0f1119;
+    --on-accent-3: #0f1119;
 
-  /* #D5001C is too dark to read on #111; this keeps the hue at ~5:1. */
-  --accent:   #F0364A;
-  --danger:   #F0364A;
+    --ink: var(--text);
+    --ink-soft: var(--mid);
+    --line: var(--mid);
+    --line-soft: var(--surface);
+    --rule: var(--mid);
+    --accent: var(--accent-1);
+    --danger: var(--accent-2);
+    --bg-2: var(--surface);
+    --bg-3: var(--bg);
+    color-scheme: dark;
+  }
 }
 
-*{ box-sizing:border-box; }
-html{ color-scheme:light; }
-[data-theme="dark"]{ color-scheme:dark; }
+:root[data-theme="dark"] {
+  --text: #eff0f8;
+  --bg: #0f1119;
+  --mid: #8f93aa;
+  --surface: #1b1f31;
+  --accent-1: #6483f0;
+  --accent-2: #f48372;
+  --accent-3: #5fc4a0;
+  --accent-1-text: #91a6f3;
+  --band: #454959;
+  --band-text: #eff0f8;
+  --on-accent-1: #0f1119;
+  --on-accent-2: #0f1119;
+  --on-accent-3: #0f1119;
 
-body{
-  margin:0; background-color:var(--bg); color:var(--ink);
-  font-family:var(--font-sans); line-height:1.6;
-  transition:background-color .25s ease, color .25s ease;
+  --ink: var(--text);
+  --ink-soft: var(--mid);
+  --line: var(--mid);
+  --line-soft: var(--surface);
+  --rule: var(--mid);
+  --accent: var(--accent-1);
+  --danger: var(--accent-2);
+  --bg-2: var(--surface);
+  --bg-3: var(--bg);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html {
+  color-scheme: light;
+  overflow-x: clip;
+}
+[data-theme="dark"] { color-scheme: dark; }
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 15px;
+  line-height: 1.6;
+  transition: background-color .25s ease, color .25s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-a{ color:inherit; text-decoration:none; }
-::selection{ background:var(--accent); color:#FFF; }
 
-h1,h2,h3,h4{ font-family:var(--font-display); font-weight:700; letter-spacing:-0.005em; margin:0; }
-
-/* The one motion idiom on the site: a headline underlines on hover. */
-.hl{ text-decoration:underline; text-decoration-color:transparent; text-underline-offset:0.14em; text-decoration-thickness:1px; transition:text-decoration-color .2s ease; }
-a:hover .hl, a.hl:hover{ text-decoration-color:currentColor; }
-
-/* Small tracked caps used for kickers, datelines and section labels. */
-.kicker{ font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); }
-.kicker.red{ color:var(--accent); }
-.tag-new{ display:inline-block; font-family:var(--font-sans); font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; line-height:1; padding:3px 5px 2px; border:1px solid var(--accent); color:var(--accent); vertical-align:2px; }
-
-.theme-toggle{
-  background:transparent; border:none; border-radius:50%;
-  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
-  font-size:16px; cursor:pointer; color:var(--ink-soft);
-  transition:background .2s, color .2s;
+a {
+  color: var(--accent-1-text);
+  text-decoration: none;
+  transition: color 0.2s ease, text-shadow 0.2s ease, box-shadow 0.2s ease;
 }
-.theme-toggle:hover{ background:var(--bg-3); color:var(--ink); }
+a:hover {
+  color: var(--accent-1);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+}
+::selection { background: var(--accent-1); color: var(--on-accent-1); }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  text-wrap: balance;
+  margin: 0;
+  color: var(--text);
+}
+
+.hl {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 0.2s ease, text-shadow 0.2s ease;
+}
+a:hover .hl, a.hl:hover {
+  text-decoration-color: currentColor;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+}
+
+.btn {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: var(--radius-ui);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  line-height: 1.2;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn, .btn-primary {
+  background: var(--accent-1);
+  color: var(--on-accent-1);
+  border-color: var(--accent-1);
+}
+.btn:hover, .btn-primary:hover {
+  background: var(--accent-1);
+  color: var(--on-accent-1);
+  border-color: var(--accent-1);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-1) 60%, transparent);
+  text-shadow: none;
+}
+.btn-secondary {
+  background: var(--accent-2);
+  color: var(--on-accent-2);
+  border-color: var(--accent-2);
+}
+.btn-secondary:hover {
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 60%, transparent);
+  text-shadow: none;
+}
+.btn.ghost, .btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--mid);
+}
+.btn.ghost:hover, .btn-ghost:hover {
+  border-color: var(--accent-1);
+  color: var(--accent-1-text);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 45%, transparent);
+  text-shadow: none;
+  background: transparent;
+}
+.btn.small {
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.btn.danger {
+  background: transparent;
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.btn.danger:hover {
+  background: var(--accent-2);
+  color: var(--on-accent-2);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 60%, transparent);
+  text-shadow: none;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--mid);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  border-color: var(--accent-1);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 1px;
+}
+
+code, pre {
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.theme-toggle {
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text);
+  padding: 0;
+  transition: background 0.2s, color 0.2s;
+}
+.theme-toggle:hover {
+  background: var(--surface);
+  color: var(--text);
+}
 
 html .sun-icon { display: block; }
 html .moon-icon { display: none; }
 html[data-theme="light"] .sun-icon { display: none; }
 html[data-theme="light"] .moon-icon { display: block; }
 
-.btn{
-  font-family:var(--font-sans); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
-  padding:11px 20px; border-radius:2px; border:1px solid var(--ink); background:var(--ink);
-  color:var(--bg); cursor:pointer; display:inline-block; transition:background .2s, color .2s, border-color .2s;
-}
-.btn:hover{ background:var(--accent); border-color:var(--accent); color:#FFF; }
-.btn.ghost{ background:transparent; color:var(--ink); border-color:var(--ink); }
-.btn.ghost:hover{ background:var(--ink); color:var(--bg); }
-.btn.small{ padding:8px 12px; font-size:11px; }
-.btn.danger{ background:transparent; color:var(--danger); border-color:var(--danger); }
-.btn.danger:hover{ background:var(--danger); color:#FFF; }
-.btn:disabled{ opacity:0.45; cursor:not-allowed; }
-
-code, pre { font-family:var(--mono); font-size: 0.9em; }
-
-@media (prefers-reduced-motion: reduce){
-  *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

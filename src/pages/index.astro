@@ -3,17 +3,20 @@
 // with a manual override (stored in localStorage) that sticks. Fully static
 // (GitHub Pages has no server-side redirect capability), so this happens
 // client-side before paint to avoid a visible flash of the wrong language.
+import { SITE_NAME } from '../lib/site';
+import '../styles/tokens.css';
 ---
 
 <!DOCTYPE html>
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <title>The Muhammadjon Journal — Muhammadjon Ibrohimov</title>
+  <title>{SITE_NAME}</title>
   <script is:inline>
     (function(){
       var SUPPORTED = ['uz', 'en', 'ru'];
-      var override = localStorage.getItem('miuceo_lang');
+      var override = null;
+      try { override = localStorage.getItem('miuceo_lang'); } catch (e) {}
       var target = override;
       if(!target || SUPPORTED.indexOf(target) === -1){
         var browserLangs = navigator.languages || [navigator.language || 'uz'];
@@ -34,3 +37,17 @@
   <p><a href="/uz/">uz</a> · <a href="/en/">en</a> · <a href="/ru/">ru</a></p>
 </body>
 </html>
+
+<style>
+  body {
+    padding: var(--space-4);
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+  a {
+    color: var(--accent-1-text);
+    font-family: var(--font-heading);
+    font-weight: 600;
+  }
+</style>

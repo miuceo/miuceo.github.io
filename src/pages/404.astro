@@ -1,11 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { DEFAULT_LANG, LANGS, t } from '../lib/i18n';
+import { SITE_NAME } from '../lib/site';
 
-// GitHub Pages serves this one file for every unmatched path, so it cannot be
-// pre-rendered per language. It ships in the default language and swaps to the
-// right one before paint, using the language prefix of the URL that 404'd
-// (/en/nope -> English) and falling back to the reader's stored preference.
 const strings = t(DEFAULT_LANG);
 
 const translations = Object.fromEntries(
@@ -15,15 +12,12 @@ const translations = Object.fromEntries(
 
 <BaseLayout
   lang={DEFAULT_LANG}
-  title={`${strings.notFound.title} — The Muhammadjon Journal`}
+  title={`${strings.notFound.title} — ${SITE_NAME}`}
   description={strings.notFound.desc}
   canonicalPath="/404/"
   hreflangPaths={{}}
   noindex={true}
 >
-  <!-- The repo miuceo/ai-news-agent was renamed to miuceo/neuron-uz, which moved
-       its Pages site. Old links (already sent in Telegram digests) land here, so
-       forward them to the same path under the new prefix before anything paints. -->
   <script is:inline>
     (function () {
       var p = location.pathname;
@@ -32,12 +26,15 @@ const translations = Object.fromEntries(
       }
     })();
   </script>
-  <div class="card">
-    <div class="mark">The Muhammadjon Journal</div>
-    <div class="code">404</div>
-    <h1 id="nfTitle">{strings.notFound.title}</h1>
-    <p id="nfDesc">{strings.notFound.desc}</p>
-    <a href={`/${DEFAULT_LANG}/`} id="nfBack" class="btn">{strings.notFound.backHome}</a>
+
+  <div class="not-found-wrap">
+    <div class="card">
+      <div class="mark">{SITE_NAME}</div>
+      <div class="code">404</div>
+      <h1 id="nfTitle">{strings.notFound.title}</h1>
+      <p id="nfDesc">{strings.notFound.desc}</p>
+      <a href={`/${DEFAULT_LANG}/`} id="nfBack" class="btn btn-primary">{strings.notFound.backHome}</a>
+    </div>
   </div>
 
   <script is:inline define:vars={{ translations, DEFAULT_LANG }}>
@@ -47,7 +44,7 @@ const translations = Object.fromEntries(
       var lang =
         supported.indexOf(fromPath) !== -1
           ? fromPath
-          : localStorage.getItem('miuceo_lang') || DEFAULT_LANG;
+          : (function(){ try { return localStorage.getItem('miuceo_lang'); } catch(e){ return null; } })() || DEFAULT_LANG;
       if (supported.indexOf(lang) === -1) lang = DEFAULT_LANG;
 
       var s = translations[lang];
@@ -62,10 +59,59 @@ const translations = Object.fromEntries(
 </BaseLayout>
 
 <style>
-  :global(body){ min-height:100vh; display:flex; align-items:center; justify-content:center; }
-  .card{ text-align:center; padding:40px 16px; max-width:520px; }
-  .mark{ font-family:var(--font-display); font-weight:900; font-size:22px; padding-bottom:12px; border-bottom:3px double var(--rule); margin-bottom:28px; }
-  .code{ font-family:var(--font-display); font-weight:900; font-size:96px; line-height:1; color:var(--accent); margin-bottom:12px; }
-  h1{ font-size:32px; font-weight:700; margin:0 0 14px; }
-  p{ font-family:var(--font-body); font-style:italic; font-size:18px; color:var(--ink-soft); line-height:1.55; margin:0 0 30px; }
+  .not-found-wrap {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6) 0;
+  }
+  .card {
+    text-align: center;
+    padding: var(--space-5);
+    max-width: 520px;
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    box-sizing: border-box;
+  }
+  .mark {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-1-text);
+    margin-bottom: var(--space-4);
+  }
+  .code {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 80px;
+    line-height: 1;
+    color: var(--accent-1);
+    margin-bottom: var(--space-2);
+  }
+  h1 {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+    margin: 0 0 var(--space-2);
+  }
+  p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--text);
+    line-height: 1.6;
+    margin: 0 0 var(--space-4);
+  }
+  .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>

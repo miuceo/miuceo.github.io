@@ -15,7 +15,7 @@ const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/contact/`])) as
 
 <BaseLayout
   lang={lang}
-  title={`${strings.contact.title} — The Muhammadjon Journal`}
+  title={`${strings.contact.title} — ${strings.masthead.name}`}
   description={strings.contact.desc}
   canonicalPath={`/${lang}/contact/`}
   hreflangPaths={langPaths}
@@ -29,24 +29,30 @@ const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/contact/`])) as
 
   <div class="contact-grid">
     <div class="contact-card">
-      <span class="label">Telegram</span>
+      <span class="label-pill pill-telegram">Telegram</span>
       <h2>@muhammadibrohimov_ceo</h2>
       <p>{strings.contact.telegramDesc}</p>
-      <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="contact-link">{strings.contact.telegramLink}</a>
+      <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="contact-link">
+        {strings.contact.telegramLink}
+      </a>
     </div>
 
     <div class="contact-card">
-      <span class="label">GitHub</span>
+      <span class="label-pill pill-github">GitHub</span>
       <h2>@miuceo</h2>
       <p>{strings.contact.githubDesc}</p>
-      <a href="https://github.com/miuceo" target="_blank" rel="noopener" class="contact-link">{strings.contact.githubLink}</a>
+      <a href="https://github.com/miuceo" target="_blank" rel="noopener" class="contact-link">
+        {strings.contact.githubLink}
+      </a>
     </div>
 
     <div class="contact-card">
-      <span class="label">Email</span>
+      <span class="label-pill pill-email">Email</span>
       <h2>ibrokhimovmiu@gmail.com</h2>
       <p>{strings.contact.emailDesc}</p>
-      <a href="mailto:ibrokhimovmiu@gmail.com" class="contact-link">{strings.contact.emailLink}</a>
+      <a href="mailto:ibrokhimovmiu@gmail.com" class="contact-link">
+        {strings.contact.emailLink}
+      </a>
     </div>
   </div>
 
@@ -54,12 +60,86 @@ const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/contact/`])) as
 </BaseLayout>
 
 <style>
-  .contact-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:0 36px; padding:36px 0 0; }
-  @media (max-width:860px){ .contact-grid{ grid-template-columns:minmax(0,1fr); } }
-  .contact-card{ border-top:2px solid var(--rule); padding:12px 0 28px; display:flex; flex-direction:column; gap:10px; min-width:0; }
-  .contact-card .label{ font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); }
-  .contact-card h2{ font-size:23px; line-height:1.2; margin:0; overflow-wrap:anywhere; }
-  .contact-card p{ font-family:var(--font-body); font-size:16px; color:var(--ink-soft); line-height:1.55; margin:0; flex:1; }
-  .contact-link{ font-family:var(--font-sans); font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink); width:fit-content; margin-top:6px; padding-top:10px; }
-  .contact-link:hover{ color:var(--accent); }
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+    padding: var(--space-4) 0 var(--space-6);
+  }
+  @media (max-width: 860px) {
+    .contact-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .contact-card {
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .contact-card:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+
+  .label-pill {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    line-height: 1;
+    display: inline-flex;
+    width: fit-content;
+    margin-bottom: var(--space-1);
+  }
+  .pill-telegram {
+    background: var(--accent-1);
+    color: var(--on-accent-1);
+  }
+  .pill-github {
+    background: var(--accent-2);
+    color: var(--on-accent-2);
+  }
+  .pill-email {
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+  }
+
+  .contact-card h2 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .contact-card p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--text);
+    line-height: 1.6;
+    margin: 0;
+    flex-grow: 1;
+  }
+  .contact-link {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    text-decoration: underline;
+    width: fit-content;
+    margin-top: auto;
+    padding-top: var(--space-3);
+  }
+  .contact-link:hover {
+    color: var(--accent-1);
+  }
 </style>

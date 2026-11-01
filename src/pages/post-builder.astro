@@ -4,12 +4,13 @@
 // post-builder.html (which stays untouched as the fallback until this is
 // proven — see CLAUDE.md's phase-discipline rule).
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE_NAME } from '../lib/site';
 import '../islands/PostBuilder/styles.css';
 ---
 
 <BaseLayout
   lang="uz"
-  title="Post Builder — miuceo"
+  title={`Post Builder — ${SITE_NAME}`}
   description="Post Builder — miuceo admin tool"
   canonicalPath="/post-builder/"
   hreflangPaths={{}}
@@ -19,26 +20,42 @@ import '../islands/PostBuilder/styles.css';
 
   <div id="pbRoot" style="visibility:hidden;">
     <div class="app">
+      <div id="draftRecoveryBar" class="draft-recovery-bar" style="display:none;">
+        <div class="draft-recovery-content">
+          <span class="draft-recovery-icon">📝</span>
+          <span class="draft-recovery-text" id="draftRecoveryText">Oxirgi qoralama brauzerda saqlangan.</span>
+        </div>
+        <div class="draft-recovery-actions">
+          <button class="btn btn-ghost small" type="button" id="draftViewBtn">Oxirgi qoralamani nusxalash / ko'rish</button>
+          <button class="btn primary small" type="button" id="draftRestoreBtn">Tiklash</button>
+          <button class="btn btn-ghost small danger-btn" type="button" id="draftDismissBtn">O'chirish</button>
+        </div>
+      </div>
+
       <div class="top">
-        <a href="/uz/" class="back-link">← Orqaga</a>
+        <div class="top-nav-links">
+          <a href="/admin.html" class="back-link">← Admin panel</a>
+          <span class="top-sep" aria-hidden="true">·</span>
+          <a href="/uz/" class="back-link">Bosh sahifa</a>
+        </div>
         <div class="top-actions">
-          <button class="theme-toggle" id="themeToggle">☀️</button>
-          <button class="btn ghost" id="logoutBtn">Chiqish</button>
-          <button class="btn ghost" id="clearBtn">Tozalash</button>
+          <button class="theme-toggle" id="themeToggle" aria-label="Mavzuni almashtirish">☀️</button>
+          <button class="btn btn-ghost" id="logoutBtn">Chiqish</button>
+          <button class="btn btn-ghost" id="clearBtn">Tozalash</button>
           <button class="btn primary" id="generateBtn">Generate &amp; Publish</button>
         </div>
       </div>
 
       <div class="edit-bar">
-        <button class="btn ghost" id="loadPostsBtn">Mavjud postlarni yuklash</button>
+        <button class="btn btn-ghost" id="loadPostsBtn">Mavjud postlarni yuklash</button>
         <select id="postSelect"><option value="">— Yangi post yaratish —</option></select>
       </div>
 
       <div class="edit-bar agent-bar">
         <span class="agent-label">AI yordamchi:</span>
-        <button class="btn ghost small" id="translateEnBtn" disabled>Ingliz tiliga tarjima</button>
-        <button class="btn ghost small" id="translateRuBtn" disabled>Rus tiliga tarjima</button>
-        <button class="btn ghost small" id="improveBtn" disabled>Matnni yaxshilash</button>
+        <button class="btn btn-ghost small" id="translateEnBtn" disabled>Ingliz tiliga tarjima</button>
+        <button class="btn btn-ghost small" id="translateRuBtn" disabled>Rus tiliga tarjima</button>
+        <button class="btn btn-ghost small" id="improveBtn" disabled>Matnni yaxshilash</button>
         <span class="agent-hint" id="agentHint">Avval postni saqlang yoki mavjud postni tanlang</span>
       </div>
 
@@ -57,7 +74,7 @@ import '../islands/PostBuilder/styles.css';
         <div>
           <div class="panel-label">Jonli ko'rinish</div>
           <div class="preview-frame">
-            <div class="preview-nav">The Muhammadjon Journal</div>
+            <div class="preview-nav">{SITE_NAME}</div>
             <div class="preview-body" id="previewBody">
               <div class="preview-placeholder">Postni yozishni boshlaganingda shu yerda ko'rasan</div>
             </div>
@@ -68,8 +85,12 @@ import '../islands/PostBuilder/styles.css';
     </div>
 
     <footer class="actions">
-      <div class="status" id="statusText">0 blok</div>
-      <div class="status" id="modeText">Yangi post</div>
+      <div class="actions-inner">
+        <div class="status" id="statusText">0 blok</div>
+        <span class="word-count-status" id="wordCountStatus">0 so'z</span>
+        <span class="autosave-status" id="autosaveStatus"></span>
+        <div class="status" id="modeText">Yangi post</div>
+      </div>
     </footer>
 
     <!-- Agent output lands here for review. Nothing is written anywhere until
@@ -86,7 +107,7 @@ import '../islands/PostBuilder/styles.css';
         <textarea id="reviewBodyInput" class="review-input review-body"></textarea>
         <div class="review-status" id="reviewStatus"></div>
         <div style="display:flex; gap:10px; justify-content:flex-end;">
-          <button class="btn ghost" id="reviewCancelBtn">Bekor qilish</button>
+          <button class="btn btn-ghost" id="reviewCancelBtn">Bekor qilish</button>
           <button class="btn primary" id="reviewSaveBtn">Saqlash</button>
         </div>
       </div>
@@ -102,7 +123,7 @@ import '../islands/PostBuilder/styles.css';
         <div class="review-meta">AI yozgan matnlar. Tahrirlashingiz mumkin — tasdiqlamaguningizcha hech narsa yozilmaydi.</div>
         <div id="publishReviewBody"></div>
         <div style="display:flex; gap:10px; justify-content:flex-end;">
-          <button class="btn ghost" id="publishCancelBtn">Bekor qilish</button>
+          <button class="btn btn-ghost" id="publishCancelBtn">Bekor qilish</button>
           <button class="btn primary" id="publishConfirmBtn">Nashr qil</button>
         </div>
       </div>
@@ -113,14 +134,31 @@ import '../islands/PostBuilder/styles.css';
         <div class="panel-label" style="margin:0;">Jarayon</div>
         <div class="log" id="processLog"></div>
         <div style="display:flex; gap:10px; justify-content:flex-end;">
-          <button class="btn ghost" id="closeModalBtn">Yopish</button>
+          <button class="btn btn-ghost" id="closeModalBtn">Yopish</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="draftModal">
+      <div class="box">
+        <div class="panel-label" style="margin:0;">Saqlangan qoralama</div>
+        <div class="review-meta" id="draftSavedAt"></div>
+        <label class="review-label">Sarlavha</label>
+        <input type="text" id="draftModalTitle" class="review-input" readonly>
+        <label class="review-label">Matn</label>
+        <textarea id="draftModalBody" class="review-input review-body" readonly></textarea>
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:10px;">
+          <button class="btn btn-ghost" type="button" id="draftModalDismissBtn">O'chirish</button>
+          <button class="btn btn-ghost" type="button" id="draftModalCopyBtn">Nusxa olish</button>
+          <button class="btn primary" type="button" id="draftModalRestoreBtn">Tahrirlagichga tiklash</button>
+          <button class="btn btn-ghost" type="button" id="draftModalCloseBtn">Yopish</button>
         </div>
       </div>
     </div>
   </div>
 
   <div id="authGate" style="display:none; min-height:60vh; align-items:center; justify-content:center; text-align:center; padding:40px;">
-    <p style="color:var(--ink-soft); font-size:14px;">Tekshirilmoqda...</p>
+    <p style="color:var(--text); font-size:14px;">Tekshirilmoqda...</p>
   </div>
 
   <script>
@@ -129,7 +167,228 @@ import '../islands/PostBuilder/styles.css';
     function reveal() {
       const root = document.getElementById('pbRoot')!;
       root.style.visibility = 'visible';
-      import('../islands/PostBuilder/editor').then(({ initPostBuilder }) => initPostBuilder());
+      import('../islands/PostBuilder/editor').then(({ initPostBuilder }) => {
+        initPostBuilder();
+        setupDraftAndWordCount();
+      });
+    }
+
+    function setupDraftAndWordCount() {
+      const DRAFT_KEY = 'miuceo_pb_draft_backup';
+      const titleInput = document.getElementById('titleInput') as HTMLInputElement | null;
+      const blocksContainer = document.getElementById('blocksContainer');
+      const postSelect = document.getElementById('postSelect') as HTMLSelectElement | null;
+      const wordCountStatus = document.getElementById('wordCountStatus');
+      const autosaveStatus = document.getElementById('autosaveStatus');
+      const draftRecoveryBar = document.getElementById('draftRecoveryBar');
+      const draftRecoveryText = document.getElementById('draftRecoveryText');
+      const draftViewBtn = document.getElementById('draftViewBtn');
+      const draftRestoreBtn = document.getElementById('draftRestoreBtn');
+      const draftDismissBtn = document.getElementById('draftDismissBtn');
+      const draftModal = document.getElementById('draftModal');
+      const draftModalTitle = document.getElementById('draftModalTitle') as HTMLInputElement | null;
+      const draftModalBody = document.getElementById('draftModalBody') as HTMLTextAreaElement | null;
+      const draftSavedAt = document.getElementById('draftSavedAt');
+      const draftModalCloseBtn = document.getElementById('draftModalCloseBtn');
+      const draftModalCopyBtn = document.getElementById('draftModalCopyBtn');
+      const draftModalRestoreBtn = document.getElementById('draftModalRestoreBtn');
+      const draftModalDismissBtn = document.getElementById('draftModalDismissBtn');
+
+      function computeWordCount(): number {
+        const textareas = document.querySelectorAll<HTMLTextAreaElement>('#blocksContainer textarea.text-input');
+        let total = 0;
+        textareas.forEach((ta) => {
+          const val = ta.value.trim();
+          if (val) {
+            total += val.split(/\s+/).filter(Boolean).length;
+          }
+        });
+        return total;
+      }
+
+      function updateWordCount() {
+        if (!wordCountStatus) return;
+        const words = computeWordCount();
+        if (words === 0) {
+          wordCountStatus.textContent = "0 so'z";
+        } else {
+          const mins = Math.max(1, Math.round(words / 200));
+          wordCountStatus.textContent = `${words} so'z · ~${mins} daq o'qish`;
+        }
+      }
+
+      function getSavedDraft() {
+        try {
+          const raw = localStorage.getItem(DRAFT_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function checkAndShowRecoveryBar() {
+        if (!draftRecoveryBar) return;
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('edit') || params.has('draft')) {
+          draftRecoveryBar.style.display = 'none';
+          return;
+        }
+        if (postSelect && postSelect.value !== '') {
+          draftRecoveryBar.style.display = 'none';
+          return;
+        }
+        const saved = getSavedDraft();
+        const hasSavedContent =
+          saved &&
+          ((typeof saved.title === 'string' && saved.title.trim().length > 0) ||
+           (Array.isArray(saved.texts) && saved.texts.some((t: string) => typeof t === 'string' && t.trim().length > 0)));
+
+        const currentTitleEmpty = !titleInput || titleInput.value.trim() === '';
+        const currentBlocksEmpty = computeWordCount() === 0;
+
+        if (hasSavedContent && currentTitleEmpty && currentBlocksEmpty) {
+          if (draftRecoveryText) {
+            const preview = saved.title ? `"${saved.title}"` : 'Nomsiz qoralama';
+            draftRecoveryText.textContent = `Oxirgi qoralama saqlangan: ${preview} (${saved.savedAt || ''})`;
+          }
+          draftRecoveryBar.style.display = 'flex';
+        } else {
+          draftRecoveryBar.style.display = 'none';
+        }
+      }
+
+      let saveTimeout: number | undefined;
+      function scheduleAutoSave() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = window.setTimeout(() => {
+          if (postSelect && postSelect.value !== '') return;
+          const currentTitle = titleInput ? titleInput.value : '';
+          const textareas = document.querySelectorAll<HTMLTextAreaElement>('#blocksContainer textarea.text-input');
+          const texts = Array.from(textareas).map((ta) => ta.value);
+          const hasContent = currentTitle.trim().length > 0 || texts.some((t) => t.trim().length > 0);
+          if (!hasContent) return;
+
+          const now = new Date();
+          const hh = String(now.getHours()).padStart(2, '0');
+          const mm = String(now.getMinutes()).padStart(2, '0');
+          const timeStr = `${hh}:${mm}`;
+
+          try {
+            localStorage.setItem(
+              DRAFT_KEY,
+              JSON.stringify({
+                title: currentTitle,
+                texts,
+                savedAt: timeStr,
+                timestamp: now.getTime(),
+              })
+            );
+            if (autosaveStatus) {
+              autosaveStatus.textContent = `✓ Qoralama brauzerda saqlandi (${timeStr})`;
+            }
+          } catch (e) {
+            console.warn('Auto-save error:', e);
+          }
+        }, 800);
+      }
+
+      function handleContentChange() {
+        updateWordCount();
+        scheduleAutoSave();
+      }
+
+      function restoreDraft() {
+        const saved = getSavedDraft();
+        if (!saved) return;
+        if (titleInput && saved.title) {
+          titleInput.value = saved.title;
+          titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        const addBtn = document.getElementById('addTextBtn') as HTMLButtonElement | null;
+        if (addBtn && Array.isArray(saved.texts) && saved.texts.length > 0) {
+          saved.texts.forEach((text: string) => {
+            addBtn.click();
+            const textareas = document.querySelectorAll<HTMLTextAreaElement>('#blocksContainer textarea.text-input');
+            const last = textareas[textareas.length - 1];
+            if (last) {
+              last.value = text;
+              last.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          });
+        }
+        if (draftRecoveryBar) draftRecoveryBar.style.display = 'none';
+        if (draftModal) draftModal.style.display = 'none';
+        updateWordCount();
+      }
+
+      function dismissDraft() {
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {}
+        if (draftRecoveryBar) draftRecoveryBar.style.display = 'none';
+        if (draftModal) draftModal.style.display = 'none';
+        if (autosaveStatus) autosaveStatus.textContent = '';
+      }
+
+      function openDraftModal() {
+        const saved = getSavedDraft();
+        if (!saved || !draftModal) return;
+        if (draftSavedAt) draftSavedAt.textContent = `Saqlangan vaqt: ${saved.savedAt || ''}`;
+        if (draftModalTitle) draftModalTitle.value = saved.title || '';
+        if (draftModalBody) draftModalBody.value = (saved.texts || []).join('\n\n');
+        draftModal.style.display = 'flex';
+      }
+
+      // Event listeners
+      if (titleInput) {
+        titleInput.addEventListener('input', handleContentChange);
+      }
+      if (blocksContainer) {
+        blocksContainer.addEventListener('input', handleContentChange);
+        const observer = new MutationObserver(() => {
+          handleContentChange();
+        });
+        observer.observe(blocksContainer, { childList: true, subtree: true });
+      }
+
+      if (postSelect) {
+        postSelect.addEventListener('change', () => {
+          if (postSelect.value !== '') {
+            if (draftRecoveryBar) draftRecoveryBar.style.display = 'none';
+            if (autosaveStatus) autosaveStatus.textContent = '';
+          } else {
+            checkAndShowRecoveryBar();
+          }
+        });
+      }
+
+      draftViewBtn?.addEventListener('click', openDraftModal);
+      draftRestoreBtn?.addEventListener('click', restoreDraft);
+      draftDismissBtn?.addEventListener('click', dismissDraft);
+
+      draftModalCloseBtn?.addEventListener('click', () => {
+        if (draftModal) draftModal.style.display = 'none';
+      });
+      draftModalRestoreBtn?.addEventListener('click', restoreDraft);
+      draftModalDismissBtn?.addEventListener('click', dismissDraft);
+      draftModalCopyBtn?.addEventListener('click', () => {
+        const saved = getSavedDraft();
+        if (!saved) return;
+        const allText = (saved.title ? `${saved.title}\n\n` : '') + (saved.texts || []).join('\n\n');
+        navigator.clipboard.writeText(allText).then(() => {
+          if (draftModalCopyBtn) {
+            const orig = draftModalCopyBtn.textContent;
+            draftModalCopyBtn.textContent = '✓ Nusxalandi!';
+            setTimeout(() => {
+              if (draftModalCopyBtn) draftModalCopyBtn.textContent = orig;
+            }, 2000);
+          }
+        });
+      });
+
+      // Initial check
+      checkAndShowRecoveryBar();
+      updateWordCount();
     }
 
     function denyAndRedirect() {
@@ -154,7 +413,7 @@ import '../islands/PostBuilder/styles.css';
           // session cookie (confirmed live), so also keep the session id
           // in localStorage and send it as a Bearer token on every
           // subsequent request — see worker/src/auth.ts readSessionToken.
-          if (data.sessionId) localStorage.setItem('miuceo_session_token', data.sessionId);
+          try { if (data.sessionId) localStorage.setItem('miuceo_session_token', data.sessionId); } catch (e) {}
           reveal();
         } else {
           denyAndRedirect();

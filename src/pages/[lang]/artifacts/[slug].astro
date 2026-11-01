@@ -42,7 +42,7 @@ const jsonLd = {
 
 <BaseLayout
   lang={lang}
-  title={`${title} — The Muhammadjon Journal`}
+  title={`${title} — ${strings.masthead.name}`}
   description={description}
   canonicalPath={`/${lang}/artifacts/${slug}/`}
   hreflangPaths={langPaths}
@@ -54,7 +54,9 @@ const jsonLd = {
     <a href={`/${lang}/artifacts/`} class="back-link">← {strings.artifacts.backToList}</a>
 
     <header class="artifact-header">
-      <span class="kicker red"><span aria-hidden="true">{badge.emoji}</span> {strings.home.kickerArtifact} · {badge.label}</span>
+      <span class="kind-pill">
+        <span aria-hidden="true">{badge.emoji}</span> {strings.home.kickerArtifact} · {badge.label}
+      </span>
       <h1>{title}</h1>
       {description && <p class="description">{description}</p>}
       <div class="meta-row">
@@ -75,16 +77,16 @@ const jsonLd = {
     </header>
 
     <div class="toolbar">
-      <button type="button" id="btnFullscreen" class="btn ghost small">{strings.artifacts.openFullscreen}</button>
-      <a href={entry.data.file} target="_blank" rel="noopener noreferrer" class="btn ghost small">{strings.artifacts.openNewTab}</a>
-      <button type="button" id="btnReload" class="btn ghost small">{strings.artifacts.reload}</button>
-      <a href={entry.data.file} download={`${slug}.html`} class="btn ghost small">{strings.artifacts.download}</a>
-      <button type="button" id="btnCopyLink" class="btn ghost small" data-url={artifactPageUrl}>{strings.artifacts.copyLink}</button>
+      <button type="button" id="btnFullscreen" class="btn btn-ghost">{strings.artifacts.openFullscreen}</button>
+      <a href={entry.data.file} target="_blank" rel="noopener noreferrer" class="btn btn-ghost">{strings.artifacts.openNewTab}</a>
+      <button type="button" id="btnReload" class="btn btn-ghost">{strings.artifacts.reload}</button>
+      <a href={entry.data.file} download={`${slug}.html`} class="btn btn-ghost">{strings.artifacts.download}</a>
+      <button type="button" id="btnCopyLink" class="btn btn-ghost" data-url={artifactPageUrl}>{strings.artifacts.copyLink}</button>
       <button
         type="button"
         id="btnCopyEmbed"
-        class="btn ghost small"
-        data-embed={`<iframe src="${artifactFileUrl}" sandbox="allow-scripts allow-popups allow-forms" referrerpolicy="no-referrer" loading="lazy" style="width:100%;height:600px;border:1px solid #ccc;border-radius:8px;"></iframe>`}
+        class="btn btn-ghost"
+        data-embed={`<iframe src="${artifactFileUrl}" sandbox="allow-scripts allow-popups allow-forms" referrerpolicy="no-referrer" loading="lazy" style="width:100%;height:600px;border:1px solid rgba(128,128,128,0.4);border-radius:8px;"></iframe>`}
       >{strings.artifacts.copyEmbed}</button>
       <span id="copyStatus" class="copy-status" aria-live="polite"></span>
     </div>
@@ -138,50 +140,188 @@ const jsonLd = {
 </script>
 
 <style>
-  .artifact-page { max-width: 1040px; margin: 0 auto; padding: 32px 0 0; }
-  .back-link { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); display: inline-block; margin-bottom: 22px; }
-  .back-link:hover { color: var(--accent); }
-
-  .artifact-header { margin-bottom: 22px; }
-  .artifact-header h1 { font-size: 44px; font-weight: 700; line-height: 1.1; margin: 10px 0 12px; text-wrap: balance; }
-  .description { font-family: var(--font-body); font-size: 20px; color: var(--ink-soft); line-height: 1.5; max-width: 720px; margin: 0 0 16px; }
-  .meta-row {
-    display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 0; margin-bottom: 14px;
-    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
-    font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+  .artifact-page {
+    padding: var(--space-5) 0 var(--space-6);
   }
-  .date { color: var(--ink); font-weight: 700; }
+  .back-link {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    text-decoration: underline;
+    display: inline-block;
+    margin-bottom: var(--space-4);
+  }
+  .back-link:hover {
+    color: var(--accent-1);
+  }
 
-  .notice { font-family: var(--font-sans); font-size: 13px; color: var(--accent); border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; margin-bottom: 12px; }
+  .artifact-header {
+    margin-bottom: var(--space-4);
+  }
+  .kind-pill {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+  }
+  .artifact-header h1 {
+    font-family: var(--font-heading);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin: var(--space-2) 0 var(--space-3);
+    text-wrap: balance;
+  }
+  .description {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--text);
+    line-height: 1.6;
+    max-width: 65ch;
+    margin: 0 0 var(--space-3);
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: var(--space-3) 0;
+    margin-bottom: var(--space-3);
+    border-top: 1px solid var(--mid);
+    border-bottom: 1px solid var(--mid);
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .date {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .tags {
+    color: var(--accent-1-text);
+  }
 
-  .prompt-block { margin-bottom: 12px; }
-  .prompt-block summary { cursor: pointer; font-family: var(--font-sans); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
-  .prompt-block pre { white-space: pre-wrap; font-size: 13px; background: var(--bg-2); border: 1px solid var(--line); padding: 14px; margin-top: 10px; color: var(--ink); }
+  .notice {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--surface);
+    border-left: 4px solid var(--accent-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: 0 var(--radius-ui) var(--radius-ui) 0;
+    margin-bottom: var(--space-3);
+  }
 
-  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-  .btn.small { padding: 8px 12px; font-size: 11px; }
-  .copy-status { font-family: var(--font-sans); font-size: 12px; color: var(--accent); }
+  .prompt-block {
+    margin-bottom: var(--space-3);
+  }
+  .prompt-block summary {
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent-1-text);
+  }
+  .prompt-block pre {
+    white-space: pre-wrap;
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-ui);
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+    color: var(--text);
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+  .toolbar .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .copy-status {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-3);
+  }
 
   .iframe-wrap {
     width: 100%;
     height: 70vh;
     min-height: 420px;
-    border: 1px solid var(--rule);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
     overflow: hidden;
-    background: var(--bg-2);
+    background: var(--surface);
   }
-  .iframe-wrap:fullscreen { height: 100dvh; border: none; }
-  #artifactFrame { width: 100%; height: 100%; border: none; display: block; }
+  .iframe-wrap:fullscreen {
+    height: 100dvh;
+    border: none;
+    border-radius: 0;
+  }
+  #artifactFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
 
-  .footnote { font-family: var(--font-body); font-style: italic; font-size: 14px; color: var(--ink-soft); margin-top: 14px; line-height: 1.55; }
+  .footnote {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--text);
+    margin-top: var(--space-3);
+    line-height: 1.55;
+  }
 
   @media (max-width: 640px) {
-    .artifact-page { padding-top: 22px; }
-    .artifact-header h1 { font-size: 30px; }
-    .description { font-size: 17px; }
-    .iframe-wrap { height: 60vh; }
-    .toolbar { display: grid; grid-template-columns: 1fr 1fr; }
-    .toolbar .btn.small { padding: 10px 6px; text-align: center; }
-    .copy-status { grid-column: 1 / -1; }
+    .artifact-page {
+      padding-top: var(--space-4);
+    }
+    .artifact-header h1 {
+      font-size: 30px;
+    }
+    .description {
+      font-size: 17px;
+    }
+    .iframe-wrap {
+      height: 60vh;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .toolbar .btn {
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .copy-status {
+      grid-column: 1 / -1;
+    }
   }
 </style>

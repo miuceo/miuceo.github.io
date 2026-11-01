@@ -1,6 +1,7 @@
 ---
 import '../styles/tokens.css';
 import type { Lang } from '../lib/i18n';
+import { SITE_NAME } from '../lib/site';
 
 interface Props {
   lang: Lang;
@@ -41,7 +42,7 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 <link rel="canonical" href={canonicalUrl}>
 {noindex && <meta name="robots" content="noindex">}
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="alternate" type="application/rss+xml" title="The Muhammadjon Journal — RSS" href={`/${lang}/rss.xml`}>
+<link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — RSS`} href={`/${lang}/rss.xml`}>
 
 {Object.entries(hreflangPaths).map(([hrefLang, path]) => (
   <link rel="alternate" hreflang={hrefLang} href={new URL(path, site).toString()} />
@@ -52,7 +53,7 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 <meta property="og:title" content={title}>
 <meta property="og:description" content={description}>
 <meta property="og:url" content={canonicalUrl}>
-<meta property="og:site_name" content="The Muhammadjon Journal">
+<meta property="og:site_name" content={SITE_NAME}>
 <meta property="og:locale" content={localeMap[lang]}>
 {ogImage && <meta property="og:image" content={ogImage}>}
 <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'}>
@@ -79,7 +80,7 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
     // switcher only navigates; nothing else persists the choice.
     var seg = (location.pathname.split('/')[1] || '').toLowerCase();
     if (seg === 'uz' || seg === 'en' || seg === 'ru') {
-      localStorage.setItem('miuceo_lang', seg);
+      try { localStorage.setItem('miuceo_lang', seg); } catch (e) {}
     }
   })();
 </script>
@@ -122,22 +123,77 @@ const localeMap: Record<Lang, string> = { uz: 'uz_UZ', en: 'en_US', ru: 'ru_RU' 
 </html>
 
 <style is:global>
-  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; position:relative; }
+  .wrap {
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+  }
 
-  /* Inner-page header: a newspaper section front — centred name, italic dek. */
-  .page-header{ text-align:center; padding:44px 0 30px; border-bottom:1px solid var(--rule); }
-  .page-header h1{ font-weight:900; font-size:56px; line-height:1.05; letter-spacing:-0.01em; margin:0 0 14px; }
-  .page-header p{ font-family:var(--font-body); font-style:italic; font-size:19px; color:var(--ink-soft); max-width:640px; margin:0 auto; line-height:1.55; }
+  .page-header {
+    text-align: left;
+    padding: var(--space-6) 0 var(--space-5);
+    border: none;
+  }
+  .page-header h1 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 48px;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-3);
+  }
+  .page-header p {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-style: normal;
+    line-height: 1.65;
+    max-width: 65ch;
+    color: var(--text);
+    margin: 0;
+  }
 
-  .section-label{ font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink); margin:56px 0 20px; padding-top:8px; border-top:2px solid var(--rule); }
+  .section-label {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-1-text);
+    border: none;
+    margin: var(--space-6) 0 var(--space-4);
+    padding: 0;
+  }
 
-  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); font-family:var(--font-body); font-style:italic; font-size:17px; }
+  .empty-state {
+    text-align: left;
+    padding: var(--space-6) 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: 16px;
+    line-height: 1.65;
+  }
 
-  @media (max-width:640px){
-    .wrap{ padding:0 16px; }
-    .page-header{ padding:28px 0 22px; }
-    .page-header h1{ font-size:36px; }
-    .page-header p{ font-size:17px; }
-    .section-label{ margin:40px 0 16px; }
+  @media (max-width: 1024px) {
+    .wrap {
+      padding: 0 24px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .wrap {
+      padding: 0 16px;
+    }
+    .page-header {
+      padding: var(--space-4) 0 var(--space-3);
+    }
+    .page-header h1 {
+      font-size: 28px;
+    }
+    .section-label {
+      margin: var(--space-4) 0 var(--space-2);
+    }
   }
 </style>

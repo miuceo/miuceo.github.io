@@ -24,69 +24,347 @@ function authHeaders(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin panel — The Muhammadjon Journal</title>
+<title>Admin panel — Muhammadjon Ibrohimov</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="assets/theme.css">
 <style>
-  .wrap{ max-width:1000px; margin:0 auto; padding:0 32px 100px; }
-
-  .navbar{ display:flex; justify-content:space-between; align-items:center; padding:22px 0 14px; border-bottom:3px double var(--rule); margin-bottom:40px; }
-  .brand{ font-family:var(--font-display); font-weight:900; font-size:24px; color:var(--ink); }
-  .back-link{ font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); }
-  .back-link:hover{ color:var(--accent); }
-
-  .page-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
-  .page-header h1{ font-weight:900; font-size:36px; margin:0; }
-
-  .post-row{ border-bottom:1px solid var(--line); padding:18px 0; display:flex; justify-content:space-between; align-items:center; gap:20px; }
-  .post-info h3{ font-size:20px; font-weight:700; margin:0 0 6px; }
-  .post-info .meta{ font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); }
-  .post-actions{ display:flex; gap:8px; flex-shrink:0; }
-  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); font-family:var(--font-body); font-style:italic; font-size:16px; }
-
-  .tabs{ display:flex; gap:6px; border-bottom:1px solid var(--rule); margin-bottom:28px; }
-  .tab-btn{ background:transparent; border:none; padding:12px 18px; font-family:var(--font-sans); font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
-  .tab-btn:hover{ color:var(--ink); }
-  .tab-btn.active{ color:var(--ink); border-bottom-color:var(--accent); }
-  .tab-panel{ display:none; }
-  .tab-panel.active{ display:block; }
-
-  .model-tag{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-right:8px; }
-
-  #artifactModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; padding:20px; overflow-y:auto; }
-  #artifactModal .box{ background:var(--bg-2); border:1px solid var(--rule); padding:28px; width:min(520px, 100%); margin:auto; }
-  #artifactModal h2{ font-size:19px; margin:0 0 20px; }
-  #artifactModal label{ display:block; font-size:13px; font-weight:600; color:var(--ink-soft); margin:14px 0 6px; }
-  #artifactModal label:first-of-type{ margin-top:0; }
-  #artifactModal input[type=text], #artifactModal input[type=file], #artifactModal select, #artifactModal textarea{
-    width:100%; background:var(--bg-3); border:1px solid var(--line); border-radius:6px; color:var(--ink);
-    padding:9px 12px; font-size:14px; font-family:inherit;
+  .wrap {
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px 100px;
   }
-  #artifactModal textarea{ min-height:70px; resize:vertical; }
-  #artifactModal .checkbox-row{ display:flex; align-items:center; gap:8px; margin-top:14px; }
-  #artifactModal .checkbox-row input{ width:auto; }
-  #artifactModal .checkbox-row label{ margin:0; font-weight:500; color:var(--ink); }
-  #artifactModal .warning-box{ display:none; background:rgba(224,79,79,0.1); border:1px solid var(--danger); color:var(--danger); border-radius:6px; padding:12px 14px; font-size:13px; margin-top:14px; }
-  #artifactModal .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:24px; }
 
-  #confirmModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; }
-  #confirmModal .box{ background:var(--bg-2); border:1px solid var(--rule); padding:28px; width:min(440px, 90vw); }
-  #confirmModal p{ font-size:15px; margin:0 0 20px; }
-  #confirmModal .row{ display:flex; gap:10px; justify-content:flex-end; }
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--bg);
+    border-bottom: 1px solid var(--mid);
+    padding: 12px 0;
+    margin-bottom: var(--space-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+  }
+  .brand {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--accent-1-text);
+    letter-spacing: -0.01em;
+  }
+  .back-link {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    text-decoration: none;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+  }
+  .back-link:hover {
+    color: var(--accent-1);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+  }
 
-  #logModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; }
-  #logModal .box{ background:var(--bg-2); border:1px solid var(--rule); padding:24px; width:min(600px, 90vw); }
-  #logModal .log{ font-size:12px; background:var(--bg-3); border-radius:6px; padding:12px; max-height:200px; overflow-y:auto; white-space:pre-wrap; margin-bottom:14px; }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+  .page-header h1 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 34px;
+    color: var(--text);
+    margin: 0;
+  }
 
-  @media (max-width:640px){
-    .wrap{ padding:0 18px 60px; }
-    .navbar{ flex-wrap:wrap; gap:10px; }
-    .page-header{ flex-wrap:wrap; gap:14px; }
-    .page-header h1{ font-size:24px; }
-    .post-row{ flex-direction:column; align-items:flex-start; gap:14px; }
-    .post-actions{ flex-wrap:wrap; }
+  .post-row {
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .post-row:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .post-info h3 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 6px;
+  }
+  .post-info .meta {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    opacity: 0.8;
+  }
+  .post-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text);
+    opacity: 0.75;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 16px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: var(--space-2);
+    border-bottom: 1px solid var(--mid);
+    margin-bottom: var(--space-5);
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    padding: 12px 18px;
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease;
+  }
+  .tab-btn:hover {
+    color: var(--accent-1);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+  }
+  .tab-btn.active {
+    color: var(--accent-1-text);
+    border-bottom-color: var(--accent-1);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+  }
+  .tab-panel {
+    display: none;
+  }
+  .tab-panel.active {
+    display: block;
+  }
+
+  .model-tag {
+    display: inline-block;
+    background: var(--accent-3);
+    color: var(--on-accent-3);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    margin-right: 8px;
+    vertical-align: middle;
+    line-height: 1.2;
+  }
+
+  .admin-filter-bar {
+    margin-bottom: var(--space-4);
+  }
+  .admin-filter-bar input {
+    background: var(--bg);
+    border: 1.5px solid var(--mid);
+    border-radius: var(--radius-ui);
+    color: var(--text);
+    padding: 10px 14px;
+    width: 100%;
+    font-family: var(--font-heading);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .admin-filter-bar input:focus {
+    border-color: var(--accent-1);
+    outline: 2px solid var(--accent-1);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 30%, transparent);
+  }
+  .admin-filter-bar input::placeholder {
+    color: var(--text);
+    opacity: 0.55;
+    font-style: italic;
+  }
+
+  #artifactModal, #confirmModal, #logModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  #artifactModal .box, #confirmModal .box, #logModal .box {
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-5);
+    width: min(540px, 100%);
+    margin: auto;
+    box-shadow: 0 8px 32px color-mix(in srgb, var(--text) 10%, transparent);
+  }
+  #artifactModal h2 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 20px;
+  }
+  #artifactModal label {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 14px 0 6px;
+  }
+  #artifactModal label:first-of-type {
+    margin-top: 0;
+  }
+  #artifactModal input[type=text],
+  #artifactModal input[type=file],
+  #artifactModal select,
+  #artifactModal textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--mid);
+    border-radius: var(--radius-ui);
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: var(--font-heading);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  #artifactModal input[type=text]:focus,
+  #artifactModal input[type=file]:focus,
+  #artifactModal select:focus,
+  #artifactModal textarea:focus {
+    border-color: var(--accent-1);
+    outline: 2px solid var(--accent-1);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 30%, transparent);
+  }
+  #artifactModal textarea {
+    min-height: 75px;
+    resize: vertical;
+    font-family: var(--font-body);
+  }
+  #artifactModal .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  #artifactModal .checkbox-row input {
+    width: auto;
+  }
+  #artifactModal .checkbox-row label {
+    margin: 0;
+    font-weight: 500;
+    color: var(--text);
+  }
+  #artifactModal .warning-box {
+    display: none;
+    background: color-mix(in srgb, var(--accent-2) 12%, transparent);
+    border: 1px solid var(--accent-2);
+    color: var(--accent-2);
+    border-radius: var(--radius-ui);
+    padding: 12px 14px;
+    font-size: 13px;
+    margin-top: 14px;
+    line-height: 1.45;
+  }
+  #artifactModal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  #confirmModal .box {
+    width: min(440px, 92vw);
+  }
+  #confirmModal p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--text);
+    margin: 0 0 20px;
+    line-height: 1.55;
+  }
+  #confirmModal .row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  #logModal .box {
+    width: min(640px, 92vw);
+  }
+  #logModal .log {
+    font-size: 12px;
+    font-family: var(--mono);
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-ui);
+    padding: 14px;
+    max-height: 220px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 1024px) {
+    .wrap {
+      padding: 0 var(--space-4) 80px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .wrap {
+      padding: 0 var(--space-3) 60px;
+    }
+    .navbar {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .page-header {
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .page-header h1 {
+      font-size: 26px;
+    }
+    .post-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .post-actions {
+      flex-wrap: wrap;
+      width: 100%;
+    }
   }
 </style>
 </head>
@@ -94,7 +372,7 @@ function authHeaders(){
 
 <div class="wrap">
   <nav class="navbar">
-    <span class="brand">The Muhammadjon Journal</span>
+    <span class="brand">Muhammadjon Ibrohimov</span>
     <div style="display:flex; gap:16px; align-items:center;">
       <button class="theme-toggle" id="themeToggle">☀️</button>
       <button class="btn ghost small" id="logoutBtn">Chiqish</button>
@@ -119,6 +397,10 @@ function authHeaders(){
       </div>
     </div>
 
+    <div class="admin-filter-bar">
+      <input type="search" id="adminPostSearch" placeholder="Postlarni sarlavha yoki slug bo'yicha qidirish...">
+    </div>
+
     <div id="postsList">
       <div class="empty-state">Yuklanmoqda...</div>
     </div>
@@ -131,6 +413,10 @@ function authHeaders(){
         <button class="btn ghost" id="refreshArtifactsBtn">Yangilash</button>
         <button class="btn" id="newArtifactBtn">+ Yangi artifact</button>
       </div>
+    </div>
+
+    <div class="admin-filter-bar">
+      <input type="search" id="adminArtifactSearch" placeholder="Artifaktlarni nomi, model yoki teg bo'yicha qidirish...">
     </div>
 
     <div id="artifactsList">
@@ -272,11 +558,24 @@ async function loadPosts(){
 
 function renderPosts(){
   const listEl = document.getElementById('postsList');
+  const tabBtn = document.getElementById('tabPostsBtn');
+  if(tabBtn) tabBtn.textContent = `Postlar (${posts.length})`;
+
   if(posts.length === 0){
     listEl.innerHTML = '<div class="empty-state">Hali post yo\'q. "+ Yangi post" tugmasini bosing.</div>';
     return;
   }
-  listEl.innerHTML = posts.map(p => `
+  const query = (document.getElementById('adminPostSearch')?.value || '').trim().toLowerCase();
+  const filtered = query
+    ? posts.filter(p => (p.title || '').toLowerCase().includes(query) || (p.slug || '').toLowerCase().includes(query))
+    : posts;
+
+  if(filtered.length === 0){
+    listEl.innerHTML = '<div class="empty-state">Qidiruv bo\'yicha post topilmadi.</div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(p => `
     <div class="post-row">
       <div class="post-info">
         <h3>${escapeHtml(p.title)}</h3>
@@ -428,11 +727,30 @@ async function loadArtifacts(){
 
 function renderArtifacts(){
   const listEl = document.getElementById('artifactsList');
+  const tabBtn = document.getElementById('tabArtifactsBtn');
+  if(tabBtn) tabBtn.textContent = `Artifacts (${artifacts.length})`;
+
   if(artifacts.length === 0){
     listEl.innerHTML = '<div class="empty-state">Hali artifact yo\'q. "+ Yangi artifact" tugmasini bosing.</div>';
     return;
   }
-  listEl.innerHTML = artifacts.map(a => `
+  const query = (document.getElementById('adminArtifactSearch')?.value || '').trim().toLowerCase();
+  const filtered = query
+    ? artifacts.filter(a => {
+        const titleStr = localizedText(a.title).toLowerCase();
+        const modelStr = (a.model || '').toLowerCase();
+        const tagsStr = (a.tags || []).join(' ').toLowerCase();
+        const slugStr = (a.slug || '').toLowerCase();
+        return titleStr.includes(query) || modelStr.includes(query) || tagsStr.includes(query) || slugStr.includes(query);
+      })
+    : artifacts;
+
+  if(filtered.length === 0){
+    listEl.innerHTML = '<div class="empty-state">Qidiruv bo\'yicha artifact topilmadi.</div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(a => `
     <div class="post-row">
       <div class="post-info">
         <h3><span class="model-tag">${escapeHtml(a.model || '')}</span>${escapeHtml(localizedText(a.title))}</h3>
@@ -569,7 +887,7 @@ document.getElementById('artifactFile').addEventListener('change', (e) => {
       const box = document.getElementById('artifactWarningBox');
       box.style.display = 'block';
       box.innerHTML = `⚠ Faylda tokenga o'xshash qatorlar topildi: ${matches.map(escapeHtml).join(', ')}. Baribir yuklashni xohlaysizmi?`
-        + '<div style="margin-top:8px;"><label style="font-weight:500; color:var(--ink); display:flex; gap:6px; align-items:center;">'
+        + '<div style="margin-top:8px;"><label style="font-weight:500; color:var(--text); display:flex; gap:6px; align-items:center;">'
         + '<input type="checkbox" id="artifactForceUpload"> Ha, baribir yuklash</label></div>';
       document.getElementById('artifactForceUpload').addEventListener('change', (ev) => {
         pendingArtifactForce = ev.target.checked;
@@ -642,6 +960,9 @@ document.getElementById('saveArtifactBtn').addEventListener('click', async () =>
     btn.disabled = false; btn.textContent = 'Saqlash';
   }
 });
+
+document.getElementById('adminPostSearch')?.addEventListener('input', renderPosts);
+document.getElementById('adminArtifactSearch')?.addEventListener('input', renderArtifacts);
 
 loadPosts();
 </script>

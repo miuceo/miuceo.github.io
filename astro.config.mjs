@@ -3,6 +3,7 @@ import sitemap from '@astrojs/sitemap';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeJournal from './src/lib/rehype-journal.mjs';
+import uzAlphabet from './src/lib/uz-alphabet-integration.mjs';
 
 export default defineConfig({
   site: 'https://muhammadjon.me',
@@ -19,6 +20,7 @@ export default defineConfig({
     enabled: false
   },
   integrations: [
+    uzAlphabet(),
     sitemap({
       i18n: {
         defaultLocale: 'uz',

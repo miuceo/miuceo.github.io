@@ -3,8 +3,12 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
+import PostCard from '../../components/PostCard.astro';
+import ArtifactCard from '../../components/ArtifactCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
 import { LANGS, t, type Lang } from '../../lib/i18n';
 import { resolveLocalized } from '../../lib/artifacts';
+import { getStars } from '../../lib/github';
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -13,57 +17,67 @@ export function getStaticPaths() {
 const { lang } = Astro.params as { lang: Lang };
 const strings = t(lang);
 
-// The front page is one dated feed of posts and artifacts, laid out like a
-// newspaper purely by position: 1st is the lead story, 2nd–3rd are medium,
-// the rest a compact list. Nothing is hand-picked, so publishing never needs
-// a "featured" flag. Projects have no date — they get a fixed rubric below.
-interface FeedItem {
-  kind: 'post' | 'artifact';
-  href: string;
+interface FeedPost {
+  kind: 'post';
+  slug: string;
   title: string;
   desc?: string;
   image?: string;
   date: Date;
-  model?: string;
 }
 
-const posts: FeedItem[] = (await getCollection('posts'))
+interface FeedArtifact {
+  kind: 'artifact';
+  slug: string;
+  title: string;
+  desc?: string;
+  date: Date;
+  model: string;
+  tags: string[];
+  requiresClaude: boolean;
+}
+
+type FeedItem = FeedPost | FeedArtifact;
+
+const posts: FeedPost[] = (await getCollection('posts'))
   .filter((entry) => entry.slug.endsWith(`/${lang}`))
   .map((entry) => ({
     kind: 'post',
-    href: `/${lang}/posts/${entry.slug.split('/')[0]}/`,
+    slug: entry.slug.split('/')[0],
     title: entry.data.title,
     desc: entry.data.excerpt,
     image: entry.data.coverImage,
     date: entry.data.createdAt,
   }));
 
-const artifacts: FeedItem[] = (await getCollection('artifacts')).map((a) => ({
+const artifacts: FeedArtifact[] = (await getCollection('artifacts')).map((a) => ({
   kind: 'artifact',
-  href: `/${lang}/artifacts/${a.id}/`,
+  slug: a.id,
   title: resolveLocalized(a.data.title, lang),
   desc: a.data.description ? resolveLocalized(a.data.description, lang) : undefined,
   date: a.data.date,
   model: a.data.model,
+  tags: a.data.tags,
+  requiresClaude: a.data.requiresClaude,
 }));
 
-const feed = [...posts, ...artifacts].sort((a, b) => b.date.valueOf() - a.date.valueOf());
-const [lead, ...others] = feed;
-const secondary = others.slice(0, 2);
-const latest = others.slice(2, 8);
+const feed: FeedItem[] = [...posts, ...artifacts]
+  .sort((a, b) => b.date.valueOf() - a.date.valueOf())
+  .slice(0, 7);
 
-const projects = (await getCollection('projects'))
-  .sort((a, b) => b.data.order - a.data.order)
-  .slice(0, 3);
+const allProjects = (await getCollection('projects')).sort((a, b) => b.data.order - a.data.order);
+const projects = allProjects.slice(0, 3);
+const featuredProject = allProjects[0];
+
+const starsByRepo = new Map(
+  await Promise.all(
+    projects
+      .filter((p) => p.data.githubRepo)
+      .map(async (p) => [p.data.githubRepo as string, await getStars(p.data.githubRepo as string)] as const)
+  )
+);
 
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/`])) as Record<Lang, string>;
-
-const dateFmt = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric' });
-
-const kicker = (item: FeedItem) =>
-  item.kind === 'post'
-    ? strings.home.kickerPost
-    : `${strings.home.kickerArtifact}${item.model ? ` · ${item.model}` : ''}`;
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -88,79 +102,156 @@ const jsonLd = {
 
   <main class="front-page">
     <section class="hero">
-      <h1>{strings.hero.titlePre} <em>{strings.hero.titleAccent1}</em> {strings.hero.titleMid} <em>{strings.hero.titleAccent2}</em></h1>
-      <p class="hero-desc">{strings.hero.desc}</p>
-      <div class="hero-cta">
-        <a href={`/${lang}/projects/`} class="btn">{strings.hero.ctaProjects}</a>
-        <a href={`/${lang}/contact/`} class="btn ghost">{strings.hero.ctaContact}</a>
-        <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="btn ghost">{strings.hero.ctaTelegram}</a>
+      <div class="hero-content">
+        <span class="hero-eyebrow">{strings.hero.prompt}</span>
+        <h1>
+          {strings.hero.titlePre} {strings.hero.titleAccent1} {strings.hero.titleMid} {strings.hero.titleAccent2}
+        </h1>
+        <p class="hero-desc">{strings.hero.desc}</p>
+        <div class="hero-cta">
+          <a href={`/${lang}/projects/`} class="btn btn-primary">{strings.hero.ctaProjects}</a>
+          <a href={`/${lang}/contact/`} class="btn btn-ghost">{strings.hero.ctaContact}</a>
+          <a href="https://t.me/muhammadibrohimov_ceo" target="_blank" rel="noopener" class="btn btn-ghost">
+            {strings.hero.ctaTelegram}
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-bento">
+        {/* Top Bento Card: Status + Quick Search */}
+        <div class="bento-card bento-status">
+          <div class="bento-status-left">
+            <div class="bento-status-eyebrow">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span class="status-label">{strings.hero.bento.statusLabel}</span>
+            </div>
+            <div class="bento-status-value">{strings.hero.bento.statusValue}</div>
+          </div>
+          <button type="button" class="bento-cmdk" data-open-cmdk aria-label={strings.hero.bento.quickSearch}>
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span class="cmdk-label">{strings.hero.bento.quickSearch}</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+        </div>
+
+        {/* Middle Bento Row: 3 mini stat cards */}
+        <div class="bento-stats">
+          <a href={`/${lang}/projects/`} class="bento-stat">
+            <span class="bento-stat-num num-projects">{allProjects.length}</span>
+            <span class="bento-stat-label">{strings.hero.bento.statProjects}</span>
+          </a>
+          <a href={`/${lang}/posts/`} class="bento-stat">
+            <span class="bento-stat-num num-posts">{posts.length}</span>
+            <span class="bento-stat-label">{strings.hero.bento.statPosts}</span>
+          </a>
+          <a href={`/${lang}/artifacts/`} class="bento-stat">
+            <span class="bento-stat-num num-artifacts">{artifacts.length}</span>
+            <span class="bento-stat-label">{strings.hero.bento.statArtifacts}</span>
+          </a>
+        </div>
+
+        {/* Bottom Bento Card: Featured Project + Neuron UZ pill */}
+        <div class="bento-card bento-featured">
+          <div class="bento-featured-pills">
+            <span class="bento-pill-featured">{strings.hero.bento.featuredLabel}</span>
+            <a href="/neuron-uz/" class="bento-pill-quick" title="Neuron UZ">
+              <span>Neuron UZ</span>
+              <span class="pill-arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
+          <a
+            href={featuredProject?.data.url || `/${lang}/projects/`}
+            class="bento-featured-body"
+            target={featuredProject?.data.external ? '_blank' : undefined}
+            rel={featuredProject?.data.external ? 'noopener noreferrer' : undefined}
+          >
+            <div class="bento-featured-title-wrap">
+              <h3 class="bento-featured-title">
+                {featuredProject ? featuredProject.data.title[lang] : ''}
+              </h3>
+              <svg class="featured-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+              </svg>
+            </div>
+            <p class="bento-featured-desc">
+              {featuredProject ? featuredProject.data.description[lang] : ''}
+            </p>
+          </a>
+        </div>
       </div>
     </section>
 
-    {lead ? (
-      <div class:list={['front-grid', { 'text-lead': !lead.image }]}>
-        <a href={lead.href} class:list={['story lead', { 'no-image': !lead.image }]}>
-          <span class:list={['kicker', { red: lead.kind === 'artifact' }]}>{kicker(lead)}</span>
-          <h2><span class="hl">{lead.title}</span></h2>
-          {lead.image && (
-            <figure class="story-img"><img src={lead.image} alt="" loading="eager" /></figure>
-          )}
-          {lead.desc && <p class="story-desc">{lead.desc}</p>}
-          <span class="story-meta">{dateFmt.format(lead.date)}</span>
-        </a>
+    <section class="latest-section">
+      <div class="section-head">
+        <h2 class="section-heading">{strings.home.latest}</h2>
+        <div class="section-links">
+          <a href={`/${lang}/posts/`} class="more-link">{strings.home.viewAllPosts}</a>
+          <a href={`/${lang}/artifacts/`} class="more-link">{strings.home.viewAllArtifacts}</a>
+        </div>
+      </div>
 
-        <div class="col-secondary">
-          {secondary.map((item) => (
-            <a href={item.href} class="story medium">
-              {item.image && (
-                <figure class="story-img"><img src={item.image} alt="" loading="lazy" /></figure>
+      {feed.length > 0 ? (
+        <div class="latest-grid">
+          {feed.map((item) => (
+            <div class="grid-item">
+              {item.kind === 'post' ? (
+                <PostCard
+                  lang={lang}
+                  slug={item.slug}
+                  title={item.title}
+                  excerpt={item.desc ?? ''}
+                  createdAt={item.date}
+                  coverImage={item.image}
+                  showKind
+                />
+              ) : (
+                <ArtifactCard
+                  lang={lang}
+                  slug={item.slug}
+                  title={item.title}
+                  description={item.desc}
+                  model={item.model}
+                  date={item.date}
+                  tags={item.tags}
+                  requiresClaude={item.requiresClaude}
+                  showKind
+                />
               )}
-              <span class:list={['kicker', { red: item.kind === 'artifact' }]}>{kicker(item)}</span>
-              <h3><span class="hl">{item.title}</span></h3>
-              {item.desc && <p class="story-desc">{item.desc}</p>}
-              <span class="story-meta">{dateFmt.format(item.date)}</span>
-            </a>
+            </div>
           ))}
         </div>
-
-        <aside class="col-side">
-          {latest.length > 0 && (
-            <section class="latest">
-              <h2 class="rubric">{strings.home.latest}</h2>
-              <ol>
-                {latest.map((item) => (
-                  <li>
-                    <a href={item.href}>
-                      <span class="latest-title hl">{item.title}</span>
-                      <span class:list={['latest-meta', { red: item.kind === 'artifact' }]}>
-                        {item.kind === 'artifact' ? strings.home.kickerArtifact : strings.home.kickerPost} · {dateFmt.format(item.date)}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
-
-        </aside>
-      </div>
-    ) : (
-      <div class="empty-state">{strings.home.noPosts}</div>
-    )}
+      ) : (
+        <div class="empty-state">{strings.home.noPosts}</div>
+      )}
+    </section>
 
     {projects.length > 0 && (
-      <section class="projects-rubric">
-        <div class="rubric-head">
-          <h2 class="rubric">{strings.projects.title}</h2>
-          <a href={`/${lang}/projects/`} class="rubric-more">{strings.home.viewAllProjects}</a>
+      <section class="projects-section">
+        <div class="section-head">
+          <h2 class="section-heading">{strings.projects.title}</h2>
+          <a href={`/${lang}/projects/`} class="more-link">{strings.home.viewAllProjects}</a>
         </div>
-        <div class="projects-row">
+        <div class="projects-grid">
           {projects.map((p) => (
-            <a href={`/${lang}/projects/`} class="project">
-              <h3><span class="hl">{p.data.title[lang]}</span></h3>
-              <p>{p.data.description[lang]}</p>
-              {p.data.tags.length > 0 && <span class="project-tags">{p.data.tags.slice(0, 4).join(' · ')}</span>}
-            </a>
+            <div class="grid-item">
+              <ProjectCard
+                lang={lang}
+                title={p.data.title[lang]}
+                description={p.data.description[lang]}
+                problem={p.data.problem?.[lang]}
+                solution={p.data.solution?.[lang]}
+                result={p.data.result?.[lang]}
+                tags={p.data.tags}
+                status={p.data.status}
+                url={p.data.url}
+                external={p.data.external}
+                stars={p.data.githubRepo ? starsByRepo.get(p.data.githubRepo) : undefined}
+              />
+            </div>
           ))}
         </div>
       </section>
@@ -170,160 +261,497 @@ const jsonLd = {
   <Footer lang={lang} />
 </BaseLayout>
 
-<style>
-  .front-page { padding-top: 28px; }
+<script is:inline>
+  (function () {
+    var cmdkBtn = document.querySelector('[data-open-cmdk]');
+    if (cmdkBtn) {
+      cmdkBtn.addEventListener('click', function () {
+        window.dispatchEvent(new CustomEvent('open-cmdk'));
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+      });
+    }
+  })();
+</script>
 
-  /* The hero stays as the front page's banner headline — same words as
-     before, set like a newspaper's top story across the full width. */
+<style>
+  .front-page {
+    padding-bottom: var(--space-6);
+  }
+
   .hero {
-    text-align: center;
-    padding: 44px 0 52px;
-    margin-bottom: 32px;
-    border-bottom: 3px double var(--rule);
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: center;
+    padding: var(--space-6) 0 var(--space-5);
+    margin-bottom: var(--space-5);
+  }
+  .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .hero-eyebrow {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-1-text);
+    margin-bottom: var(--space-2);
   }
   .hero h1 {
-    font-weight: 900;
-    font-size: clamp(36px, 5.6vw, 72px);
-    line-height: 1.06;
-    letter-spacing: -0.015em;
-    max-width: 1120px;
-    margin: 0 auto;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 48px;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
     text-wrap: balance;
+    color: var(--text);
+    margin: 0 0 var(--space-3);
   }
-  .hero h1 em { font-style: italic; font-weight: 700; color: var(--accent); }
   .hero-desc {
     font-family: var(--font-body);
-    font-size: 20px;
-    line-height: 1.55;
-    color: var(--ink-soft);
-    max-width: 680px;
-    margin: 22px auto 0;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.65;
+    max-width: 65ch;
+    color: var(--text);
+    margin: 0 0 var(--space-4);
   }
-  .hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .hero-cta .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
 
-  /* Three newspaper columns separated by hairline rules. */
-  .front-grid {
+  /* Bento Showcase */
+  .hero-bento {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+  }
+
+  .bento-card {
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .bento-card:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--accent-1) 20%, transparent);
+  }
+
+  /* Top Bento: Status */
+  .bento-status {
+    padding: var(--space-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .bento-status-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .bento-status-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-1-text);
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--accent-3);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-3) 80%, transparent);
+    display: inline-block;
+    flex-shrink: 0;
+    animation: status-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes status-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--accent-3) 80%, transparent);
+    }
+    50% {
+      opacity: 0.55;
+      transform: scale(0.9);
+      box-shadow: 0 0 3px color-mix(in srgb, var(--accent-3) 35%, transparent);
+    }
+  }
+  .bento-status-value {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .bento-cmdk {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-ui);
+    padding: 6px 10px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  }
+  .bento-cmdk:hover {
+    border-color: var(--accent-1);
+    color: var(--accent-1-text);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 25%, transparent);
+  }
+  .bento-cmdk .search-icon {
+    color: var(--mid);
+    transition: color 0.2s ease;
+  }
+  .bento-cmdk:hover .search-icon {
+    color: var(--accent-1);
+  }
+  .bento-cmdk kbd {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  /* Middle Bento: Stats */
+  .bento-stats {
     display: grid;
-    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
   }
-  .front-grid > * { padding: 0 24px; }
-  .front-grid > *:first-child { padding-left: 0; }
-  .front-grid > *:last-child { padding-right: 0; }
-  .front-grid > * + * { border-left: 1px solid var(--line); }
-
-  .story { display: flex; flex-direction: column; gap: 8px; color: var(--ink); }
-  .story h2, .story h3 { line-height: 1.12; }
-  .lead h2 { font-size: 40px; font-weight: 700; letter-spacing: -0.01em; }
-  .lead.no-image h2 { font-size: 50px; }
-  .medium h3 { font-size: 21px; }
-
-  .story-img { margin: 6px 0 4px; overflow: hidden; background: var(--bg-3); }
-  .story-img img {
-    display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover;
-    transition: transform .8s ease;
+  .bento-stat {
+    background: var(--surface);
+    border: 1px solid var(--mid);
+    border-radius: var(--radius-card);
+    padding: var(--space-3) var(--space-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
-  .medium .story-img { margin: 0 0 4px; }
-  .story:hover .story-img img { transform: scale(1.02); }
+  .bento-stat:hover {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent-1) 25%, transparent);
+    transform: translateY(-1px);
+  }
+  .bento-stat-num {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .bento-stat-num.num-projects {
+    color: var(--accent-1-text);
+  }
+  .bento-stat-num.num-posts {
+    color: var(--accent-2);
+  }
+  .bento-stat-num.num-artifacts {
+    color: var(--accent-3);
+  }
+  .bento-stat-label {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
 
-  .story-desc {
-    font-family: var(--font-body);
-    color: var(--ink-soft);
+  /* Bottom Bento: Featured */
+  .bento-featured {
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    position: relative;
+  }
+  .bento-featured-pills {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    position: relative;
+    z-index: 2;
+  }
+  .bento-pill-featured {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--accent-1);
+    color: var(--on-accent-1);
+  }
+  .bento-pill-quick {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--accent-2);
+    color: var(--on-accent-2);
+    text-decoration: none;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .bento-pill-quick:hover {
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-2) 60%, transparent);
+    transform: translateY(-1px);
+  }
+  .bento-pill-quick .pill-arrow {
+    font-size: 12px;
+  }
+  .bento-featured-body {
+    display: block;
+    text-decoration: none;
+    position: relative;
+  }
+  .bento-featured-body::after {
+    content: '';
+    position: absolute;
+    inset: -38px -16px -12px -16px;
+    z-index: 1;
+  }
+  .bento-featured-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .bento-featured-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
     margin: 0;
-    font-size: 15px;
-    line-height: 1.5;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+  }
+  .bento-featured:hover .bento-featured-title {
+    color: var(--accent-1);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 55%, transparent);
+  }
+  .featured-arrow {
+    color: var(--accent-1-text);
+    flex-shrink: 0;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+  .bento-featured:hover .featured-arrow {
+    color: var(--accent-1);
+    transform: translate(2px, -2px);
+  }
+  .bento-featured-desc {
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text);
+    margin: 0;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .lead .story-desc { font-size: 18px; color: var(--ink); -webkit-line-clamp: 5; }
-  .lead.no-image .story-desc { font-size: 20px; }
-  .story-meta {
-    font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--ink-soft);
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .section-title-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .section-eyebrow {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-1-text);
+    margin-bottom: 4px;
+  }
+  .section-heading {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text);
+    margin: 0;
+  }
+  .section-links {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .more-link {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-1-text);
+    text-decoration: underline;
   }
 
-  .col-secondary { display: flex; flex-direction: column; }
-  .col-secondary .story + .story { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
-
-  /* Section heads: small tracked caps on a heavy rule. */
-  .rubric {
-    font-family: var(--font-sans); font-size: 11px; font-weight: 700;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
-    padding-top: 8px; border-top: 2px solid var(--rule); margin: 0 0 4px;
+  .latest-section {
+    margin-bottom: var(--space-6);
+  }
+  .latest-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+  .latest-grid > :first-child {
+    grid-column: span 2;
   }
 
-  .latest ol { list-style: none; margin: 0; padding: 0; }
-  .latest li + li { border-top: 1px solid var(--line); }
-  .latest a { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; }
-  .latest-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.25; color: var(--ink); }
-  .latest-meta {
-    font-family: var(--font-sans); font-size: 10.5px; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--ink-soft);
+  .projects-section {
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    padding: var(--space-5);
+    margin-top: var(--space-6);
   }
-  .latest-meta.red { color: var(--accent); }
-
-
-  .projects-rubric { margin-top: 48px; border-top: 3px double var(--rule); padding-top: 4px; }
-  .rubric-head { display: flex; justify-content: space-between; align-items: baseline; }
-  .rubric-head .rubric { border-top: none; }
-  .rubric-more {
-    font-family: var(--font-sans); font-size: 11px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
-  }
-  .rubric-more:hover { color: var(--accent); }
-  .projects-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
-  .project { padding: 0 24px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); }
-  .project:first-child { padding-left: 0; }
-  .project:last-child { padding-right: 0; }
-  .project + .project { border-left: 1px solid var(--line); }
-  .project h3 { font-size: 20px; line-height: 1.2; }
-  .project p { font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
-  .project-tags {
-    font-family: var(--font-sans); font-size: 10.5px; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--accent);
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
   }
 
-  /* A lead with no picture is short, so the two medium stories move up under
-     it as a row instead of leaving a tall empty column beside them. */
-  .front-grid.text-lead { grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); }
-  .text-lead > .lead { grid-column: 1; grid-row: 1; padding: 0 24px 24px 0; border-bottom: 1px solid var(--line); }
-  .text-lead > .col-secondary {
-    grid-column: 1; grid-row: 2; flex-direction: row; align-items: flex-start;
-    border-left: none; padding: 24px 24px 0 0;
+  @media (prefers-reduced-motion: reduce) {
+    .status-dot {
+      animation: none;
+    }
   }
-  .text-lead > .col-secondary .story { flex: 1 1 0; min-width: 0; }
-  .text-lead > .col-secondary .story + .story { margin: 0 0 0 24px; padding: 0 0 0 24px; border-top: none; border-left: 1px solid var(--line); }
-  .text-lead > .col-side { grid-column: 2; grid-row: 1 / 3; }
 
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); font-family: var(--font-body); font-style: italic; }
-
-  /* Tablet: lead spans the top, the other two columns sit side by side. */
-  @media (max-width: 1000px) {
-    .front-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    .front-grid > .lead { grid-column: 1 / -1; padding: 0 0 24px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
-    .front-grid > .col-secondary { padding-left: 0; border-left: none; }
-    .front-grid.text-lead { grid-template-columns: minmax(0, 1fr); }
-    .text-lead > .lead, .text-lead > .col-secondary, .text-lead > .col-side { grid-column: 1; grid-row: auto; padding-right: 0; }
-    .text-lead > .col-side { border-left: none; padding-left: 0; margin-top: 28px; }
-    .text-lead > .col-secondary { padding-top: 0; }
+  @media (min-width: 769px) {
+    .latest-grid > :first-child :global(.post-card.has-image) {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: var(--space-5);
+      align-items: center;
+    }
+    .latest-grid > :first-child :global(.post-card.has-image .card-image) {
+      margin-bottom: 0;
+      aspect-ratio: 16 / 10;
+      max-height: 280px;
+    }
+    .latest-grid > :first-child :global(.post-card.has-image .card-image img) {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+    }
+    .latest-grid > :first-child :global(.post-card.has-image .card-body) {
+      justify-content: center;
+      flex-grow: 0;
+    }
+    .latest-grid > :first-child :global(.post-card.has-image .card-excerpt) {
+      flex-grow: 0;
+    }
+    .latest-grid > :first-child :global(.card-title) {
+      font-size: 28px;
+    }
+    .latest-grid > :first-child :global(.card-excerpt) {
+      font-size: 18px;
+    }
   }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      padding: var(--space-5) 0;
+      margin-bottom: var(--space-4);
+      gap: var(--space-4);
+    }
+    .projects-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero h1 {
+      font-size: 32px;
+    }
+    .latest-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .latest-grid > :first-child {
+      grid-column: auto;
+    }
+  }
+
   @media (max-width: 640px) {
-    .front-page { padding-top: 20px; }
-    .hero { padding: 24px 0 32px; margin-bottom: 24px; }
-    .hero-desc { font-size: 17px; margin-top: 16px; }
-    .hero-cta { margin-top: 22px; }
-    .front-grid { grid-template-columns: minmax(0, 1fr); }
-    .front-grid > * { padding: 0; border-left: none !important; }
-    .front-grid > .col-side { margin-top: 28px; }
-    .text-lead > .col-secondary { flex-direction: column; }
-    .text-lead > .col-secondary .story + .story { margin: 20px 0 0; padding: 20px 0 0; border-left: none; border-top: 1px solid var(--line); }
-    .lead h2 { font-size: 30px; }
-    .lead.no-image h2 { font-size: 34px; }
-    .lead .story-desc { font-size: 17px; }
-    .projects-row { grid-template-columns: minmax(0, 1fr); }
-    .project { padding: 0 !important; border-left: none !important; }
-    .project + .project { margin-top: 18px; padding-top: 18px !important; border-top: 1px solid var(--line); }
+    .hero h1 {
+      font-size: 28px;
+    }
+    .hero-cta {
+      width: 100%;
+    }
+    .hero-cta .btn {
+      max-width: 100%;
+    }
+    .projects-section {
+      padding: var(--space-4);
+    }
+    .projects-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .bento-status {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .bento-cmdk {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .bento-stat-num {
+      font-size: 24px;
+    }
+    .bento-stat-label {
+      font-size: 10px;
+    }
   }
 </style>
