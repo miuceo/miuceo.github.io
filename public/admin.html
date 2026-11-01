@@ -56,6 +56,15 @@ function authHeaders(){
     font-size: 18px;
     color: var(--accent-1-text);
     letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .brand img {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: block;
   }
   .back-link {
     font-family: var(--font-heading);
@@ -372,7 +381,7 @@ function authHeaders(){
 
 <div class="wrap">
   <nav class="navbar">
-    <span class="brand">Muhammadjon Ibrohimov</span>
+    <span class="brand"><img src="favicon.svg" alt=""><span>Muhammadjon Ibrohimov</span></span>
     <div style="display:flex; gap:16px; align-items:center;">
       <button class="theme-toggle" id="themeToggle">☀️</button>
       <button class="btn ghost small" id="logoutBtn">Chiqish</button>

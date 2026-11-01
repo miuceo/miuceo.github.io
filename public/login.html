@@ -37,8 +37,17 @@
   .brand {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 18px;
+    font-size: 17px;
     color: var(--accent-1-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .brand img {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: block;
   }
   .card h1 {
     font-family: var(--font-heading);
@@ -114,7 +123,7 @@
 
 <div class="card">
   <div class="brand-row">
-    <div class="brand">Muhammadjon Ibrohimov</div>
+    <div class="brand"><img src="favicon.svg" alt=""><span>Muhammadjon Ibrohimov</span></div>
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">☀️</button>
   </div>
   <h1>Admin panel</h1>

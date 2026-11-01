@@ -26,7 +26,15 @@ const sections = [
 
 <header class="site-header">
   <div class="nav-bar">
-    <a href={`/${lang}/`} class="nav-brand">{strings.masthead.name}</a>
+    <a href={`/${lang}/`} class="nav-brand">
+      <svg class="brand-logo" width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" class="logo-bg" />
+        <path d="M6.5 22.5V9.5h2.6l4.15 6.4 4.15-6.4H20v13h-2.7v-8.3l-3.45 5.2h-1.2L9.2 14.2v8.3H6.5Z" class="logo-m" />
+        <circle cx="24" cy="10.8" r="1.75" class="logo-dot" />
+        <rect x="22.65" y="14.2" width="2.7" height="8.3" rx="1.35" class="logo-stem" />
+      </svg>
+      <span>{strings.masthead.name}</span>
+    </a>
 
     <nav class="nav-links" aria-label="Sections">
       {sections.map((s) => (
@@ -92,17 +100,43 @@ const sections = [
   .nav-brand {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 18px;
+    font-size: 17px;
     color: var(--text);
     text-decoration: none;
     white-space: nowrap;
     letter-spacing: -0.01em;
     padding: var(--space-1) 0;
     flex-shrink: 0;
-    margin-right: 12px;
+    margin-right: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .brand-logo {
+    flex-shrink: 0;
+    border-radius: 7px;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .logo-bg {
+    fill: var(--surface);
+    stroke: var(--mid);
+    stroke-width: 1;
+  }
+  .logo-m {
+    fill: var(--accent-1);
+  }
+  .logo-dot {
+    fill: var(--accent-2);
+  }
+  .logo-stem {
+    fill: var(--accent-3);
   }
   .nav-brand:hover {
     color: var(--accent-1-text);
+  }
+  .nav-brand:hover .brand-logo {
+    transform: translateY(-1px);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-1) 40%, transparent);
   }
 
   .nav-links {

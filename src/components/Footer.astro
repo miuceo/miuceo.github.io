@@ -10,7 +10,15 @@ const strings = t(lang);
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-brand-col">
-      <a href={`/${lang}/`} class="footer-mark">{strings.masthead.name}</a>
+      <a href={`/${lang}/`} class="footer-mark">
+        <svg class="footer-logo" width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" class="f-logo-bg" />
+          <path d="M6.5 22.5V9.5h2.6l4.15 6.4 4.15-6.4H20v13h-2.7v-8.3l-3.45 5.2h-1.2L9.2 14.2v8.3H6.5Z" class="f-logo-m" />
+          <circle cx="24" cy="10.8" r="1.75" class="f-logo-dot" />
+          <rect x="22.65" y="14.2" width="2.7" height="8.3" rx="1.35" class="f-logo-stem" />
+        </svg>
+        <span>{strings.masthead.name}</span>
+      </a>
       <p class="footer-copyright">{strings.footer.copyright}</p>
     </div>
     <nav class="footer-links" aria-label="Footer navigation">
@@ -49,7 +57,27 @@ const strings = t(lang);
     font-size: 18px;
     color: var(--band-text);
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
     transition: opacity .2s, text-shadow .2s ease;
+  }
+  .footer-logo {
+    flex-shrink: 0;
+  }
+  .f-logo-bg {
+    fill: color-mix(in srgb, var(--band-text) 10%, var(--band));
+    stroke: color-mix(in srgb, var(--band-text) 22%, transparent);
+    stroke-width: 1;
+  }
+  .f-logo-m {
+    fill: var(--accent-1);
+  }
+  .f-logo-dot {
+    fill: var(--accent-2);
+  }
+  .f-logo-stem {
+    fill: var(--accent-3);
   }
   .footer-mark:hover {
     opacity: 1;
