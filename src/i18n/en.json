@@ -33,7 +33,11 @@
       "statPosts": "Articles",
       "statArtifacts": "AI Artifacts",
       "featuredLabel": "Featured work",
-      "quickSearch": "Quick search"
+      "quickSearch": "Quick search",
+      "ghTitle": "GitHub activity",
+      "ghContributions": "contributions in the last year",
+      "ghLess": "Less",
+      "ghMore": "More"
     }
   },
   "search": {

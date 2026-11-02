@@ -33,7 +33,11 @@
       "statPosts": "Статьи",
       "statArtifacts": "AI-артефакты",
       "featuredLabel": "Избранное",
-      "quickSearch": "Быстрый поиск"
+      "quickSearch": "Быстрый поиск",
+      "ghTitle": "Активность на GitHub",
+      "ghContributions": "вкладов за последний год",
+      "ghLess": "Меньше",
+      "ghMore": "Больше"
     }
   },
   "search": {

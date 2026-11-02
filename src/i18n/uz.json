@@ -33,7 +33,11 @@
       "statPosts": "Maqolalar",
       "statArtifacts": "AI Artifaktlar",
       "featuredLabel": "So'nggi ish",
-      "quickSearch": "Tezkor qidiruv"
+      "quickSearch": "Tezkor qidiruv",
+      "ghTitle": "GitHub faolligi",
+      "ghContributions": "ta hissa (oxirgi 1 yil)",
+      "ghLess": "Kam",
+      "ghMore": "Ko'p"
     }
   },
   "search": {

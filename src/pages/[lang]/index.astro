@@ -8,7 +8,7 @@ import ArtifactCard from '../../components/ArtifactCard.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import { LANGS, t, type Lang } from '../../lib/i18n';
 import { resolveLocalized } from '../../lib/artifacts';
-import { getStars } from '../../lib/github';
+import { getStars, getGithubContributions } from '../../lib/github';
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -69,13 +69,16 @@ const allProjects = (await getCollection('projects')).sort((a, b) => b.data.orde
 const projects = allProjects.slice(0, 3);
 const featuredProject = allProjects[0];
 
-const starsByRepo = new Map(
-  await Promise.all(
+const [starsEntries, ghActivity] = await Promise.all([
+  Promise.all(
     projects
       .filter((p) => p.data.githubRepo)
       .map(async (p) => [p.data.githubRepo as string, await getStars(p.data.githubRepo as string)] as const)
-  )
-);
+  ),
+  getGithubContributions('miuceo'),
+]);
+
+const starsByRepo = new Map(starsEntries);
 
 const langPaths = Object.fromEntries(LANGS.map((l) => [l, `/${l}/`])) as Record<Lang, string>;
 
@@ -186,6 +189,64 @@ const jsonLd = {
           </a>
         </div>
       </div>
+
+      {/* Full-Width Horizontal GitHub Activity Bar */}
+      <div class="bento-card hero-github-bar">
+        <div class="gh-bar-head">
+          <div class="gh-bar-left">
+            <svg class="gh-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 .5C5.73.5.5 5.74.5 12.02c0 5.1 3.29 9.42 7.86 10.95.58.1.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.05 11.05 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.12 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.26 5.68.42.36.78 1.06.78 2.14 0 1.55-.01 2.79-.01 3.17 0 .31.21.67.8.56A11.53 11.53 0 0 0 23.5 12.02C23.5 5.74 18.27.5 12 .5Z"/>
+            </svg>
+            <span class="gh-bar-title">{strings.hero.bento.ghTitle}</span>
+            <span class="gh-bar-sep" aria-hidden="true">·</span>
+            <span class="gh-bar-total">
+              <strong id="ghTotalCount">{ghActivity.total}</strong> {strings.hero.bento.ghContributions}
+            </span>
+          </div>
+
+          <div class="gh-bar-right">
+            <div class="gh-legend" aria-hidden="true">
+              <span class="gh-legend-label">{strings.hero.bento.ghLess}</span>
+              <span class="gh-cell level-0"></span>
+              <span class="gh-cell level-1"></span>
+              <span class="gh-cell level-2"></span>
+              <span class="gh-cell level-3"></span>
+              <span class="gh-cell level-4"></span>
+              <span class="gh-legend-label">{strings.hero.bento.ghMore}</span>
+            </div>
+            <a href="https://github.com/miuceo" target="_blank" rel="noopener noreferrer" class="gh-profile-link">
+              <span>@miuceo</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="gh-heatmap-scroll">
+          <div
+            class="gh-heatmap-grid"
+            id="ghHeatmapGrid"
+            style={`--weeks: ${ghActivity.weeks.length};`}
+            role="img"
+            aria-label={`${strings.hero.bento.ghTitle}: ${ghActivity.total} ${strings.hero.bento.ghContributions}`}
+          >
+            {ghActivity.weeks.map((week) => (
+              <div class="gh-week">
+                {week.map((day) =>
+                  day ? (
+                    <span
+                      class={`gh-cell level-${day.level}`}
+                      title={`${day.date}: ${day.count}`}
+                      data-date={day.date}
+                    />
+                  ) : (
+                    <span class="gh-cell is-empty" aria-hidden="true" />
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="latest-section">
@@ -274,6 +335,36 @@ const jsonLd = {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
       });
     }
+
+    // Live client-side refresh of GitHub contribution cells & total
+    var totalEl = document.getElementById('ghTotalCount');
+    var gridEl = document.getElementById('ghHeatmapGrid');
+    if (totalEl && gridEl) {
+      fetch('https://github-contributions-api.jogruber.de/v4/miuceo?y=last')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (!data || !Array.isArray(data.contributions)) return;
+          if (data.total && typeof data.total.lastYear === 'number') {
+            totalEl.textContent = String(data.total.lastYear);
+          }
+          var byDate = {};
+          for (var i = 0; i < data.contributions.length; i++) {
+            var c = data.contributions[i];
+            byDate[c.date] = c;
+          }
+          var cells = gridEl.querySelectorAll('[data-date]');
+          for (var j = 0; j < cells.length; j++) {
+            var cell = cells[j];
+            var dt = cell.getAttribute('data-date');
+            var info = dt ? byDate[dt] : null;
+            if (info) {
+              cell.className = 'gh-cell level-' + (info.level || 0);
+              cell.setAttribute('title', info.date + ': ' + info.count);
+            }
+          }
+        })
+        .catch(function () {});
+    }
   })();
 </script>
 
@@ -285,9 +376,9 @@ const jsonLd = {
   .hero {
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: var(--space-6);
+    gap: var(--space-5) var(--space-6);
     align-items: center;
-    padding: var(--space-6) 0 var(--space-6);
+    padding: var(--space-6) 0 var(--space-5);
     margin-bottom: var(--space-5);
   }
   .hero-content {
@@ -638,6 +729,162 @@ const jsonLd = {
     overflow: hidden;
   }
 
+  /* Full-Width Horizontal GitHub Activity Bar */
+  .hero-github-bar {
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .hero-github-bar:hover {
+    border-color: var(--accent-3);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent-3) 22%, transparent);
+  }
+  .gh-bar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .gh-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .gh-icon {
+    color: var(--accent-3);
+    flex-shrink: 0;
+  }
+  .gh-bar-title {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+  .gh-bar-sep {
+    color: var(--mid);
+  }
+  .gh-bar-total {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .gh-bar-total strong {
+    color: var(--accent-3);
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .gh-bar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .gh-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .gh-legend-label {
+    margin: 0 3px;
+    opacity: 0.85;
+  }
+  .gh-legend :global(.gh-cell) {
+    width: 11px;
+    height: 11px;
+    aspect-ratio: 1 / 1;
+  }
+  .gh-profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    border: 1px solid var(--mid);
+    color: var(--accent-1-text);
+    text-decoration: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  }
+  .gh-profile-link:hover {
+    border-color: var(--accent-3);
+    color: var(--accent-3);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-3) 30%, transparent);
+    text-shadow: none;
+  }
+  .gh-heatmap-scroll {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--mid) transparent;
+    padding-bottom: 2px;
+  }
+  .gh-heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--weeks, 53), minmax(12px, 1fr));
+    gap: 4px;
+    width: 100%;
+    min-width: 720px;
+  }
+  :global(.gh-week) {
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    gap: 4px;
+  }
+  :global(.gh-cell) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 3px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  :global(.gh-cell.is-empty) {
+    background: transparent;
+    border: 1px solid transparent;
+    pointer-events: none;
+  }
+  :global(.gh-cell.level-0) {
+    background: var(--bg);
+    border: 1px solid color-mix(in srgb, var(--mid) 40%, transparent);
+  }
+  :global(.gh-cell.level-1) {
+    background: color-mix(in srgb, var(--accent-3) 30%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--accent-3) 45%, transparent);
+  }
+  :global(.gh-cell.level-2) {
+    background: color-mix(in srgb, var(--accent-3) 56%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--accent-3) 70%, transparent);
+  }
+  :global(.gh-cell.level-3) {
+    background: color-mix(in srgb, var(--accent-3) 80%, var(--bg));
+    border: 1px solid var(--accent-3);
+  }
+  :global(.gh-cell.level-4) {
+    background: var(--accent-3);
+    border: 1px solid var(--accent-3);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--accent-3) 50%, transparent);
+  }
+  .gh-heatmap-grid :global(.gh-cell:not(.is-empty):hover) {
+    transform: scale(1.25);
+    z-index: 2;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-3) 75%, transparent);
+  }
+
   .section-head {
     display: flex;
     justify-content: space-between;
@@ -786,6 +1033,9 @@ const jsonLd = {
     }
     .bento-stat-label {
       font-size: 10px;
+    }
+    .hero-github-bar {
+      padding: var(--space-3);
     }
   }
 </style>
